@@ -156,12 +156,45 @@ export default function DiscoverScreen() {
               </Pressable>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.paymentRow}>
-              {userCountry.paymentMethods.map((method) => (
-                <View key={method.id} style={[styles.paymentChip, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  <View style={[styles.paymentDot, { backgroundColor: method.color }]} />
-                  <Text style={[styles.paymentChipText, { color: colors.foreground }]}>{method.label}</Text>
-                </View>
-              ))}
+              {userCountry.paymentMethods.map((method) => {
+                const typeLabel =
+                  method.type === "mobile_money" ? "Mobile Money" :
+                  method.type === "bank" ? "Bank Transfer" :
+                  method.type === "ussd" ? "USSD Code" : "Card";
+                const icon =
+                  method.type === "mobile_money" || method.type === "ussd"
+                    ? "smartphone"
+                    : "credit-card";
+                const initial = method.label.charAt(0).toUpperCase();
+                return (
+                  <View
+                    key={method.id}
+                    style={[
+                      styles.paymentCard,
+                      {
+                        backgroundColor: method.color + "12",
+                        borderColor: method.color + "35",
+                      },
+                    ]}
+                  >
+                    {/* Brand circle */}
+                    <View style={[styles.paymentCardIcon, { backgroundColor: method.color + "22" }]}>
+                      <View style={[styles.paymentCardIconInner, { backgroundColor: method.color }]}>
+                        <Text style={styles.paymentCardInitial}>{initial}</Text>
+                      </View>
+                    </View>
+                    {/* Label */}
+                    <Text style={[styles.paymentCardLabel, { color: colors.foreground }]} numberOfLines={2}>
+                      {method.label}
+                    </Text>
+                    {/* Type badge */}
+                    <View style={[styles.paymentTypeBadge, { backgroundColor: method.color + "22" }]}>
+                      <Feather name={icon as any} size={9} color={method.color} />
+                      <Text style={[styles.paymentTypeText, { color: method.color }]}>{typeLabel}</Text>
+                    </View>
+                  </View>
+                );
+              })}
             </ScrollView>
           </View>
         )}
@@ -270,18 +303,41 @@ const styles = StyleSheet.create({
   },
   cityText: { fontSize: 13, fontWeight: "500" },
   cityFlag: { fontSize: 14 },
-  paymentRow: { gap: 8, paddingBottom: 4 },
-  paymentChip: {
+  paymentRow: { gap: 10, paddingBottom: 4 },
+  paymentCard: {
+    width: 88,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    alignItems: "center",
+    gap: 8,
+  },
+  paymentCardIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  paymentCardIconInner: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  paymentCardInitial: { color: "#fff", fontSize: 14, fontWeight: "900" },
+  paymentCardLabel: { fontSize: 11, fontWeight: "700", textAlign: "center", lineHeight: 14 },
+  paymentTypeBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
     borderRadius: 20,
-    borderWidth: 1,
   },
-  paymentDot: { width: 8, height: 8, borderRadius: 4 },
-  paymentChipText: { fontSize: 12, fontWeight: "600" },
+  paymentTypeText: { fontSize: 8, fontWeight: "700", letterSpacing: 0.3 },
   empty: { alignItems: "center", gap: 10, paddingVertical: 48 },
   emptyTitle: { fontSize: 17, fontWeight: "700" },
   emptyText: { fontSize: 14, textAlign: "center" },

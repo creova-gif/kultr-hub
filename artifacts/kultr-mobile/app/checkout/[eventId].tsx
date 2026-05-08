@@ -226,6 +226,11 @@ export default function CheckoutScreen() {
           <View style={styles.paymentMethods}>
             {paymentMethods.map((method) => {
               const active = (selectedMethodId || paymentMethods[0]?.id) === method.id;
+              const typeLabel =
+                method.type === "mobile_money" ? "Mobile Money" :
+                method.type === "bank" ? "Bank Transfer" :
+                method.type === "ussd" ? "USSD" : "Card";
+              const initial = method.label.charAt(0).toUpperCase();
               return (
                 <Pressable
                   key={method.id}
@@ -237,22 +242,55 @@ export default function CheckoutScreen() {
                   style={[
                     styles.paymentMethod,
                     {
-                      backgroundColor: active ? "rgba(255,107,0,0.06)" : colors.card,
-                      borderColor: active ? "#FF6B00" : colors.border,
+                      backgroundColor: active
+                        ? method.color + "10"
+                        : colors.card,
+                      borderColor: active ? method.color : colors.border,
                     },
                   ]}
                 >
-                  {/* Operator color stripe */}
-                  <View style={[styles.methodColorBar, { backgroundColor: method.color }]} />
-                  <View style={[styles.paymentIcon, { backgroundColor: active ? "rgba(255,107,0,0.15)" : colors.muted }]}>
-                    <Feather name={method.icon as any} size={18} color={active ? "#FF6B00" : colors.mutedForeground} />
+                  {/* Brand avatar */}
+                  <View
+                    style={[
+                      styles.brandAvatar,
+                      { backgroundColor: active ? method.color : method.color + "22" },
+                    ]}
+                  >
+                    <Text style={[styles.brandInitial, { color: active ? "#fff" : method.color }]}>
+                      {initial}
+                    </Text>
                   </View>
+
+                  {/* Info */}
                   <View style={styles.paymentInfo}>
-                    <Text style={[styles.paymentLabel, { color: colors.foreground }]}>{method.label}</Text>
-                    <Text style={[styles.paymentSub, { color: colors.mutedForeground }]}>{method.sub}</Text>
+                    <View style={styles.paymentLabelRow}>
+                      <Text style={[styles.paymentLabel, { color: colors.foreground }]}>
+                        {method.label}
+                      </Text>
+                      <View style={[styles.typeBadge, { backgroundColor: method.color + "20" }]}>
+                        <Text style={[styles.typeBadgeText, { color: method.color }]}>
+                          {typeLabel}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.paymentSub, { color: colors.mutedForeground }]}>
+                      {method.sub}
+                    </Text>
                   </View>
-                  <View style={[styles.radioOuter, { borderColor: active ? "#FF6B00" : colors.border }]}>
-                    {active && <View style={styles.radioInner} />}
+
+                  {/* Radio */}
+                  <View
+                    style={[
+                      styles.radioOuter,
+                      {
+                        borderColor: active ? method.color : colors.border,
+                        backgroundColor: active ? method.color + "15" : "transparent",
+                      },
+                    ]}
+                  >
+                    {active && (
+                      <View style={[styles.radioInner, { backgroundColor: method.color }]} />
+                    )}
                   </View>
                 </Pressable>
               );
@@ -492,26 +530,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 14,
-    paddingLeft: 6,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1.5,
     gap: 12,
     overflow: "hidden",
   },
-  methodColorBar: { width: 4, height: "100%", borderRadius: 2, alignSelf: "stretch" },
-  paymentIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  brandAvatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
+  brandInitial: { fontSize: 18, fontWeight: "900" },
   paymentInfo: { flex: 1 },
-  paymentLabel: { fontSize: 14, fontWeight: "600" },
+  paymentLabelRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
+  paymentLabel: { fontSize: 14, fontWeight: "700" },
+  typeBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  typeBadgeText: { fontSize: 9, fontWeight: "800", letterSpacing: 0.4 },
   paymentSub: { fontSize: 12, marginTop: 1 },
-  radioOuter: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, alignItems: "center", justifyContent: "center" },
-  radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#FF6B00" },
+  radioOuter: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: "center", justifyContent: "center" },
+  radioInner: { width: 11, height: 11, borderRadius: 6 },
   // Phone input
   phoneInput: {
     flexDirection: "row",
