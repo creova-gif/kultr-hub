@@ -17,21 +17,30 @@ import { useColors } from "@/hooks/useColors";
 const MENU_ITEMS = [
   { icon: "heart", label: "Saved Events", route: "/saved" },
   { icon: "tag", label: "My Tickets", route: "/(tabs)/tickets" },
+  { icon: "plus-circle", label: "Create Event", route: "/create-event" },
   { icon: "star", label: "My Reviews", route: null },
   { icon: "users", label: "Following", route: null },
-  { icon: "map-pin", label: "My Cities", route: null },
   { icon: "bell", label: "Notifications", route: "/notifications" },
   { icon: "settings", label: "Settings", route: null },
-  { icon: "shield", label: "Privacy & Security", route: null },
   { icon: "help-circle", label: "Help & Support", route: null },
 ] as const;
+
+function formatRevenue(amount: number, symbol: string) {
+  if (amount >= 1_000_000) return `${symbol}${(amount / 1_000_000).toFixed(1)}M`;
+  if (amount >= 1_000) return `${symbol}${(amount / 1_000).toFixed(0)}K`;
+  return `${symbol}${amount}`;
+}
 
 export default function ProfileScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { tickets, savedEvents } = useApp();
+  const { tickets, savedEvents, createdEvents } = useApp();
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
+  const isCreator = createdEvents.length > 0;
+  const totalRevenue = createdEvents.reduce((s, e) => s + e.revenue, 0);
+  const totalTicketsSold = createdEvents.reduce((s, e) => s + e.ticketsSold, 0);
+  const liveEvents = createdEvents.filter((e) => e.status === "live").length;
 
   return (
     <ScrollView
@@ -70,7 +79,9 @@ export default function ProfileScreen() {
             <Text style={[styles.userHandle, { color: colors.mutedForeground }]}>@alexkamau</Text>
             <View style={styles.memberRow}>
               <Feather name="award" size={11} color="#FF6B00" />
-              <Text style={[styles.memberText, { color: "#FF6B00" }]}>Kultr Member</Text>
+              <Text style={[styles.memberText, { color: "#FF6B00" }]}>
+                {isCreator ? "Kultr Creator" : "Kultr Member"}
+              </Text>
             </View>
           </View>
           <Pressable style={[styles.editBtn, { borderColor: "#FF6B00" }]}>
@@ -83,17 +94,12 @@ export default function ProfileScreen() {
           {[
             { label: "Tickets", value: tickets.length.toString(), onPress: () => router.push("/(tabs)/tickets") },
             { label: "Saved", value: savedEvents.length.toString(), onPress: () => router.push("/saved") },
-            { label: "Cities", value: "3", onPress: null },
+            { label: "Events", value: createdEvents.length.toString(), onPress: () => router.push("/create-event") },
           ].map((stat, i) => (
             <React.Fragment key={stat.label}>
-              <Pressable
-                style={styles.statItem}
-                onPress={stat.onPress ?? undefined}
-              >
+              <Pressable style={styles.statItem} onPress={stat.onPress ?? undefined}>
                 <Text style={[styles.statValue, { color: colors.foreground }]}>{stat.value}</Text>
-                <Text style={[styles.statLabel, { color: stat.onPress ? "#FF6B00" : colors.mutedForeground }]}>
-                  {stat.label}
-                </Text>
+                <Text style={[styles.statLabel, { color: "#FF6B00" }]}>{stat.label}</Text>
               </Pressable>
               {i < 2 && <View style={[styles.statDivider, { backgroundColor: colors.border }]} />}
             </React.Fragment>
@@ -101,21 +107,95 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* Creator CTA */}
-      <View style={[styles.creatorCard, { backgroundColor: "#1A0A00", borderColor: "#FF6B00" }]}>
-        <View style={styles.creatorLeft}>
-          <Feather name="zap" size={20} color="#FF6B00" />
-          <View>
-            <Text style={[styles.creatorTitle, { color: colors.foreground }]}>Become a Creator</Text>
-            <Text style={[styles.creatorSub, { color: colors.mutedForeground }]}>
-              List your events and reach thousands
-            </Text>
+      {/* ── Creator Dashboard ── */}
+      {isCreator ? (
+        <View style={styles.dashboardSection}>
+          <View style={styles.dashboardHeader}>
+            <View style={styles.dashboardTitleRow}>
+              <Feather name="zap" size={16} color="#FF6B00" />
+              <Text style={[styles.dashboardTitle, { color: colors.foreground }]}>Creator Dashboard</Text>
+            </View>
+            <Pressable
+              onPress={() => router.push("/create-event")}
+              style={styles.newEventBtn}
+            >
+              <Feather name="plus" size={14} color="#FF6B00" />
+              <Text style={styles.newEventBtnText}>New Event</Text>
+            </Pressable>
           </View>
+
+          {/* Revenue stats row */}
+          <View style={styles.revenueRow}>
+            <View style={[styles.revenueCard, { backgroundColor: "#0E2200", borderColor: "#00C853" + "40" }]}>
+              <Text style={styles.revenueValue}>
+                {formatRevenue(totalRevenue, createdEvents[0]?.currencySymbol ?? "KSh")}
+              </Text>
+              <Text style={styles.revenueLabel}>Total Revenue</Text>
+              <View style={styles.revenueIconWrapper}>
+                <Feather name="trending-up" size={14} color="#00C853" />
+              </View>
+            </View>
+            <View style={[styles.revenueCard, { backgroundColor: "#1A0A00", borderColor: "#FF6B00" + "40" }]}>
+              <Text style={[styles.revenueValue, { color: "#FF6B00" }]}>{totalTicketsSold}</Text>
+              <Text style={styles.revenueLabel}>Tickets Sold</Text>
+              <View style={[styles.revenueIconWrapper, { backgroundColor: "rgba(255,107,0,0.1)" }]}>
+                <Feather name="tag" size={14} color="#FF6B00" />
+              </View>
+            </View>
+            <View style={[styles.revenueCard, { backgroundColor: "#0A0A1A", borderColor: "#7B61FF" + "40" }]}>
+              <Text style={[styles.revenueValue, { color: "#7B61FF" }]}>{liveEvents}</Text>
+              <Text style={styles.revenueLabel}>Live Now</Text>
+              <View style={[styles.revenueIconWrapper, { backgroundColor: "rgba(123,97,255,0.1)" }]}>
+                <Feather name="radio" size={14} color="#7B61FF" />
+              </View>
+            </View>
+          </View>
+
+          {/* Created events list */}
+          {createdEvents.map((ev) => (
+            <View
+              key={ev.id}
+              style={[styles.eventRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <View style={[styles.eventStatusDot, {
+                backgroundColor: ev.status === "live" ? "#00C853" : ev.status === "ended" ? "#555" : "#FF6B00",
+              }]} />
+              <View style={styles.eventRowLeft}>
+                <Text style={[styles.eventRowTitle, { color: colors.foreground }]} numberOfLines={1}>
+                  {ev.title}
+                </Text>
+                <Text style={[styles.eventRowMeta, { color: colors.mutedForeground }]}>
+                  {ev.date} · {ev.venue}
+                </Text>
+              </View>
+              <View style={styles.eventRowRight}>
+                <Text style={[styles.eventRowRevenue, { color: "#00C853" }]}>
+                  {formatRevenue(ev.revenue, ev.currencySymbol)}
+                </Text>
+                <Text style={[styles.eventRowSold, { color: colors.mutedForeground }]}>
+                  {ev.ticketsSold} sold
+                </Text>
+              </View>
+            </View>
+          ))}
         </View>
-        <Pressable style={styles.creatorBtn}>
-          <Text style={styles.creatorBtnText}>Apply</Text>
-        </Pressable>
-      </View>
+      ) : (
+        /* ── Become a Creator CTA ── */
+        <View style={[styles.creatorCard, { backgroundColor: "#1A0A00", borderColor: "#FF6B00" }]}>
+          <View style={styles.creatorLeft}>
+            <Feather name="zap" size={20} color="#FF6B00" />
+            <View>
+              <Text style={[styles.creatorTitle, { color: "#fff" }]}>Become a Creator</Text>
+              <Text style={[styles.creatorSub, { color: "#888" }]}>
+                List your events and reach thousands
+              </Text>
+            </View>
+          </View>
+          <Pressable style={styles.creatorBtn} onPress={() => router.push("/create-event")}>
+            <Text style={styles.creatorBtnText}>Apply</Text>
+          </Pressable>
+        </View>
+      )}
 
       {/* Menu */}
       <View style={[styles.menuSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -132,8 +212,19 @@ export default function ProfileScreen() {
               },
             ]}
           >
-            <View style={[styles.menuIconWrapper, { backgroundColor: colors.muted }]}>
-              <Feather name={item.icon as any} size={16} color={item.route ? "#FF6B00" : colors.foreground} />
+            <View style={[
+              styles.menuIconWrapper,
+              {
+                backgroundColor: item.label === "Create Event"
+                  ? "rgba(255,107,0,0.12)"
+                  : colors.muted,
+              },
+            ]}>
+              <Feather
+                name={item.icon as any}
+                size={16}
+                color={item.route ? "#FF6B00" : colors.foreground}
+              />
             </View>
             <Text style={[styles.menuLabel, { color: colors.foreground }]}>{item.label}</Text>
             <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
@@ -218,6 +309,69 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 20, fontWeight: "800" },
   statLabel: { fontSize: 11, marginTop: 2, fontWeight: "600" },
   statDivider: { width: 1, marginVertical: 4 },
+
+  // Creator Dashboard
+  dashboardSection: { marginHorizontal: 16, marginBottom: 16, gap: 10 },
+  dashboardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  dashboardTitleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  dashboardTitle: { fontSize: 17, fontWeight: "800" },
+  newEventBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#FF6B00",
+  },
+  newEventBtnText: { color: "#FF6B00", fontSize: 12, fontWeight: "700" },
+
+  revenueRow: { flexDirection: "row", gap: 8 },
+  revenueCard: {
+    flex: 1,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+    gap: 3,
+    position: "relative",
+    overflow: "hidden",
+  },
+  revenueValue: { fontSize: 20, fontWeight: "900", color: "#00C853" },
+  revenueLabel: { fontSize: 10, color: "#666", fontWeight: "600" },
+  revenueIconWrapper: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "rgba(0,200,83,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  eventRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+    gap: 10,
+  },
+  eventStatusDot: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
+  eventRowLeft: { flex: 1 },
+  eventRowTitle: { fontSize: 14, fontWeight: "700" },
+  eventRowMeta: { fontSize: 11, marginTop: 2 },
+  eventRowRight: { alignItems: "flex-end" },
+  eventRowRevenue: { fontSize: 15, fontWeight: "800" },
+  eventRowSold: { fontSize: 11, marginTop: 1 },
+
+  // Become a Creator CTA
   creatorCard: {
     marginHorizontal: 16,
     borderRadius: 14,
@@ -238,19 +392,16 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   creatorBtnText: { color: "#fff", fontSize: 13, fontWeight: "700" },
+
   menuSection: {
     marginHorizontal: 16,
     borderRadius: 16,
     borderWidth: 1,
     overflow: "hidden",
     marginBottom: 16,
+    marginTop: 16,
   },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 14,
-    gap: 12,
-  },
+  menuItem: { flexDirection: "row", alignItems: "center", padding: 14, gap: 12 },
   menuIconWrapper: {
     width: 32,
     height: 32,

@@ -100,6 +100,14 @@ export default function EventDetailScreen() {
               </Pressable>
               <Pressable
                 style={[styles.heroBtn, { backgroundColor: "rgba(0,0,0,0.5)" }]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  const { Share } = require("react-native");
+                  Share.share({
+                    title: event.title,
+                    message: `Check out "${event.title}" on Kultr — ${event.venue}, ${event.city} on ${event.date}. Get your tickets now!`,
+                  });
+                }}
               >
                 <Feather name="share-2" size={20} color="#fff" />
               </Pressable>

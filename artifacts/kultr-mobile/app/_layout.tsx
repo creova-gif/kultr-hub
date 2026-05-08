@@ -6,7 +6,7 @@ import {
   useFonts,
 } from "@expo-google-fonts/inter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -14,21 +14,31 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { AppProvider } from "@/context/AppContext";
+import { AppProvider, useApp } from "@/context/AppContext";
 
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
+  const { onboardingDone } = useApp();
+
+  React.useEffect(() => {
+    if (!onboardingDone) {
+      router.replace("/onboarding");
+    }
+  }, [onboardingDone]);
+
   return (
     <Stack screenOptions={{ headerShown: false, animation: "slide_from_right" }}>
+      <Stack.Screen name="onboarding" options={{ headerShown: false, animation: "fade" }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="event/[id]" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="checkout/[eventId]" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="ticket/[id]" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="saved" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="notifications" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="create-event" options={{ headerShown: false, presentation: "card" }} />
     </Stack>
   );
 }
