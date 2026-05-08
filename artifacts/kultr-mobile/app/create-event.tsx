@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { type CreatedEvent, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 
-const LOGO = require("@/assets/images/logo.png");
+const LOGO_ICON = require("@/assets/images/logo-icon.png");
 
 const CATEGORIES = ["Music", "Art", "Food", "Heritage", "Comedy", "Sports", "Nightlife"] as const;
 type Category = (typeof CATEGORIES)[number];
@@ -124,7 +124,7 @@ export default function CreateEventScreen() {
           <Feather name="arrow-left" size={18} color={colors.foreground} />
         </Pressable>
         <View style={styles.headerBrand}>
-          <Image source={LOGO} style={styles.headerLogoImg} resizeMode="contain" />
+          <Image source={LOGO_ICON} style={styles.headerLogoImg} resizeMode="contain" />
           <View>
             <Text style={[styles.headerTitle, { color: colors.foreground }]}>Create Event</Text>
             <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>

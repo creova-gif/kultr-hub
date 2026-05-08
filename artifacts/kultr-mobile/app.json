@@ -4,12 +4,12 @@
     "slug": "kultr-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/logo-icon.png",
     "scheme": "kultr-mobile",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/icon.png",
+      "image": "./assets/images/logo-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#111111"
     },
@@ -20,7 +20,7 @@
       "backgroundColor": "#111111"
     },
     "web": {
-      "favicon": "./assets/images/icon.png"
+      "favicon": "./assets/images/logo-icon.png"
     },
     "plugins": [
       [

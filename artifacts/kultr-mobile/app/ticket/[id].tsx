@@ -20,7 +20,7 @@ import { useApp } from "@/context/AppContext";
 import { formatDate, formatTime, getEventById } from "@/constants/data";
 import { useColors } from "@/hooks/useColors";
 
-const LOGO = require("@/assets/images/logo.png");
+const LOGO_WORDMARK = require("@/assets/images/logo-wordmark.png");
 
 export default function TicketViewScreen() {
   const { id, newPurchase, eventId, ticketTypeName, ticketNumber } = useLocalSearchParams<{
@@ -107,10 +107,7 @@ export default function TicketViewScreen() {
             </View>
 
             <View style={styles.ticketHeaderContent}>
-              <View style={styles.brandLogoRow}>
-                <Image source={LOGO} style={styles.brandLogoImg} resizeMode="contain" />
-                <Text style={styles.brandLogoText}>ultr</Text>
-              </View>
+              <Image source={LOGO_WORDMARK} style={styles.brandLogoImg} resizeMode="contain" />
               <View style={[styles.ticketTypePill, { backgroundColor: "rgba(255,107,0,0.2)", borderColor: "#FF6B00" }]}>
                 <Text style={[styles.ticketTypeLabel, { color: "#FF6B00" }]}>
                   {resolvedTicketTypeName.toUpperCase()}
@@ -263,9 +260,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 8,
   },
-  brandLogoRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  brandLogoImg: { width: 28, height: 28, borderRadius: 6, backgroundColor: "#1A1A1A" },
-  brandLogoText: { color: "#E0E0E0", fontSize: 22, fontWeight: "900", letterSpacing: -0.5 },
+  brandLogoImg: { width: 90, height: 30 },
   ticketTypePill: {
     borderWidth: 1,
     borderRadius: 4,

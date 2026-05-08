@@ -19,7 +19,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EA_COUNTRIES } from "@/constants/currencies";
 import { useApp } from "@/context/AppContext";
 
-const LOGO = require("@/assets/images/logo.png");
+const LOGO_ICON = require("@/assets/images/logo-icon.png");
+const LOGO_WORDMARK = require("@/assets/images/logo-wordmark.png");
 
 const { width } = Dimensions.get("window");
 
@@ -91,11 +92,10 @@ export default function OnboardingScreen() {
         {step === 0 && (
           <View style={styles.step}>
             <View style={styles.welcomeCenter}>
-              {/* Logo image */}
-              <View style={styles.logoContainer}>
-                <Image source={LOGO} style={styles.logoImage} resizeMode="contain" />
-              </View>
-              <Text style={styles.brand}>KULTR</Text>
+              {/* Hero icon */}
+              <Image source={LOGO_ICON} style={styles.logoImage} resizeMode="contain" />
+              {/* Wordmark */}
+              <Image source={LOGO_WORDMARK} style={styles.logoWordmark} resizeMode="contain" />
               <Text style={styles.tagline}>Bold Culture.{"\n"}Timeless Impact.</Text>
               <Text style={styles.welcomeSub}>
                 Discover the most vibrant events across{"\n"}East Africa — made for you.
@@ -280,26 +280,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     gap: 0,
   },
-  logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    overflow: "hidden",
-    marginBottom: 20,
-    backgroundColor: "#1A1A1A",
-  },
-  logoImage: { width: 80, height: 80 },
-  logoMark_UNUSED: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#FF6B00",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 20,
-  },
-  logoK: { fontSize: 36, fontWeight: "900", color: "#fff" },
-  brand: { fontSize: 13, fontWeight: "900", letterSpacing: 8, color: "#FF6B00", marginBottom: 20 },
+  logoImage: { width: 130, height: 130, marginBottom: 16 },
+  logoWordmark: { width: 140, height: 44, marginBottom: 24 },
   tagline: {
     fontSize: 38,
     fontWeight: "900",

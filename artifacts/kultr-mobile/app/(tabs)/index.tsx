@@ -87,17 +87,11 @@ export default function HomeScreen() {
 
         {/* Nav row */}
         <View style={styles.navRow}>
-          <View style={styles.logoRow}>
-            <Image
-              source={require("@/assets/images/logo.png")}
-              style={styles.logoImg}
-              resizeMode="contain"
-            />
-            <View>
-              <Text style={styles.logoText}>ultr</Text>
-              <Text style={styles.logoSub}>East Africa</Text>
-            </View>
-          </View>
+          <Image
+            source={require("@/assets/images/logo-wordmark.png")}
+            style={styles.logoWordmark}
+            resizeMode="contain"
+          />
           <View style={styles.navActions}>
             <Pressable
               onPress={() => router.push("/notifications")}
@@ -355,10 +349,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 20,
   },
-  logoRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  logoImg: { width: 36, height: 36, borderRadius: 8, backgroundColor: "#1A1A1A" },
-  logoText: { color: "#fff", fontSize: 26, fontWeight: "900", letterSpacing: -1 },
-  logoSub: { color: "#555", fontSize: 10, fontWeight: "600", letterSpacing: 2, marginTop: -2 },
+  logoWordmark: { width: 110, height: 36 },
   navActions: { flexDirection: "row", alignItems: "center", gap: 10 },
   navBtn: {
     width: 40, height: 40, borderRadius: 20,
