@@ -314,9 +314,16 @@ export function getDaysUntil(dateStr: string): number {
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
-export const EVENT_IMAGES: Record<string, ReturnType<typeof require>> = {
+// `require()` returns `any` at runtime; the explicit cast to `any` lets every
+// Image component accept these values without per-site casts.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const EVENT_IMAGES: Record<"concert" | "art" | "food" | "culture", any> = {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   concert: require("@/assets/images/event_concert.png"),
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   art: require("@/assets/images/event_art.png"),
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   food: require("@/assets/images/event_food.png"),
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   culture: require("@/assets/images/event_culture.png"),
 };

@@ -1,5 +1,4 @@
 import { Feather } from "@expo/vector-icons";
-import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
 import { Tabs } from "expo-router";
 import React from "react";
@@ -24,9 +23,11 @@ const TABS = [
   { name: "profile", label: "Profile", icon: "user" },
 ] as const;
 
-function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
+type FloatingTabBarProps = Parameters<NonNullable<React.ComponentProps<typeof Tabs>["tabBar"]>>[0];
+
+function FloatingTabBar({ state, navigation }: FloatingTabBarProps) {
   const insets = useSafeAreaInsets();
-  const colors = useColors();
+  useColors(); // ensure hook runs in right context
 
   const bottomOffset = Platform.OS === "web"
     ? Math.max(insets.bottom, 20) + 8
@@ -34,11 +35,9 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
 
   return (
     <View style={[styles.wrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
-      {/* Glow behind pill */}
       <View style={styles.glow} />
-
-      <View style={[styles.pill, { backgroundColor: "#1A1A1A" }]}>
-        {state.routes.map((route, index) => {
+      <View style={styles.pill}>
+        {state.routes.map((route: { key: string; name: string }, index: number) => {
           const focused = state.index === index;
           const tab = TABS[index];
           if (!tab) return null;
@@ -57,13 +56,11 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
                   navigation.navigate(route.name, {});
                 }
               }}
-              style={[styles.tabItem, focused && styles.tabItemActive]}
+              style={styles.tabItem}
             >
               {focused ? (
                 <View style={styles.activeContent}>
-                  <View style={styles.activeIconWrap}>
-                    <Feather name={tab.icon} size={15} color="#FF6B00" />
-                  </View>
+                  <Feather name={tab.icon} size={15} color="#FF6B00" />
                   <Text style={styles.activeLabel}>{tab.label}</Text>
                 </View>
               ) : (
@@ -125,6 +122,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 8,
     gap: 2,
+    backgroundColor: "#1A1A1A",
     borderWidth: 1,
     borderColor: "#2A2A2A",
     shadowColor: "#000",
@@ -140,9 +138,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 23,
   },
-  tabItemActive: {
-    // handled by inner styles
-  },
   activeContent: {
     flexDirection: "row",
     alignItems: "center",
@@ -153,9 +148,6 @@ const styles = StyleSheet.create({
     borderRadius: 23,
     borderWidth: 1,
     borderColor: "rgba(255,107,0,0.3)",
-  },
-  activeIconWrap: {
-    // just the icon
   },
   activeLabel: {
     color: "#FF6B00",

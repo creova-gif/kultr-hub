@@ -341,7 +341,7 @@ export default function CheckoutScreen() {
           <View style={[styles.conversionNote, { backgroundColor: "rgba(255,107,0,0.08)", borderColor: "#FF6B00" + "40" }]}>
             <Feather name="refresh-cw" size={13} color="#FF6B00" />
             <Text style={[styles.conversionText, { color: colors.mutedForeground }]}>
-              Converted from {event.currencySymbol} {event.currencyCode} · indicative rate
+              Converted from {event.currencySymbol} {event.currency} · indicative rate
             </Text>
           </View>
         )}

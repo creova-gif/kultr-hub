@@ -4,7 +4,6 @@ import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   Dimensions,
-  FlatList,
   Image,
   Platform,
   Pressable,
@@ -17,8 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { EventCardCompact } from "@/components/EventCardCompact";
 import { EventCardHero } from "@/components/EventCardHero";
-import { CATEGORIES, EVENTS, EVENT_IMAGES, formatDate, formatTime, getDaysUntil } from "@/constants/data";
-import { useApp } from "@/context/AppContext";
+import { CATEGORIES, EVENTS, EVENT_IMAGES, getDaysUntil } from "@/constants/data";
 import { useColors } from "@/hooks/useColors";
 
 const { width } = Dimensions.get("window");
@@ -34,17 +32,30 @@ const CATEGORY_ICONS: Record<string, string> = {
   Nightlife: "moon",
 };
 
+const CITY_TO_COUNTRY: Record<string, string> = {
+  Nairobi: "KE",
+  Lagos: "NG",
+  Accra: "GH",
+  Kampala: "UG",
+  "Dar es Salaam": "TZ",
+};
+
+const COUNTRY_FLAGS: Record<string, string> = {
+  KE: "🇰🇪", NG: "🇳🇬", GH: "🇬🇭", UG: "🇺🇬", TZ: "🇹🇿",
+  RW: "🇷🇼", ET: "🇪🇹",
+};
+
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { isSaved, toggleSaved } = useApp();
   const [selectedCategory, setSelectedCategory] = useState("For You");
 
   const featured = EVENTS.filter((e) => e.featured);
   const soonest = EVENTS.filter((e) => getDaysUntil(e.date) >= 0)
     .sort((a, b) => getDaysUntil(a.date) - getDaysUntil(b.date));
-  const thisWeekend = soonest.filter((e) => getDaysUntil(e.date) <= 14).slice(0, 4);
+  const thisWeekend = soonest.filter((e) => getDaysUntil(e.date) <= 60).slice(0, 4);
   const acrossAfrica = EVENTS.filter((e) => e.city !== "Nairobi").slice(0, 4);
+  const nearNairobi = EVENTS.filter((e) => e.city === "Nairobi").slice(0, 5);
 
   const displayed =
     selectedCategory === "For You"
@@ -80,19 +91,19 @@ export default function HomeScreen() {
             <Text style={styles.logoText}>
               <Text style={{ color: "#FF6B00" }}>K</Text>ultr
             </Text>
-            <Text style={[styles.logoSub, { color: "#555" }]}>East Africa</Text>
+            <Text style={styles.logoSub}>East Africa</Text>
           </View>
           <View style={styles.navActions}>
             <Pressable
               onPress={() => router.push("/notifications")}
-              style={[styles.navBtn, { backgroundColor: "#1C1C1C" }]}
+              style={styles.navBtn}
             >
               <Feather name="bell" size={17} color="#ccc" />
               <View style={styles.notifDot} />
             </Pressable>
             <Pressable
               onPress={() => router.push("/(tabs)/profile")}
-              style={[styles.avatar, { backgroundColor: "#FF6B00" }]}
+              style={styles.avatar}
             >
               <Text style={styles.avatarText}>A</Text>
             </Pressable>
@@ -101,16 +112,15 @@ export default function HomeScreen() {
 
         {/* Big greeting */}
         <View style={styles.greetingBlock}>
-          <Text style={[styles.greetingSmall, { color: "#555" }]}>
-            Good evening — Nairobi, Kenya
-          </Text>
+          <Text style={styles.greetingSmall}>Good evening — Nairobi, Kenya</Text>
           <Text style={styles.greetingBig} numberOfLines={2}>
-            What's your{"\n"}
-            <Text style={{ color: "#FF6B00", fontStyle: "italic" }}>vibe</Text> tonight?
+            {"What's your\n"}
+            <Text style={{ color: "#FF6B00", fontStyle: "italic" }}>vibe</Text>
+            {" tonight?"}
           </Text>
         </View>
 
-        {/* Category pills — icon + label style */}
+        {/* Category pills — icon + label */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -141,21 +151,17 @@ export default function HomeScreen() {
         </ScrollView>
       </View>
 
-      {/* ── FILTERED VIEW ── */}
+      {/* ── FILTERED CATEGORY VIEW ── */}
       {selectedCategory !== "For You" ? (
         <View style={styles.filteredSection}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionLabel, { color: colors.foreground }]}>
-              {selectedCategory}
-            </Text>
-            <Text style={[styles.sectionCount, { color: "#555" }]}>{displayed.length} events</Text>
+            <Text style={styles.sectionLabel}>{selectedCategory}</Text>
+            <Text style={{ color: "#555", fontSize: 13 }}>{displayed.length} events</Text>
           </View>
           {displayed.length === 0 ? (
             <View style={styles.emptyState}>
               <Feather name="calendar" size={36} color="#333" />
-              <Text style={[styles.emptyText, { color: "#555" }]}>
-                No {selectedCategory} events yet
-              </Text>
+              <Text style={{ color: "#555", fontSize: 15 }}>No {selectedCategory} events yet</Text>
             </View>
           ) : (
             displayed.map((event) => (
@@ -170,26 +176,25 @@ export default function HomeScreen() {
           {/* ── FEATURED ── */}
           <View style={styles.featuredSection}>
             <SectionTitle label="FEATURED" accent="On Stage" />
-            <FlatList
+            <ScrollView
               horizontal
-              data={featured}
-              keyExtractor={(e) => e.id}
-              renderItem={({ item }) => <EventCardHero event={item} />}
               showsHorizontalScrollIndicator={false}
-              ItemSeparatorComponent={() => <View style={{ width: 14 }} />}
-              contentContainerStyle={{ paddingHorizontal: 20 }}
               snapToInterval={width - 32 + 14}
               decelerationRate="fast"
-              scrollEnabled={featured.length > 1}
-            />
+              contentContainerStyle={{ paddingHorizontal: 20, gap: 14 }}
+            >
+              {featured.map((item) => (
+                <EventCardHero key={item.id} event={item} />
+              ))}
+            </ScrollView>
           </View>
 
-          {/* ── HAPPENING SOON ── */}
+          {/* ── HAPPENING SOON bento grid ── */}
           {thisWeekend.length > 0 && (
             <View style={styles.section}>
-              <SectionTitle label="HAPPENING SOON" accent="Next 2 weeks" />
+              <SectionTitle label="HAPPENING SOON" accent="Next 60 days" />
               <View style={styles.bentoGrid}>
-                {thisWeekend.slice(0, 4).map((event, i) => {
+                {thisWeekend.map((event, i) => {
                   const daysUntil = getDaysUntil(event.date);
                   const image = EVENT_IMAGES[event.imageKey];
                   const isBig = i === 0;
@@ -200,23 +205,31 @@ export default function HomeScreen() {
                       style={({ pressed }) => [
                         styles.bentoCard,
                         isBig ? styles.bentoLarge : styles.bentoSmall,
-                        { opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+                        { opacity: pressed ? 0.9 : 1 },
                       ]}
                     >
-                      <Image source={image} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                      <Image
+                        source={image as any}
+                        style={StyleSheet.absoluteFillObject}
+                        resizeMode="cover"
+                      />
                       <LinearGradient
                         colors={["transparent", "rgba(0,0,0,0.95)"]}
-                        style={StyleSheet.absoluteFill}
+                        style={StyleSheet.absoluteFillObject}
                       />
-                      {/* Day badge */}
                       <View style={styles.dayBadge}>
-                        <Text style={styles.dayNum}>{daysUntil === 0 ? "TODAY" : daysUntil === 1 ? "TMRW" : `${daysUntil}d`}</Text>
+                        <Text style={styles.dayNum}>
+                          {daysUntil === 0 ? "TODAY" : daysUntil === 1 ? "TMRW" : `${daysUntil}d`}
+                        </Text>
                       </View>
                       <View style={styles.bentoContent}>
                         <View style={styles.bentoCat}>
                           <Text style={styles.bentoCatText}>{event.category.toUpperCase()}</Text>
                         </View>
-                        <Text style={[styles.bentoTitle, isBig ? styles.bentoTitleLg : styles.bentoTitleSm]} numberOfLines={2}>
+                        <Text
+                          style={[styles.bentoTitle, isBig ? styles.bentoTitleLg : styles.bentoTitleSm]}
+                          numberOfLines={2}
+                        >
                           {event.title}
                         </Text>
                         {isBig && (
@@ -235,57 +248,63 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* ── NAIROBI ── */}
-          <View style={styles.section}>
-            <SectionTitle label="NEAR NAIROBI" onSeeAll={() => router.push("/discover")} />
-            <FlatList
-              horizontal
-              data={EVENTS.filter((e) => e.city === "Nairobi").slice(0, 5)}
-              keyExtractor={(e) => e.id}
-              renderItem={({ item }) => <EventCardCompact event={item} />}
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 20 }}
-            />
-          </View>
+          {/* ── NEAR NAIROBI ── */}
+          {nearNairobi.length > 0 && (
+            <View style={styles.section}>
+              <SectionTitle label="NEAR NAIROBI" onSeeAll={() => router.push("/discover")} />
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 20 }}
+              >
+                {nearNairobi.map((item) => (
+                  <EventCardCompact key={item.id} event={item} />
+                ))}
+              </ScrollView>
+            </View>
+          )}
 
           {/* ── ACROSS AFRICA ── */}
-          <View style={styles.section}>
-            <SectionTitle label="ACROSS AFRICA" onSeeAll={() => router.push("/discover")} />
-            <View style={styles.africaGrid}>
-              {acrossAfrica.map((event) => {
-                const image = EVENT_IMAGES[event.imageKey];
-                return (
-                  <Pressable
-                    key={event.id}
-                    onPress={() => router.push(`/event/${event.id}`)}
-                    style={({ pressed }) => [
-                      styles.africaCard,
-                      { backgroundColor: "#1A1A1A", opacity: pressed ? 0.88 : 1 },
-                    ]}
-                  >
-                    <Image source={image} style={styles.africaImage} resizeMode="cover" />
-                    <LinearGradient
-                      colors={["transparent", "rgba(0,0,0,0.85)"]}
-                      style={StyleSheet.absoluteFillObject}
-                    />
-                    <View style={styles.africaContent}>
-                      <Text style={styles.africaCityFlag}>
-                        {event.country === "Nigeria" ? "🇳🇬" :
-                          event.country === "Ghana" ? "🇬🇭" :
-                          event.country === "Uganda" ? "🇺🇬" :
-                          event.country === "Tanzania" ? "🇹🇿" : "🌍"}
-                      </Text>
-                      <Text style={styles.africaCity}>{event.city}</Text>
-                      <Text style={styles.africaTitle} numberOfLines={2}>{event.title}</Text>
-                      <Text style={styles.africaPrice}>
-                        {event.currencySymbol} {event.price.toLocaleString()}
-                      </Text>
-                    </View>
-                  </Pressable>
-                );
-              })}
+          {acrossAfrica.length > 0 && (
+            <View style={styles.section}>
+              <SectionTitle label="ACROSS AFRICA" onSeeAll={() => router.push("/discover")} />
+              <View style={styles.africaGrid}>
+                {acrossAfrica.map((event) => {
+                  const image = EVENT_IMAGES[event.imageKey];
+                  const countryCode = CITY_TO_COUNTRY[event.city] ?? "KE";
+                  const flag = COUNTRY_FLAGS[countryCode] ?? "🌍";
+                  return (
+                    <Pressable
+                      key={event.id}
+                      onPress={() => router.push(`/event/${event.id}`)}
+                      style={({ pressed }) => [
+                        styles.africaCard,
+                        { opacity: pressed ? 0.88 : 1 },
+                      ]}
+                    >
+                      <Image
+                        source={image as any}
+                        style={styles.africaImage}
+                        resizeMode="cover"
+                      />
+                      <LinearGradient
+                        colors={["transparent", "rgba(0,0,0,0.9)"]}
+                        style={StyleSheet.absoluteFillObject}
+                      />
+                      <View style={styles.africaContent}>
+                        <Text style={styles.africaCityFlag}>{flag}</Text>
+                        <Text style={styles.africaCity}>{event.city.toUpperCase()}</Text>
+                        <Text style={styles.africaTitle} numberOfLines={2}>{event.title}</Text>
+                        <Text style={styles.africaPrice}>
+                          {event.currencySymbol} {event.price.toLocaleString()}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
-          </View>
+          )}
         </>
       )}
     </ScrollView>
@@ -320,16 +339,10 @@ function SectionTitle({
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: "#111" },
 
-  // ── Hero Header ──
-  heroHeader: {
-    paddingBottom: 24,
-  },
-  patternStrip: {
-    flexDirection: "row",
-    height: 4,
-    marginBottom: 20,
-  },
+  heroHeader: { paddingBottom: 24 },
+  patternStrip: { flexDirection: "row", height: 4, marginBottom: 20 },
   patternCell: { flex: 1 },
+
   navRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -337,168 +350,95 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 20,
   },
-  logoText: {
-    color: "#fff",
-    fontSize: 28,
-    fontWeight: "900",
-    letterSpacing: -1,
-  },
-  logoSub: {
-    fontSize: 10,
-    fontWeight: "600",
-    letterSpacing: 2,
-    marginTop: -2,
-  },
+  logoText: { color: "#fff", fontSize: 28, fontWeight: "900", letterSpacing: -1 },
+  logoSub: { color: "#555", fontSize: 10, fontWeight: "600", letterSpacing: 2, marginTop: -2 },
   navActions: { flexDirection: "row", alignItems: "center", gap: 10 },
   navBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 40, height: 40, borderRadius: 20,
+    alignItems: "center", justifyContent: "center",
+    backgroundColor: "#1C1C1C",
   },
   notifDot: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: "#FF6B00",
-    borderWidth: 1.5,
-    borderColor: "#111",
+    position: "absolute", top: 8, right: 8,
+    width: 7, height: 7, borderRadius: 3.5,
+    backgroundColor: "#FF6B00", borderWidth: 1.5, borderColor: "#111",
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 40, height: 40, borderRadius: 20,
+    alignItems: "center", justifyContent: "center",
+    backgroundColor: "#FF6B00",
   },
   avatarText: { color: "#fff", fontSize: 15, fontWeight: "800" },
+
   greetingBlock: { paddingHorizontal: 20, marginBottom: 24 },
-  greetingSmall: { fontSize: 11, fontWeight: "600", letterSpacing: 1, marginBottom: 6 },
-  greetingBig: {
-    color: "#fff",
-    fontSize: 38,
-    fontWeight: "900",
-    lineHeight: 42,
-    letterSpacing: -1,
-  },
+  greetingSmall: { color: "#555", fontSize: 11, fontWeight: "600", letterSpacing: 1, marginBottom: 6 },
+  greetingBig: { color: "#fff", fontSize: 38, fontWeight: "900", lineHeight: 44, letterSpacing: -1 },
+
   categoryScroll: { paddingHorizontal: 20, gap: 8 },
   categoryPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
+    flexDirection: "row", alignItems: "center", gap: 5,
+    paddingHorizontal: 12, paddingVertical: 8,
+    borderRadius: 20, borderWidth: 1,
   },
   categoryLabel: { fontSize: 12, fontWeight: "700", letterSpacing: 0.3 },
 
-  // ── Sections ──
   featuredSection: { marginBottom: 36, paddingTop: 8 },
   section: { marginBottom: 36 },
   filteredSection: { paddingTop: 8 },
+
   sectionHeaderRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    marginBottom: 16,
+    flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between",
+    paddingHorizontal: 20, marginBottom: 16,
   },
   sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    marginBottom: 12,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 20, marginBottom: 12,
   },
-  sectionLabel: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "800",
-    letterSpacing: 2,
-  },
+  sectionLabel: { color: "#fff", fontSize: 13, fontWeight: "800", letterSpacing: 2 },
   sectionAccent: { color: "#FF6B00", fontSize: 11, fontWeight: "600", marginTop: 1 },
-  sectionCount: { fontSize: 13 },
   seeAllBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
   seeAllText: { color: "#FF6B00", fontSize: 12, fontWeight: "700" },
 
-  // ── Bento Grid ──
+  // Bento
   bentoGrid: {
-    paddingHorizontal: 20,
-    gap: 10,
-    flexDirection: "row",
-    flexWrap: "wrap",
+    paddingHorizontal: 20, gap: 10,
+    flexDirection: "row", flexWrap: "wrap",
   },
-  bentoCard: {
-    borderRadius: 16,
-    overflow: "hidden",
-    position: "relative",
-  },
-  bentoLarge: {
-    width: "100%",
-    height: 200,
-  },
-  bentoSmall: {
-    width: (width - 50) / 3,
-    height: 140,
-  },
+  bentoCard: { borderRadius: 16, overflow: "hidden", position: "relative" },
+  bentoLarge: { width: "100%", height: 200 },
+  bentoSmall: { width: (width - 50) / 3, height: 140 },
   dayBadge: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    backgroundColor: "#FF6B00",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    position: "absolute", top: 12, left: 12,
+    backgroundColor: "#FF6B00", borderRadius: 6,
+    paddingHorizontal: 8, paddingVertical: 4,
   },
   dayNum: { color: "#fff", fontSize: 10, fontWeight: "900", letterSpacing: 1 },
   bentoContent: { position: "absolute", bottom: 12, left: 12, right: 12 },
   bentoCat: {
-    backgroundColor: "rgba(255,107,0,0.2)",
-    alignSelf: "flex-start",
-    borderRadius: 4,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    marginBottom: 4,
+    backgroundColor: "rgba(255,107,0,0.2)", alignSelf: "flex-start",
+    borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2, marginBottom: 4,
   },
   bentoCatText: { color: "#FF6B00", fontSize: 8, fontWeight: "800", letterSpacing: 0.5 },
-  bentoTitle: { color: "#fff", fontWeight: "800", lineHeight: 16 },
+  bentoTitle: { color: "#fff", fontWeight: "800" },
   bentoTitleLg: { fontSize: 22, lineHeight: 26 },
   bentoTitleSm: { fontSize: 12, lineHeight: 15 },
   bentoMeta: { color: "#A0A0A0", fontSize: 11, marginTop: 2, marginBottom: 4 },
   bentoPrice: { color: "#FF6B00", fontSize: 11, fontWeight: "700" },
 
-  // ── Across Africa Grid ──
+  // Africa grid
   africaGrid: {
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
+    paddingHorizontal: 20, flexDirection: "row", flexWrap: "wrap", gap: 10,
   },
   africaCard: {
-    width: (width - 50) / 2,
-    height: 180,
-    borderRadius: 16,
-    overflow: "hidden",
-    position: "relative",
+    width: (width - 50) / 2, height: 180, borderRadius: 16,
+    overflow: "hidden", position: "relative", backgroundColor: "#1A1A1A",
   },
   africaImage: { width: "100%", height: "100%" },
-  africaContent: {
-    position: "absolute",
-    bottom: 12,
-    left: 12,
-    right: 12,
-  },
+  africaContent: { position: "absolute", bottom: 12, left: 12, right: 12 },
   africaCityFlag: { fontSize: 20, marginBottom: 2 },
   africaCity: { color: "#A0A0A0", fontSize: 10, fontWeight: "700", letterSpacing: 1, marginBottom: 4 },
   africaTitle: { color: "#fff", fontSize: 13, fontWeight: "800", lineHeight: 16, marginBottom: 4 },
   africaPrice: { color: "#FF6B00", fontSize: 11, fontWeight: "700" },
 
-  // Empty
   emptyState: { alignItems: "center", paddingVertical: 60, gap: 12 },
-  emptyText: { fontSize: 15 },
 });
