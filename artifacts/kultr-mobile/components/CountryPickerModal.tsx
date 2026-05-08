@@ -2,7 +2,6 @@ import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React from "react";
 import {
-  Dimensions,
   Modal,
   Pressable,
   ScrollView,
@@ -14,9 +13,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { EA_COUNTRIES, type EACountry } from "@/constants/currencies";
 import { useColors } from "@/hooks/useColors";
-
-const { width } = Dimensions.get("window");
-const CARD_WIDTH = (width - 48) / 2;
 
 interface Props {
   visible: boolean;
@@ -36,24 +32,27 @@ export function CountryPickerModal({ visible, currentCode, onSelect, onClose }: 
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <View style={[styles.root, { backgroundColor: "#0E0E0E" }]}>
+
         {/* Header */}
-        <View style={[styles.header, { paddingTop: insets.top + 20, borderBottomColor: "#222" }]}>
+        <View style={[styles.header, { paddingTop: insets.top + 24 }]}>
           <View>
-            <Text style={[styles.title, { color: colors.foreground }]}>Your Location</Text>
-            <Text style={[styles.sub, { color: "#555" }]}>
-              Sets your currency and payment methods
-            </Text>
+            <Text style={styles.eyebrow}>SELECT REGION</Text>
+            <Text style={styles.title}>Where are you?</Text>
+            <Text style={styles.sub}>Sets currency and payment methods</Text>
           </View>
-          <Pressable onPress={onClose} style={[styles.closeBtn, { backgroundColor: "#1C1C1C" }]}>
-            <Feather name="x" size={18} color={colors.foreground} />
+          <Pressable onPress={onClose} style={styles.closeBtn}>
+            <Feather name="x" size={16} color="#fff" />
           </Pressable>
         </View>
 
-        {/* Country grid */}
+        {/* Divider */}
+        <View style={styles.divider} />
+
+        {/* Country list */}
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={[styles.grid, { paddingBottom: insets.bottom + 40 }]}
+          contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 40 }]}
         >
           {EA_COUNTRIES.map((country) => {
             const isSelected = country.code === currentCode;
@@ -67,45 +66,62 @@ export function CountryPickerModal({ visible, currentCode, onSelect, onClose }: 
                 style={({ pressed }) => [
                   styles.card,
                   {
-                    backgroundColor: isSelected ? "rgba(255,107,0,0.1)" : "#1A1A1A",
-                    borderColor: isSelected ? "#FF6B00" : "#2A2A2A",
-                    opacity: pressed ? 0.85 : 1,
-                    transform: [{ scale: pressed ? 0.97 : 1 }],
+                    backgroundColor: isSelected ? "rgba(255,107,0,0.08)" : "#1A1A1A",
+                    borderColor: isSelected ? "#FF6B00" : "#242424",
+                    opacity: pressed ? 0.8 : 1,
+                    transform: [{ scale: pressed ? 0.985 : 1 }],
                   },
                 ]}
               >
-                {/* Selected checkmark */}
-                {isSelected && (
-                  <View style={styles.checkBadge}>
-                    <Feather name="check" size={10} color="#fff" />
+                {/* Selected left bar */}
+                {isSelected && <View style={styles.selectedBar} />}
+
+                {/* Left: text content */}
+                <View style={styles.cardLeft}>
+                  {/* Country name + check */}
+                  <View style={styles.nameRow}>
+                    <Text style={[styles.countryName, { color: isSelected ? "#FF6B00" : "#fff" }]}>
+                      {country.name}
+                    </Text>
+                    {isSelected && (
+                      <View style={styles.checkBadge}>
+                        <Feather name="check" size={9} color="#fff" />
+                      </View>
+                    )}
                   </View>
-                )}
 
-                {/* Large flag */}
-                <Text style={styles.flag}>{country.flag}</Text>
+                  {/* Currency badge */}
+                  <View style={[styles.currencyBadge, { backgroundColor: isSelected ? "rgba(255,107,0,0.15)" : "#242424" }]}>
+                    <Text style={[styles.currencyText, { color: isSelected ? "#FF6B00" : "#888" }]}>
+                      {country.currencySymbol} · {country.currencyCode}
+                    </Text>
+                  </View>
 
-                {/* Name + currency */}
-                <Text style={[styles.countryName, { color: colors.foreground }]}>
-                  {country.name}
-                </Text>
-                <Text style={[styles.currencyLine, { color: "#555" }]}>
-                  {country.currencySymbol} · {country.currencyCode}
-                </Text>
-
-                {/* Operator color dots */}
-                <View style={styles.dots}>
-                  {country.paymentMethods.slice(0, 4).map((m) => (
-                    <View
-                      key={m.id}
-                      style={[styles.dot, { backgroundColor: m.color }]}
-                    />
-                  ))}
+                  {/* Payment operator chips */}
+                  <View style={styles.operatorRow}>
+                    {country.paymentMethods.slice(0, 4).map((m) => (
+                      <View
+                        key={m.id}
+                        style={[styles.operatorChip, { backgroundColor: m.color + "22", borderColor: m.color + "40" }]}
+                      >
+                        <View style={[styles.operatorDot, { backgroundColor: m.color }]} />
+                        <Text style={[styles.operatorLabel, { color: m.color }]}>
+                          {m.label.split(" ")[0]}
+                        </Text>
+                      </View>
+                    ))}
+                    {country.paymentMethods.length > 4 && (
+                      <Text style={styles.moreText}>+{country.paymentMethods.length - 4}</Text>
+                    )}
+                  </View>
                 </View>
 
-                {/* Payment method count */}
-                <Text style={[styles.methodCount, { color: "#444" }]}>
-                  {country.paymentMethods.length} payment{country.paymentMethods.length > 1 ? "s" : ""}
-                </Text>
+                {/* Right: big ghost flag */}
+                <View style={styles.cardRight}>
+                  <Text style={[styles.bigFlag, { opacity: isSelected ? 1 : 0.55 }]}>
+                    {country.flag}
+                  </Text>
+                </View>
               </Pressable>
             );
           })}
@@ -117,53 +133,97 @@ export function CountryPickerModal({ visible, currentCode, onSelect, onClose }: 
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+
   header: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingBottom: 20,
-    borderBottomWidth: 1,
-    marginBottom: 16,
   },
-  title: { fontSize: 22, fontWeight: "800", marginBottom: 2 },
-  sub: { fontSize: 13 },
+  eyebrow: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 2,
+    color: "#FF6B00",
+    marginBottom: 6,
+  },
+  title: { fontSize: 26, fontWeight: "900", color: "#fff", marginBottom: 3 },
+  sub: { fontSize: 13, color: "#555" },
   closeBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
+    backgroundColor: "#1C1C1C",
     alignItems: "center",
     justifyContent: "center",
+    marginTop: 4,
   },
-  grid: {
-    paddingHorizontal: 16,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
+
+  divider: { height: 1, backgroundColor: "#1E1E1E", marginHorizontal: 24, marginBottom: 20 },
+
+  list: { paddingHorizontal: 16, gap: 10 },
+
   card: {
-    width: CARD_WIDTH,
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1.5,
-    padding: 16,
-    alignItems: "flex-start",
+    overflow: "hidden",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 18,
+    paddingLeft: 20,
+    paddingRight: 0,
     position: "relative",
   },
-  checkBadge: {
+  selectedBar: {
     position: "absolute",
-    top: 12,
-    right: 12,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    backgroundColor: "#FF6B00",
+    borderTopLeftRadius: 18,
+    borderBottomLeftRadius: 18,
+  },
+
+  cardLeft: { flex: 1, gap: 8 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  countryName: { fontSize: 20, fontWeight: "900", letterSpacing: -0.3 },
+  checkBadge: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     backgroundColor: "#FF6B00",
     alignItems: "center",
     justifyContent: "center",
   },
-  flag: { fontSize: 44, marginBottom: 10 },
-  countryName: { fontSize: 16, fontWeight: "800", marginBottom: 2 },
-  currencyLine: { fontSize: 12, marginBottom: 12, fontWeight: "600" },
-  dots: { flexDirection: "row", gap: 5, marginBottom: 6 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  methodCount: { fontSize: 10, fontWeight: "600", letterSpacing: 0.5 },
+
+  currencyBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  currencyText: { fontSize: 11, fontWeight: "700", letterSpacing: 0.3 },
+
+  operatorRow: { flexDirection: "row", flexWrap: "wrap", gap: 5 },
+  operatorChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  operatorDot: { width: 5, height: 5, borderRadius: 3 },
+  operatorLabel: { fontSize: 9, fontWeight: "800", letterSpacing: 0.2 },
+  moreText: { fontSize: 10, color: "#555", fontWeight: "600", alignSelf: "center" },
+
+  cardRight: {
+    width: 80,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bigFlag: { fontSize: 56 },
 });
