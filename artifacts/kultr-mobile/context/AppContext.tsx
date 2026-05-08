@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
+import { EA_COUNTRIES, type EACountry } from "@/constants/currencies";
 
 export interface PurchasedTicket {
   id: string;
@@ -16,12 +17,16 @@ export interface PurchasedTicket {
 interface AppContextType {
   tickets: PurchasedTicket[];
   savedEvents: string[];
+  userCountry: EACountry;
   addTicket: (ticket: PurchasedTicket) => void;
   toggleSaved: (eventId: string) => void;
   isSaved: (eventId: string) => boolean;
+  setUserCountry: (country: EACountry) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
+
+const DEFAULT_COUNTRY = EA_COUNTRIES.find((c) => c.code === "KE")!;
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [tickets, setTickets] = useState<PurchasedTicket[]>([
@@ -31,7 +36,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ticketTypeId: "t1",
       ticketTypeName: "General Admission",
       ticketNumber: "KTR-98321",
-      purchaseDate: "2025-05-10",
+      purchaseDate: "2026-05-10",
       quantity: 1,
       totalPaid: 2000,
       currency: "KES",
@@ -39,6 +44,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     },
   ]);
   const [savedEvents, setSavedEvents] = useState<string[]>(["evt-002"]);
+  const [userCountry, setUserCountry] = useState<EACountry>(DEFAULT_COUNTRY);
 
   const addTicket = (ticket: PurchasedTicket) => {
     setTickets((prev) => [ticket, ...prev]);
@@ -53,7 +59,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const isSaved = (eventId: string) => savedEvents.includes(eventId);
 
   return (
-    <AppContext.Provider value={{ tickets, savedEvents, addTicket, toggleSaved, isSaved }}>
+    <AppContext.Provider
+      value={{ tickets, savedEvents, userCountry, addTicket, toggleSaved, isSaved, setUserCountry }}
+    >
       {children}
     </AppContext.Provider>
   );

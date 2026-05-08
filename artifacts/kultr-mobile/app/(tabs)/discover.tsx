@@ -1,7 +1,11 @@
 import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import {
+  Modal,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,14 +16,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { CategoryPills } from "@/components/CategoryPill";
 import { EventCardCompact } from "@/components/EventCardCompact";
+import { useApp } from "@/context/AppContext";
 import { CATEGORIES, EVENTS } from "@/constants/data";
+import { EA_COUNTRIES, type EACountry } from "@/constants/currencies";
 import { useColors } from "@/hooks/useColors";
 
 export default function DiscoverScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { userCountry, setUserCountry } = useApp();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("For You");
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
 
@@ -28,7 +36,8 @@ export default function DiscoverScreen() {
       search.trim() === "" ||
       e.title.toLowerCase().includes(search.toLowerCase()) ||
       e.city.toLowerCase().includes(search.toLowerCase()) ||
-      e.category.toLowerCase().includes(search.toLowerCase());
+      e.category.toLowerCase().includes(search.toLowerCase()) ||
+      e.country.toLowerCase().includes(search.toLowerCase());
     const matchesCat =
       selectedCategory === "For You" || e.category === selectedCategory;
     return matchesSearch && matchesCat;
@@ -37,110 +46,284 @@ export default function DiscoverScreen() {
   const cities = [...new Set(EVENTS.map((e) => e.city))];
 
   return (
-    <ScrollView
-      style={[styles.scroll, { backgroundColor: colors.background }]}
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: topPad + 16, paddingBottom: insets.bottom + 80 },
-      ]}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-          Culture <Text style={{ color: "#FF6B00" }}>Compass</Text>
-        </Text>
-        <View style={styles.locationRow}>
-          <Feather name="map-pin" size={13} color="#FF6B00" />
-          <Text style={[styles.locationText, { color: colors.mutedForeground }]}>
-            Nairobi, Kenya
+    <>
+      <ScrollView
+        style={[styles.scroll, { backgroundColor: colors.background }]}
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: topPad + 16, paddingBottom: insets.bottom + 80 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>
+            Culture <Text style={{ color: "#FF6B00" }}>Compass</Text>
           </Text>
-          <Feather name="chevron-down" size={13} color={colors.mutedForeground} />
-        </View>
-      </View>
-
-      {/* Search Bar */}
-      <View style={[styles.searchBar, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-        <Feather name="search" size={16} color={colors.mutedForeground} />
-        <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search events, artists, cities..."
-          placeholderTextColor={colors.mutedForeground}
-          style={[styles.searchInput, { color: colors.foreground }]}
-          returnKeyType="search"
-        />
-        {search.length > 0 && (
-          <Feather
-            name="x"
-            size={16}
-            color={colors.mutedForeground}
-            onPress={() => setSearch("")}
-          />
-        )}
-      </View>
-
-      {/* Categories */}
-      <View style={styles.categories}>
-        <CategoryPills
-          categories={CATEGORIES}
-          selected={selectedCategory}
-          onSelect={setSelectedCategory}
-        />
-      </View>
-
-      {/* Cities quick filter */}
-      {search.length === 0 && selectedCategory === "For You" && (
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Browse by City</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cityRow}>
-            {cities.map((city) => (
-              <View key={city} style={[styles.cityChip, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-                <Feather name="map-pin" size={11} color="#FF6B00" />
-                <Text style={[styles.cityText, { color: colors.foreground }]}>{city}</Text>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      {/* Results */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-          {search.length > 0
-            ? `Results for "${search}"`
-            : selectedCategory === "For You"
-            ? "All Events"
-            : selectedCategory}
-          <Text style={[styles.count, { color: colors.mutedForeground }]}>
-            {"  "}({filtered.length})
-          </Text>
-        </Text>
-        {filtered.length === 0 ? (
-          <View style={styles.empty}>
-            <Feather name="search" size={36} color={colors.mutedForeground} />
-            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No events found</Text>
-            <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              Try a different search or category
+          {/* Location chip — now tappable */}
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setShowCountryPicker(true); }}
+            style={[styles.locationChip, { backgroundColor: colors.muted, borderColor: colors.border }]}
+          >
+            <Text style={styles.locationFlag}>{userCountry.flag}</Text>
+            <Text style={[styles.locationText, { color: colors.foreground }]}>
+              {userCountry.name}
             </Text>
+            <Feather name="chevron-down" size={13} color="#FF6B00" />
+          </Pressable>
+        </View>
+
+        {/* Currency info strip */}
+        <View style={[styles.currencyStrip, { backgroundColor: "rgba(255,107,0,0.08)", borderColor: "#FF6B00" + "30" }]}>
+          <Feather name="refresh-cw" size={12} color="#FF6B00" />
+          <Text style={[styles.currencyStripText, { color: colors.mutedForeground }]}>
+            Viewing prices in event local currency · Checkout converts to{" "}
+            <Text style={{ color: "#FF6B00", fontWeight: "700" }}>
+              {userCountry.currencySymbol} {userCountry.currencyCode}
+            </Text>
+          </Text>
+        </View>
+
+        {/* Search Bar */}
+        <View style={[styles.searchBar, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+          <Feather name="search" size={16} color={colors.mutedForeground} />
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search events, artists, cities..."
+            placeholderTextColor={colors.mutedForeground}
+            style={[styles.searchInput, { color: colors.foreground }]}
+            returnKeyType="search"
+          />
+          {search.length > 0 && (
+            <Pressable onPress={() => setSearch("")}>
+              <Feather name="x" size={16} color={colors.mutedForeground} />
+            </Pressable>
+          )}
+        </View>
+
+        {/* Categories */}
+        <View style={styles.categories}>
+          <CategoryPills
+            categories={CATEGORIES}
+            selected={selectedCategory}
+            onSelect={setSelectedCategory}
+          />
+        </View>
+
+        {/* Cities quick filter */}
+        {search.length === 0 && selectedCategory === "For You" && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Browse by City</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cityRow}>
+              {cities.map((city) => {
+                const country = EVENTS.find((e) => e.city === city);
+                return (
+                  <Pressable
+                    key={city}
+                    onPress={() => setSearch(city)}
+                    style={[styles.cityChip, { backgroundColor: colors.muted, borderColor: colors.border }]}
+                  >
+                    <Feather name="map-pin" size={11} color="#FF6B00" />
+                    <Text style={[styles.cityText, { color: colors.foreground }]}>{city}</Text>
+                    {country && (
+                      <Text style={styles.cityFlag}>
+                        {EA_COUNTRIES.find((c) => c.code === (
+                          city === "Nairobi" ? "KE" :
+                          city === "Lagos" ? "NG" :
+                          city === "Accra" ? "GH" :
+                          city === "Kampala" ? "UG" :
+                          city === "Dar es Salaam" ? "TZ" : "KE"
+                        ))?.flag ?? ""}
+                      </Text>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
           </View>
-        ) : (
-          filtered.map((event) => (
-            <EventCardCompact key={event.id} event={event} horizontal />
-          ))
         )}
+
+        {/* Payment methods for selected country */}
+        {search.length === 0 && selectedCategory === "For You" && (
+          <View style={styles.section}>
+            <View style={styles.sectionRow}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+                {userCountry.flag} {userCountry.name} Payment Methods
+              </Text>
+              <Pressable onPress={() => setShowCountryPicker(true)}>
+                <Text style={[styles.changeLink, { color: "#FF6B00" }]}>Change</Text>
+              </Pressable>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.paymentRow}>
+              {userCountry.paymentMethods.map((method) => (
+                <View key={method.id} style={[styles.paymentChip, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={[styles.paymentDot, { backgroundColor: method.color }]} />
+                  <Text style={[styles.paymentChipText, { color: colors.foreground }]}>{method.label}</Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Results */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+            {search.length > 0
+              ? `Results for "${search}"`
+              : selectedCategory === "For You"
+              ? "All Events"
+              : selectedCategory}
+            <Text style={[styles.count, { color: colors.mutedForeground }]}>
+              {"  "}({filtered.length})
+            </Text>
+          </Text>
+          {filtered.length === 0 ? (
+            <View style={styles.empty}>
+              <Feather name="search" size={36} color={colors.mutedForeground} />
+              <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No events found</Text>
+              <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+                Try a different search or category
+              </Text>
+            </View>
+          ) : (
+            filtered.map((event) => (
+              <EventCardCompact key={event.id} event={event} horizontal />
+            ))
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Country Picker Modal */}
+      <Modal
+        visible={showCountryPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowCountryPicker(false)}
+      >
+        <CountryPickerSheet
+          currentCode={userCountry.code}
+          onSelect={(country) => {
+            Haptics.selectionAsync();
+            setUserCountry(country);
+            setShowCountryPicker(false);
+          }}
+          onClose={() => setShowCountryPicker(false)}
+          colors={colors}
+        />
+      </Modal>
+    </>
+  );
+}
+
+function CountryPickerSheet({
+  currentCode,
+  onSelect,
+  onClose,
+  colors,
+}: {
+  currentCode: string;
+  onSelect: (c: EACountry) => void;
+  onClose: () => void;
+  colors: any;
+}) {
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={[styles.modalRoot, { backgroundColor: colors.background }]}>
+      <View style={[styles.modalHeader, { borderBottomColor: colors.border, paddingTop: insets.top + 16 }]}>
+        <View>
+          <Text style={[styles.modalTitle, { color: colors.foreground }]}>Your Location</Text>
+          <Text style={[styles.modalSub, { color: colors.mutedForeground }]}>
+            Sets your currency and payment methods
+          </Text>
+        </View>
+        <Pressable onPress={onClose} style={[styles.closeBtn, { backgroundColor: colors.muted }]}>
+          <Feather name="x" size={18} color={colors.foreground} />
+        </Pressable>
       </View>
-    </ScrollView>
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
+        {EA_COUNTRIES.map((country) => {
+          const isSelected = country.code === currentCode;
+          return (
+            <Pressable
+              key={country.code}
+              onPress={() => onSelect(country)}
+              style={({ pressed }) => [
+                styles.countryRow,
+                {
+                  backgroundColor: isSelected
+                    ? "rgba(255,107,0,0.08)"
+                    : pressed
+                    ? colors.muted
+                    : "transparent",
+                  borderBottomColor: colors.border,
+                },
+              ]}
+            >
+              <Text style={styles.countryRowFlag}>{country.flag}</Text>
+              <View style={styles.countryRowInfo}>
+                <Text style={[styles.countryRowName, { color: colors.foreground, fontWeight: isSelected ? "800" : "600" }]}>
+                  {country.name}
+                </Text>
+                <Text style={[styles.countryRowCurrency, { color: colors.mutedForeground }]}>
+                  {country.currencyName} ({country.currencySymbol}) · {country.phonePrefix}
+                </Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View style={styles.countryRowMethods}>
+                    {country.paymentMethods.map((m) => (
+                      <View key={m.id} style={[styles.methodPill, { backgroundColor: colors.muted, borderLeftColor: m.color, borderLeftWidth: 2 }]}>
+                        <Text style={[styles.methodPillText, { color: colors.foreground }]}>{m.label}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </ScrollView>
+              </View>
+              {isSelected && (
+                <View style={[styles.selectedCheck, { backgroundColor: "#FF6B00" }]}>
+                  <Feather name="check" size={12} color="#fff" />
+                </View>
+              )}
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { gap: 0 },
-  header: { paddingHorizontal: 16, marginBottom: 16 },
-  headerTitle: { fontSize: 28, fontWeight: "800", marginBottom: 4 },
-  locationRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-  locationText: { fontSize: 13 },
+  header: {
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  headerTitle: { fontSize: 24, fontWeight: "800" },
+  locationChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  locationFlag: { fontSize: 15 },
+  locationText: { fontSize: 13, fontWeight: "600" },
+  currencyStrip: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 7,
+    marginHorizontal: 16,
+    marginBottom: 14,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  currencyStripText: { fontSize: 12, flex: 1, lineHeight: 16 },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -155,9 +338,11 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontSize: 14 },
   categories: { marginBottom: 24 },
   section: { paddingHorizontal: 16, marginBottom: 24 },
-  sectionTitle: { fontSize: 17, fontWeight: "700", marginBottom: 14 },
+  sectionRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 12 },
+  changeLink: { fontSize: 13, fontWeight: "600" },
   count: { fontSize: 14, fontWeight: "400" },
-  cityRow: { gap: 10, paddingBottom: 4 },
+  cityRow: { gap: 8, paddingBottom: 4 },
   cityChip: {
     flexDirection: "row",
     alignItems: "center",
@@ -168,7 +353,59 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   cityText: { fontSize: 13, fontWeight: "500" },
+  cityFlag: { fontSize: 14 },
+  paymentRow: { gap: 8, paddingBottom: 4 },
+  paymentChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  paymentDot: { width: 8, height: 8, borderRadius: 4 },
+  paymentChipText: { fontSize: 12, fontWeight: "600" },
   empty: { alignItems: "center", gap: 10, paddingVertical: 48 },
   emptyTitle: { fontSize: 17, fontWeight: "700" },
   emptyText: { fontSize: 14, textAlign: "center" },
+  // Modal
+  modalRoot: { flex: 1 },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+  },
+  modalTitle: { fontSize: 20, fontWeight: "800" },
+  modalSub: { fontSize: 13, marginTop: 3 },
+  closeBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  countryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    gap: 14,
+  },
+  countryRowFlag: { fontSize: 32 },
+  countryRowInfo: { flex: 1 },
+  countryRowName: { fontSize: 16, marginBottom: 2 },
+  countryRowCurrency: { fontSize: 12, marginBottom: 8 },
+  countryRowMethods: { flexDirection: "row", gap: 6 },
+  methodPill: {
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  methodPillText: { fontSize: 10, fontWeight: "600" },
+  selectedCheck: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

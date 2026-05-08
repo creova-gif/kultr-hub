@@ -1,10 +1,11 @@
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Alert,
   Image,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -17,13 +18,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApp } from "@/context/AppContext";
 import { EVENT_IMAGES, formatDate, formatTime, getEventById } from "@/constants/data";
+import {
+  EA_COUNTRIES,
+  convertCurrency,
+  type EACountry,
+  type PaymentMethod,
+} from "@/constants/currencies";
 import { useColors } from "@/hooks/useColors";
-
-const PAYMENT_METHODS = [
-  { id: "mpesa", label: "M-Pesa", icon: "smartphone", sub: "Pay via mobile money" },
-  { id: "mtn", label: "MTN Mobile Money", icon: "smartphone", sub: "Pay via MTN MoMo" },
-  { id: "card", label: "Card", icon: "credit-card", sub: "Visa / Mastercard" },
-] as const;
 
 export default function CheckoutScreen() {
   const { eventId, ticketTypeIndex } = useLocalSearchParams<{
@@ -32,17 +33,39 @@ export default function CheckoutScreen() {
   }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { addTicket } = useApp();
+  const { addTicket, userCountry, setUserCountry } = useApp();
 
   const event = getEventById(eventId ?? "");
   const typeIdx = Number(ticketTypeIndex ?? "0");
   const ticketType = event?.ticketTypes[typeIdx] ?? event?.ticketTypes[0];
 
   const [quantity, setQuantity] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState<string>("mpesa");
+  const [selectedMethodId, setSelectedMethodId] = useState<string>("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<"details" | "payment" | "success">("details");
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+
+  // Active payment methods for user's country
+  const paymentMethods = userCountry.paymentMethods;
+  const activeMethod: PaymentMethod | undefined =
+    paymentMethods.find((m) => m.id === selectedMethodId) ?? paymentMethods[0];
+
+  // Currency conversion: event price → user currency
+  const eventCurrencyCode = event?.currency ?? "KES";
+  const isSameCurrency = eventCurrencyCode === userCountry.currencyCode;
+
+  const convertedPrice = useMemo(() => {
+    if (!ticketType) return 0;
+    if (isSameCurrency) return ticketType.price;
+    return convertCurrency(ticketType.price, eventCurrencyCode, userCountry.code);
+  }, [ticketType, eventCurrencyCode, userCountry.code, isSameCurrency]);
+
+  const total = convertedPrice * quantity;
+  const fee = Math.round(total * 0.05);
+  const grandTotal = total + fee;
+
+  const bottomPad = Platform.OS === "web" ? Math.max(insets.bottom, 34) : insets.bottom;
+  const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
 
   if (!event || !ticketType) {
     return (
@@ -53,15 +76,12 @@ export default function CheckoutScreen() {
   }
 
   const image = EVENT_IMAGES[event.imageKey];
-  const total = ticketType.price * quantity;
-  const fee = Math.round(total * 0.05);
-  const grandTotal = total + fee;
-  const bottomPad = Platform.OS === "web" ? Math.max(insets.bottom, 34) : insets.bottom;
-  const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
+  const needsPhone =
+    activeMethod?.type === "mobile_money" || activeMethod?.type === "ussd";
 
   const handleConfirm = async () => {
-    if (paymentMethod === "mpesa" && phone.trim().length < 9) {
-      Alert.alert("Invalid Number", "Please enter a valid M-Pesa number.");
+    if (needsPhone && phone.trim().length < 8) {
+      Alert.alert("Invalid Number", "Please enter a valid mobile number.");
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -78,57 +98,55 @@ export default function CheckoutScreen() {
       purchaseDate: new Date().toISOString().split("T")[0],
       quantity,
       totalPaid: grandTotal,
-      currency: event.currency,
-      currencySymbol: event.currencySymbol,
+      currency: userCountry.currencyCode,
+      currencySymbol: userCountry.currencySymbol,
     };
     addTicket(newTicket);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    router.replace(`/ticket/${newTicket.id}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${newTicket.ticketNumber}`);
+    router.replace(
+      `/ticket/${newTicket.id}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${newTicket.ticketNumber}`
+    );
   };
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: bottomPad + 100 }}
+        contentContainerStyle={{ paddingBottom: bottomPad + 110 }}
       >
         {/* Header */}
         <View style={[styles.header, { paddingTop: topPad + 12 }]}>
-          <Pressable onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: colors.muted }]}>
+          <Pressable
+            onPress={() => router.back()}
+            style={[styles.backBtn, { backgroundColor: colors.muted }]}
+          >
             <Feather name="arrow-left" size={20} color={colors.foreground} />
           </Pressable>
           <Text style={[styles.headerTitle, { color: colors.foreground }]}>Checkout</Text>
           <View style={{ width: 40 }} />
         </View>
 
-        {/* Progress */}
-        <View style={styles.progress}>
-          {["Event", "Payment", "Confirm"].map((label, i) => (
-            <React.Fragment key={label}>
-              <View style={styles.progressStep}>
-                <View
-                  style={[
-                    styles.progressDot,
-                    {
-                      backgroundColor: i === 0 ? "#FF6B00" : colors.muted,
-                      borderColor: i === 0 ? "#FF6B00" : colors.border,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.progressDotText, { color: i === 0 ? "#fff" : colors.mutedForeground }]}>
-                    {i + 1}
-                  </Text>
-                </View>
-                <Text style={[styles.progressLabel, { color: i === 0 ? "#FF6B00" : colors.mutedForeground }]}>
-                  {label}
-                </Text>
-              </View>
-              {i < 2 && (
-                <View style={[styles.progressLine, { backgroundColor: colors.border }]} />
-              )}
-            </React.Fragment>
-          ))}
-        </View>
+        {/* Country / Currency Selector */}
+        <Pressable
+          onPress={() => { Haptics.selectionAsync(); setShowCountryPicker(true); }}
+          style={[styles.countrySwitcher, { backgroundColor: colors.card, borderColor: "#FF6B00" + "60" }]}
+        >
+          <View style={styles.countrySwitcherLeft}>
+            <Text style={styles.countryFlag}>{userCountry.flag}</Text>
+            <View>
+              <Text style={[styles.countryName, { color: colors.foreground }]}>
+                {userCountry.name}
+              </Text>
+              <Text style={[styles.countryCurrency, { color: colors.mutedForeground }]}>
+                Paying in {userCountry.currencySymbol} · {userCountry.currencyCode}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.countrySwitcherRight}>
+            <Text style={[styles.switchLabel, { color: "#FF6B00" }]}>Switch</Text>
+            <Feather name="chevron-down" size={14} color="#FF6B00" />
+          </View>
+        </Pressable>
 
         {/* Event Summary Card */}
         <View style={[styles.summaryCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -159,23 +177,39 @@ export default function CheckoutScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Ticket Details</Text>
           <View style={[styles.ticketRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={[styles.ticketName, { color: colors.foreground }]}>{ticketType.name}</Text>
-              <Text style={[styles.ticketPrice, { color: colors.mutedForeground }]}>
-                {event.currencySymbol} {ticketType.price.toLocaleString()} each
-              </Text>
+              <View style={styles.priceRow}>
+                <Text style={[styles.ticketPriceMain, { color: "#FF6B00" }]}>
+                  {userCountry.currencySymbol} {convertedPrice.toLocaleString()}
+                </Text>
+                {!isSameCurrency && (
+                  <Text style={[styles.ticketPriceOrig, { color: colors.mutedForeground }]}>
+                    ({event.currencySymbol} {ticketType.price.toLocaleString()})
+                  </Text>
+                )}
+              </View>
             </View>
             <View style={styles.qtyControl}>
               <Pressable
-                onPress={() => { if (quantity > 1) { Haptics.selectionAsync(); setQuantity(q => q - 1); } }}
+                onPress={() => {
+                  if (quantity > 1) { Haptics.selectionAsync(); setQuantity((q) => q - 1); }
+                }}
                 style={[styles.qtyBtn, { backgroundColor: colors.muted, opacity: quantity <= 1 ? 0.4 : 1 }]}
               >
                 <Feather name="minus" size={14} color={colors.foreground} />
               </Pressable>
               <Text style={[styles.qtyText, { color: colors.foreground }]}>{quantity}</Text>
               <Pressable
-                onPress={() => { if (quantity < Math.min(6, ticketType.available)) { Haptics.selectionAsync(); setQuantity(q => q + 1); } }}
-                style={[styles.qtyBtn, { backgroundColor: colors.muted, opacity: quantity >= Math.min(6, ticketType.available) ? 0.4 : 1 }]}
+                onPress={() => {
+                  if (quantity < Math.min(6, ticketType.available)) {
+                    Haptics.selectionAsync(); setQuantity((q) => q + 1);
+                  }
+                }}
+                style={[
+                  styles.qtyBtn,
+                  { backgroundColor: colors.muted, opacity: quantity >= Math.min(6, ticketType.available) ? 0.4 : 1 },
+                ]}
               >
                 <Feather name="plus" size={14} color={colors.foreground} />
               </Pressable>
@@ -185,22 +219,33 @@ export default function CheckoutScreen() {
 
         {/* Payment Method */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Payment Method</Text>
+          <View style={styles.sectionTitleRow}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Payment Method</Text>
+            <Text style={[styles.countryHint, { color: colors.mutedForeground }]}>
+              {userCountry.flag} {userCountry.name}
+            </Text>
+          </View>
           <View style={styles.paymentMethods}>
-            {PAYMENT_METHODS.map((method) => {
-              const active = paymentMethod === method.id;
+            {paymentMethods.map((method) => {
+              const active = (selectedMethodId || paymentMethods[0]?.id) === method.id;
               return (
                 <Pressable
                   key={method.id}
-                  onPress={() => { Haptics.selectionAsync(); setPaymentMethod(method.id); }}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setSelectedMethodId(method.id);
+                    setPhone("");
+                  }}
                   style={[
                     styles.paymentMethod,
                     {
-                      backgroundColor: active ? "rgba(255,107,0,0.08)" : colors.card,
+                      backgroundColor: active ? "rgba(255,107,0,0.06)" : colors.card,
                       borderColor: active ? "#FF6B00" : colors.border,
                     },
                   ]}
                 >
+                  {/* Operator color stripe */}
+                  <View style={[styles.methodColorBar, { backgroundColor: method.color }]} />
                   <View style={[styles.paymentIcon, { backgroundColor: active ? "rgba(255,107,0,0.15)" : colors.muted }]}>
                     <Feather name={method.icon as any} size={18} color={active ? "#FF6B00" : colors.mutedForeground} />
                   </View>
@@ -216,20 +261,46 @@ export default function CheckoutScreen() {
             })}
           </View>
 
-          {(paymentMethod === "mpesa" || paymentMethod === "mtn") && (
-            <View style={[styles.phoneInput, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          {/* Phone input for mobile money / USSD */}
+          {needsPhone && activeMethod && (
+            <View style={[styles.phoneInput, { backgroundColor: colors.card, borderColor: "#FF6B00" + "50" }]}>
               <Text style={[styles.phoneFlag, { color: colors.foreground }]}>
-                {paymentMethod === "mpesa" ? "🇰🇪 +254" : "🇺🇬 +256"}
+                {userCountry.flag} {activeMethod.phonePrefix ?? userCountry.phonePrefix}
               </Text>
               <TextInput
                 value={phone}
                 onChangeText={setPhone}
-                placeholder="712 345 678"
+                placeholder={activeMethod.phonePlaceholder ?? "712 345 678"}
                 placeholderTextColor={colors.mutedForeground}
                 keyboardType="phone-pad"
                 style={[styles.phoneField, { color: colors.foreground }]}
-                maxLength={12}
+                maxLength={13}
               />
+              {phone.length > 0 && (
+                <Pressable onPress={() => setPhone("")}>
+                  <Feather name="x" size={16} color={colors.mutedForeground} />
+                </Pressable>
+              )}
+            </View>
+          )}
+
+          {/* Card hint */}
+          {activeMethod?.type === "card" && (
+            <View style={[styles.cardHint, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Feather name="lock" size={13} color="#00C853" />
+              <Text style={[styles.cardHintText, { color: colors.mutedForeground }]}>
+                You will be redirected to a secure 3D-secured payment page
+              </Text>
+            </View>
+          )}
+
+          {/* Bank transfer hint */}
+          {activeMethod?.type === "bank" && (
+            <View style={[styles.cardHint, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Feather name="info" size={13} color="#FF6B00" />
+              <Text style={[styles.cardHintText, { color: colors.mutedForeground }]}>
+                Bank account details will be sent to your email after confirming
+              </Text>
             </View>
           )}
         </View>
@@ -238,12 +309,44 @@ export default function CheckoutScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Order Summary</Text>
           <View style={[styles.orderCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <OrderRow label={`${ticketType.name} × ${quantity}`} value={`${event.currencySymbol} ${total.toLocaleString()}`} colors={colors} />
-            <OrderRow label="Service fee (5%)" value={`${event.currencySymbol} ${fee.toLocaleString()}`} colors={colors} muted />
+            <OrderRow
+              label={`${ticketType.name} × ${quantity}`}
+              value={`${userCountry.currencySymbol} ${total.toLocaleString()}`}
+              colors={colors}
+            />
+            {!isSameCurrency && (
+              <OrderRow
+                label="Original price"
+                value={`${event.currencySymbol} ${(ticketType.price * quantity).toLocaleString()}`}
+                colors={colors}
+                muted
+              />
+            )}
+            <OrderRow
+              label="Service fee (5%)"
+              value={`${userCountry.currencySymbol} ${fee.toLocaleString()}`}
+              colors={colors}
+              muted
+            />
             <View style={[styles.orderDivider, { backgroundColor: colors.border }]} />
-            <OrderRow label="Total" value={`${event.currencySymbol} ${grandTotal.toLocaleString()}`} colors={colors} bold />
+            <OrderRow
+              label="Total"
+              value={`${userCountry.currencySymbol} ${grandTotal.toLocaleString()}`}
+              colors={colors}
+              bold
+            />
           </View>
         </View>
+
+        {/* Currency note if converted */}
+        {!isSameCurrency && (
+          <View style={[styles.conversionNote, { backgroundColor: "rgba(255,107,0,0.08)", borderColor: "#FF6B00" + "40" }]}>
+            <Feather name="refresh-cw" size={13} color="#FF6B00" />
+            <Text style={[styles.conversionText, { color: colors.mutedForeground }]}>
+              Converted from {event.currencySymbol} {event.currencyCode} · indicative rate
+            </Text>
+          </View>
+        )}
 
         {/* Security note */}
         <View style={styles.securityNote}>
@@ -255,12 +358,14 @@ export default function CheckoutScreen() {
       </ScrollView>
 
       {/* CTA */}
-      <View style={[styles.ctaBar, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: bottomPad + 12 }]}>
+      <View
+        style={[
+          styles.ctaBar,
+          { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: bottomPad + 12 },
+        ]}
+      >
         <Pressable
-          style={({ pressed }) => [
-            styles.ctaBtn,
-            { opacity: loading || pressed ? 0.8 : 1 },
-          ]}
+          style={({ pressed }) => [styles.ctaBtn, { opacity: loading || pressed ? 0.8 : 1 }]}
           onPress={handleConfirm}
           disabled={loading}
         >
@@ -269,13 +374,117 @@ export default function CheckoutScreen() {
           ) : (
             <>
               <Text style={styles.ctaBtnText}>
-                Pay {event.currencySymbol} {grandTotal.toLocaleString()}
+                Pay {userCountry.currencySymbol} {grandTotal.toLocaleString()}
               </Text>
               <Feather name="arrow-right" size={18} color="#fff" />
             </>
           )}
         </Pressable>
       </View>
+
+      {/* Country Picker Modal */}
+      <Modal
+        visible={showCountryPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowCountryPicker(false)}
+      >
+        <CountryPickerModal
+          currentCode={userCountry.code}
+          onSelect={(country) => {
+            Haptics.selectionAsync();
+            setUserCountry(country);
+            setSelectedMethodId("");
+            setPhone("");
+            setShowCountryPicker(false);
+          }}
+          onClose={() => setShowCountryPicker(false)}
+          colors={colors}
+        />
+      </Modal>
+    </View>
+  );
+}
+
+function CountryPickerModal({
+  currentCode,
+  onSelect,
+  onClose,
+  colors,
+}: {
+  currentCode: string;
+  onSelect: (c: EACountry) => void;
+  onClose: () => void;
+  colors: any;
+}) {
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={[styles.modalRoot, { backgroundColor: colors.background }]}>
+      <View style={[styles.modalHeader, { borderBottomColor: colors.border, paddingTop: insets.top + 16 }]}>
+        <Text style={[styles.modalTitle, { color: colors.foreground }]}>Select Your Country</Text>
+        <Pressable onPress={onClose} style={[styles.backBtn, { backgroundColor: colors.muted }]}>
+          <Feather name="x" size={18} color={colors.foreground} />
+        </Pressable>
+      </View>
+      <Text style={[styles.modalSub, { color: colors.mutedForeground }]}>
+        Payment methods and currency will update to match your country
+      </Text>
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
+        {EA_COUNTRIES.map((country) => {
+          const isSelected = country.code === currentCode;
+          return (
+            <Pressable
+              key={country.code}
+              onPress={() => onSelect(country)}
+              style={({ pressed }) => [
+                styles.countryRow,
+                {
+                  backgroundColor: isSelected
+                    ? "rgba(255,107,0,0.08)"
+                    : pressed
+                    ? colors.muted
+                    : "transparent",
+                  borderBottomColor: colors.border,
+                },
+              ]}
+            >
+              <Text style={styles.countryRowFlag}>{country.flag}</Text>
+              <View style={styles.countryRowInfo}>
+                <Text style={[styles.countryRowName, { color: colors.foreground }]}>
+                  {country.name}
+                </Text>
+                <Text style={[styles.countryRowCurrency, { color: colors.mutedForeground }]}>
+                  {country.currencyName} · {country.currencySymbol}
+                </Text>
+                <View style={styles.countryRowMethods}>
+                  {country.paymentMethods.slice(0, 3).map((m) => (
+                    <View
+                      key={m.id}
+                      style={[styles.methodPill, { backgroundColor: colors.muted }]}
+                    >
+                      <Text style={[styles.methodPillText, { color: colors.mutedForeground }]}>
+                        {m.label}
+                      </Text>
+                    </View>
+                  ))}
+                  {country.paymentMethods.length > 3 && (
+                    <View style={[styles.methodPill, { backgroundColor: colors.muted }]}>
+                      <Text style={[styles.methodPillText, { color: colors.mutedForeground }]}>
+                        +{country.paymentMethods.length - 3}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+              {isSelected && (
+                <View style={[styles.selectedCheck, { backgroundColor: "#FF6B00" }]}>
+                  <Feather name="check" size={12} color="#fff" />
+                </View>
+              )}
+            </Pressable>
+          );
+        })}
+      </ScrollView>
     </View>
   );
 }
@@ -317,19 +526,24 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   headerTitle: { fontSize: 18, fontWeight: "700" },
-  progress: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, marginBottom: 20 },
-  progressStep: { alignItems: "center", gap: 4 },
-  progressDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  // Country switcher
+  countrySwitcher: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-between",
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 14,
+    borderRadius: 14,
     borderWidth: 1.5,
   },
-  progressDotText: { fontSize: 12, fontWeight: "700" },
-  progressLabel: { fontSize: 11, fontWeight: "600" },
-  progressLine: { flex: 1, height: 1.5, marginHorizontal: 8, marginBottom: 16 },
+  countrySwitcherLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
+  countryFlag: { fontSize: 28 },
+  countryName: { fontSize: 15, fontWeight: "700" },
+  countryCurrency: { fontSize: 12, marginTop: 2 },
+  countrySwitcherRight: { flexDirection: "row", alignItems: "center", gap: 4 },
+  switchLabel: { fontSize: 13, fontWeight: "700" },
+  // Summary card
   summaryCard: {
     marginHorizontal: 16,
     borderRadius: 14,
@@ -340,13 +554,17 @@ const styles = StyleSheet.create({
   },
   summaryImage: { width: 100, height: 120 },
   summaryInfo: { flex: 1, padding: 12, gap: 4 },
-  categoryBadge: { alignSelf: "flex-start", borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, marginBottom: 2 },
+  categoryBadge: { alignSelf: "flex-start", borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
   categoryText: { fontSize: 9, fontWeight: "700", letterSpacing: 0.5 },
   summaryTitle: { fontSize: 15, fontWeight: "700", lineHeight: 19 },
   summaryMeta: { flexDirection: "row", alignItems: "center", gap: 4 },
   summaryMetaText: { fontSize: 11, flex: 1 },
+  // Sections
   section: { paddingHorizontal: 16, marginBottom: 20 },
+  sectionTitleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
   sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 12 },
+  countryHint: { fontSize: 13 },
+  // Ticket row
   ticketRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -355,48 +573,81 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
-  ticketName: { fontSize: 14, fontWeight: "700", marginBottom: 2 },
-  ticketPrice: { fontSize: 12 },
+  priceRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },
+  ticketName: { fontSize: 14, fontWeight: "700" },
+  ticketPriceMain: { fontSize: 16, fontWeight: "800" },
+  ticketPriceOrig: { fontSize: 12 },
   qtyControl: { flexDirection: "row", alignItems: "center", gap: 12 },
   qtyBtn: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   qtyText: { fontSize: 16, fontWeight: "700", minWidth: 20, textAlign: "center" },
+  // Payment methods
   paymentMethods: { gap: 10, marginBottom: 12 },
   paymentMethod: {
     flexDirection: "row",
     alignItems: "center",
     padding: 14,
+    paddingLeft: 6,
     borderRadius: 12,
     borderWidth: 1.5,
     gap: 12,
+    overflow: "hidden",
   },
+  methodColorBar: { width: 4, height: "100%", borderRadius: 2, alignSelf: "stretch" },
   paymentIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
   paymentInfo: { flex: 1 },
   paymentLabel: { fontSize: 14, fontWeight: "600" },
   paymentSub: { fontSize: 12, marginTop: 1 },
   radioOuter: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, alignItems: "center", justifyContent: "center" },
   radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#FF6B00" },
+  // Phone input
   phoneInput: {
     flexDirection: "row",
     alignItems: "center",
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 1.5,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    gap: 8,
+    gap: 10,
+    marginBottom: 0,
   },
   phoneFlag: { fontSize: 14, fontWeight: "600" },
   phoneField: { flex: 1, fontSize: 15 },
+  // Card / bank hints
+  cardHint: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 10,
+  },
+  cardHintText: { fontSize: 12, flex: 1, lineHeight: 17 },
+  // Order
   orderCard: { borderRadius: 12, borderWidth: 1, padding: 14, gap: 10 },
   orderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   orderLabel: { fontSize: 14 },
   orderValue: { fontSize: 14 },
   orderDivider: { height: 1, marginVertical: 2 },
+  // Notes
+  conversionNote: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginHorizontal: 16,
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  conversionText: { fontSize: 12, flex: 1 },
   securityNote: {
     flexDirection: "row",
     alignItems: "center",
@@ -406,6 +657,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   securityText: { fontSize: 12 },
+  // CTA
   ctaBar: {
     position: "absolute",
     bottom: 0,
@@ -425,4 +677,42 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   ctaBtnText: { color: "#fff", fontWeight: "800", fontSize: 17 },
+  // Country picker modal
+  modalRoot: { flex: 1 },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+  },
+  modalTitle: { fontSize: 18, fontWeight: "700" },
+  modalSub: { fontSize: 13, paddingHorizontal: 16, paddingVertical: 12 },
+  countryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    gap: 14,
+  },
+  countryRowFlag: { fontSize: 32 },
+  countryRowInfo: { flex: 1 },
+  countryRowName: { fontSize: 16, fontWeight: "700", marginBottom: 2 },
+  countryRowCurrency: { fontSize: 13, marginBottom: 6 },
+  countryRowMethods: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  methodPill: {
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  methodPillText: { fontSize: 10, fontWeight: "600" },
+  selectedCheck: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });
