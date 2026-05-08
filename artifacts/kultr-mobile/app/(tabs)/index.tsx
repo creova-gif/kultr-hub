@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CategoryPills } from "@/components/CategoryPill";
 import { EventCardCompact } from "@/components/EventCardCompact";
 import { EventCardHero } from "@/components/EventCardHero";
-import { CATEGORIES, EVENTS } from "@/constants/data";
+import { CATEGORIES, EVENTS, getDaysUntil } from "@/constants/data";
 import { useColors } from "@/hooks/useColors";
 
 const { width } = Dimensions.get("window");
@@ -28,7 +28,10 @@ export default function HomeScreen() {
 
   const featured = EVENTS.filter((e) => e.featured);
   const nearby = EVENTS.filter((e) => e.city === "Nairobi").slice(0, 6);
-  const weekend = EVENTS.filter((_, i) => i % 2 === 0).slice(0, 4);
+  const thisWeekend = EVENTS.filter((e) => {
+    const d = getDaysUntil(e.date);
+    return d >= 0 && d <= 7;
+  }).slice(0, 4);
   const displayed =
     selectedCategory === "For You"
       ? EVENTS
@@ -56,13 +59,16 @@ export default function HomeScreen() {
           >
             <Feather name="search" size={18} color={colors.foreground} />
           </Pressable>
-          <Pressable style={[styles.iconBtn, { backgroundColor: colors.muted }]}>
+          <Pressable
+            onPress={() => router.push("/notifications")}
+            style={[styles.iconBtn, { backgroundColor: colors.muted }]}
+          >
             <Feather name="bell" size={18} color={colors.foreground} />
             <View style={styles.notifDot} />
           </Pressable>
-          <View style={styles.avatar}>
+          <Pressable onPress={() => router.push("/(tabs)/profile")} style={styles.avatar}>
             <Text style={styles.avatarText}>A</Text>
-          </View>
+          </Pressable>
         </View>
       </View>
 
@@ -116,13 +122,28 @@ export default function HomeScreen() {
           </View>
 
           {/* This Weekend */}
-          <View style={styles.section}>
-            <SectionHeader title="This Weekend" onSeeAll={() => router.push("/discover")} />
-            <View style={{ paddingHorizontal: 16 }}>
-              {weekend.map((event) => (
-                <EventCardCompact key={event.id} event={event} horizontal />
-              ))}
+          {thisWeekend.length > 0 && (
+            <View style={styles.section}>
+              <SectionHeader title="This Weekend" onSeeAll={() => router.push("/discover")} />
+              <View style={{ paddingHorizontal: 16, gap: 0 }}>
+                {thisWeekend.map((event) => (
+                  <EventCardCompact key={event.id} event={event} horizontal />
+                ))}
+              </View>
             </View>
+          )}
+
+          {/* Pan-Africa */}
+          <View style={styles.section}>
+            <SectionHeader title="Across Africa" onSeeAll={() => router.push("/discover")} />
+            <FlatList
+              horizontal
+              data={EVENTS.filter((e) => e.city !== "Nairobi").slice(0, 5)}
+              keyExtractor={(e) => e.id}
+              renderItem={({ item }) => <EventCardCompact event={item} />}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 16 }}
+            />
           </View>
         </>
       )}

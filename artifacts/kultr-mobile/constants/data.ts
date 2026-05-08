@@ -6,6 +6,13 @@ export interface TicketType {
   description?: string;
 }
 
+export interface LineupArtist {
+  name: string;
+  role: string;
+  time?: string;
+  origin?: string;
+}
+
 export interface Event {
   id: string;
   title: string;
@@ -26,6 +33,9 @@ export interface Event {
   latitude?: number;
   longitude?: number;
   matchScore?: number;
+  lineup?: LineupArtist[];
+  tags?: string[];
+  capacity?: number;
 }
 
 export const EVENTS: Event[] = [
@@ -37,7 +47,7 @@ export const EVENTS: Event[] = [
     venue: "Alchemist Bar",
     city: "Nairobi",
     country: "Kenya",
-    date: "2025-05-24",
+    date: "2026-06-14",
     time: "20:00",
     price: 1500,
     currency: "KES",
@@ -46,6 +56,14 @@ export const EVENTS: Event[] = [
       "Experience the heartbeat of East Africa at Afrobeat Nights — a cinematic night of live music, electrifying DJ sets, and pure cultural immersion. Nairobi's finest artists take the stage in a celebration that fuses Afrobeats, Bongo Flava, and Amapiano into one unforgettable evening.",
     imageKey: "concert",
     featured: true,
+    capacity: 800,
+    tags: ["Live Music", "Afrobeats", "DJ Sets", "Dancing", "Bar"],
+    lineup: [
+      { name: "DJ Fatxo", role: "Headliner", time: "22:00", origin: "Kenya" },
+      { name: "Ssaru", role: "Featured Artist", time: "21:00", origin: "Kenya" },
+      { name: "Bensoul", role: "Live Performance", time: "20:00", origin: "Kenya" },
+      { name: "DJ Mpendwa", role: "Opening Set", time: "19:30", origin: "Kenya" },
+    ],
     ticketTypes: [
       { id: "t1", name: "General Admission", price: 1500, available: 200 },
       { id: "t2", name: "VIP Table", price: 5000, available: 20, description: "Includes bottle service" },
@@ -60,7 +78,7 @@ export const EVENTS: Event[] = [
     venue: "GoDown Arts Centre",
     city: "Nairobi",
     country: "Kenya",
-    date: "2025-05-18",
+    date: "2026-05-30",
     time: "10:00",
     price: 800,
     currency: "KES",
@@ -69,6 +87,14 @@ export const EVENTS: Event[] = [
       "A groundbreaking exhibition featuring over 40 contemporary African artists exploring themes of identity, migration, and cultural memory through painting, sculpture, and multimedia installations. A must-see for anyone who believes art can change the world.",
     imageKey: "art",
     featured: true,
+    capacity: 400,
+    tags: ["Art", "Exhibition", "Contemporary", "African Artists", "Culture"],
+    lineup: [
+      { name: "Wangechi Mutu", role: "Headlining Artist", origin: "Kenya/USA" },
+      { name: "Cyrus Kabiru", role: "Sculpture & Installation", origin: "Kenya" },
+      { name: "Michael Armitage", role: "Painting", origin: "Kenya/UK" },
+      { name: "Zanele Muholi", role: "Photography", origin: "South Africa" },
+    ],
     ticketTypes: [
       { id: "t1", name: "Day Pass", price: 800, available: 150 },
       { id: "t2", name: "Weekend Pass", price: 1500, available: 80, description: "Access all days" },
@@ -82,7 +108,7 @@ export const EVENTS: Event[] = [
     venue: "Karen Blixen Museum Gardens",
     city: "Nairobi",
     country: "Kenya",
-    date: "2025-05-20",
+    date: "2026-06-06",
     time: "13:00",
     price: 500,
     currency: "KES",
@@ -91,6 +117,13 @@ export const EVENTS: Event[] = [
       "Savour the diverse culinary landscape of Kenya at this curated food festival. From coastal Swahili cuisine to highland Kikuyu staples, meet the chefs and artisans who are reinventing East African food for a new generation.",
     imageKey: "food",
     featured: false,
+    capacity: 1200,
+    tags: ["Food", "Culture", "Chef", "Street Food", "Family Friendly"],
+    lineup: [
+      { name: "Chef Ali Mandhry", role: "Swahili Cuisine Demo", origin: "Kenya" },
+      { name: "Chef Raphael Odero", role: "Modern Kenyan", origin: "Kenya" },
+      { name: "Mama Oliech", role: "Traditional Luo", origin: "Kenya" },
+    ],
     ticketTypes: [
       { id: "t1", name: "General Entry", price: 500, available: 300 },
       { id: "t2", name: "Tasting Package", price: 2000, available: 50, description: "10 tasting tokens included" },
@@ -104,7 +137,7 @@ export const EVENTS: Event[] = [
     venue: "KICC Grounds",
     city: "Nairobi",
     country: "Kenya",
-    date: "2025-05-31",
+    date: "2026-05-23",
     time: "15:00",
     price: 2000,
     currency: "KES",
@@ -113,6 +146,14 @@ export const EVENTS: Event[] = [
       "The most ambitious cultural celebration in East Africa this year. Sauti Za Mataifa brings together traditional musicians, contemporary artists, and cultural historians for a two-day immersive festival of sound, story, and identity.",
     imageKey: "culture",
     featured: true,
+    capacity: 5000,
+    tags: ["Heritage", "Traditional Music", "Festival", "Cultural", "Multi-Day"],
+    lineup: [
+      { name: "Ayub Ogada", role: "Nyatiti Performance", time: "17:00", origin: "Kenya" },
+      { name: "Fadhilee Itulya", role: "Roots Music", time: "16:00", origin: "Kenya" },
+      { name: "Mawazo Collective", role: "Contemporary Fusion", time: "18:30", origin: "Kenya/Tanzania" },
+      { name: "Safaricom Youth Choir", role: "Choral Performance", time: "15:30", origin: "Kenya" },
+    ],
     ticketTypes: [
       { id: "t1", name: "General Admission", price: 2000, available: 500 },
       { id: "t2", name: "VIP Access", price: 7500, available: 30, description: "VIP lounge + artist meet & greet" },
@@ -127,7 +168,7 @@ export const EVENTS: Event[] = [
     venue: "Eko Convention Centre",
     city: "Lagos",
     country: "Nigeria",
-    date: "2025-06-07",
+    date: "2026-06-20",
     time: "18:00",
     price: 15000,
     currency: "NGN",
@@ -136,6 +177,14 @@ export const EVENTS: Event[] = [
       "The biggest music festival to hit Lagos this season. An explosive lineup of Afrobeats, Highlife, and Afropop superstars performing across three stages over two nights. This is not just a concert — it is a cultural moment.",
     imageKey: "concert",
     featured: false,
+    capacity: 8000,
+    tags: ["Afrobeats", "Highlife", "Afropop", "Multi-Stage", "Festival"],
+    lineup: [
+      { name: "Burna Boy", role: "Headliner", time: "22:00", origin: "Nigeria" },
+      { name: "Wizkid", role: "Co-Headliner", time: "20:30", origin: "Nigeria" },
+      { name: "Tems", role: "Featured Artist", time: "19:00", origin: "Nigeria" },
+      { name: "Rema", role: "Support", time: "18:00", origin: "Nigeria" },
+    ],
     ticketTypes: [
       { id: "t1", name: "General Admission", price: 15000, available: 1000 },
       { id: "t2", name: "VIP", price: 45000, available: 100 },
@@ -149,7 +198,7 @@ export const EVENTS: Event[] = [
     venue: "National Museum of Ghana",
     city: "Accra",
     country: "Ghana",
-    date: "2025-06-14",
+    date: "2026-07-04",
     time: "09:00",
     price: 50,
     currency: "GHS",
@@ -158,6 +207,13 @@ export const EVENTS: Event[] = [
       "A week-long celebration of Ghanaian and Pan-African art. From traditional Kente weaving demonstrations to cutting-edge digital art installations, Accra Art Week is a meeting point of the ancient and the future.",
     imageKey: "art",
     featured: false,
+    capacity: 600,
+    tags: ["Art", "Ghana", "Kente", "Digital Art", "Cultural Heritage"],
+    lineup: [
+      { name: "Serge Attukwei Clottey", role: "Installation Art", origin: "Ghana" },
+      { name: "Amoako Boafo", role: "Portraiture", origin: "Ghana/Austria" },
+      { name: "El Anatsui", role: "Sculpture", origin: "Ghana" },
+    ],
     ticketTypes: [
       { id: "t1", name: "Day Pass", price: 50, available: 200 },
       { id: "t2", name: "Full Week Pass", price: 200, available: 60 },
@@ -171,7 +227,7 @@ export const EVENTS: Event[] = [
     venue: "Serena Hotel Ballroom",
     city: "Kampala",
     country: "Uganda",
-    date: "2025-05-29",
+    date: "2026-06-12",
     time: "19:30",
     price: 50000,
     currency: "UGX",
@@ -180,6 +236,13 @@ export const EVENTS: Event[] = [
       "Uganda's funniest comedians take the stage for a night of unfiltered, culturally charged comedy. From political satire to everyday life observations, this is the show that Kampala has been waiting for.",
     imageKey: "culture",
     featured: false,
+    capacity: 300,
+    tags: ["Comedy", "Stand-Up", "Satire", "Nightlife", "Entertainment"],
+    lineup: [
+      { name: "Anne Kansiime", role: "Headliner", time: "21:00", origin: "Uganda" },
+      { name: "Salvador Idringi", role: "Co-Headliner", time: "20:00", origin: "Uganda" },
+      { name: "Reign Jemba", role: "Featured Act", time: "19:30", origin: "Uganda" },
+    ],
     ticketTypes: [
       { id: "t1", name: "Standard", price: 50000, available: 120 },
       { id: "t2", name: "Premium (Front Row)", price: 100000, available: 30 },
@@ -193,7 +256,7 @@ export const EVENTS: Event[] = [
     venue: "Coco Beach Waterfront",
     city: "Dar es Salaam",
     country: "Tanzania",
-    date: "2025-05-23",
+    date: "2026-05-16",
     time: "17:00",
     price: 10000,
     currency: "TZS",
@@ -202,6 +265,12 @@ export const EVENTS: Event[] = [
       "As the Indian Ocean breeze rolls in, Dar es Salaam transforms into a culinary paradise. Over 60 food stalls, live Taarab music, and craft vendors make the Dar Night Market the most vibrant Saturday evening in the city.",
     imageKey: "food",
     featured: false,
+    capacity: 2000,
+    tags: ["Street Food", "Taarab Music", "Crafts", "Waterfront", "Family"],
+    lineup: [
+      { name: "Bi Kidude Ensemble", role: "Taarab Music", time: "19:00", origin: "Tanzania" },
+      { name: "Diamond Platnumz Band", role: "Live Set", time: "21:00", origin: "Tanzania" },
+    ],
     ticketTypes: [
       { id: "t1", name: "Entry", price: 10000, available: 500 },
     ],
@@ -210,19 +279,8 @@ export const EVENTS: Event[] = [
 
 export const CATEGORIES = ["For You", "Music", "Art", "Food", "Heritage", "Comedy", "Sports", "Nightlife"] as const;
 
-export const PURCHASED_TICKETS_DEFAULT = [
-  {
-    id: "ticket-001",
-    eventId: "evt-001",
-    ticketType: "General Admission",
-    ticketNumber: "KTR-98321",
-    purchaseDate: "2025-05-10",
-    quantity: 2,
-  },
-];
-
 export function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
+  const date = new Date(dateStr + "T00:00:00");
   return date.toLocaleDateString("en-US", {
     weekday: "short",
     day: "numeric",
@@ -240,6 +298,20 @@ export function formatTime(timeStr: string): string {
 
 export function getEventById(id: string): Event | undefined {
   return EVENTS.find((e) => e.id === id);
+}
+
+export function getRelatedEvents(event: Event, limit = 3): Event[] {
+  return EVENTS.filter(
+    (e) => e.id !== event.id && (e.category === event.category || e.city === event.city)
+  ).slice(0, limit);
+}
+
+export function getDaysUntil(dateStr: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const eventDate = new Date(dateStr + "T00:00:00");
+  const diff = eventDate.getTime() - today.getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
 export const EVENT_IMAGES: Record<string, ReturnType<typeof require>> = {

@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React from "react";
 import {
   Platform,
@@ -14,20 +15,16 @@ import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 
 const MENU_ITEMS = [
-  { icon: "bookmark", label: "Saved Events", badge: null },
-  { icon: "star", label: "My Reviews", badge: null },
-  { icon: "users", label: "Following", badge: null },
-  { icon: "map-pin", label: "My Cities", badge: null },
-  { icon: "settings", label: "Settings", badge: null },
-  { icon: "shield", label: "Privacy & Security", badge: null },
-  { icon: "help-circle", label: "Help & Support", badge: null },
+  { icon: "heart", label: "Saved Events", route: "/saved" },
+  { icon: "tag", label: "My Tickets", route: "/(tabs)/tickets" },
+  { icon: "star", label: "My Reviews", route: null },
+  { icon: "users", label: "Following", route: null },
+  { icon: "map-pin", label: "My Cities", route: null },
+  { icon: "bell", label: "Notifications", route: "/notifications" },
+  { icon: "settings", label: "Settings", route: null },
+  { icon: "shield", label: "Privacy & Security", route: null },
+  { icon: "help-circle", label: "Help & Support", route: null },
 ] as const;
-
-const STATS = [
-  { label: "Events Attended", value: "12" },
-  { label: "Saved", value: "5" },
-  { label: "Cities Explored", value: "3" },
-];
 
 export default function ProfileScreen() {
   const colors = useColors();
@@ -48,8 +45,12 @@ export default function ProfileScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: colors.foreground }]}>Profile</Text>
-        <Pressable style={[styles.iconBtn, { backgroundColor: colors.muted }]}>
-          <Feather name="settings" size={18} color={colors.foreground} />
+        <Pressable
+          onPress={() => router.push("/notifications")}
+          style={[styles.iconBtn, { backgroundColor: colors.muted }]}
+        >
+          <Feather name="bell" size={18} color={colors.foreground} />
+          <View style={styles.notifDot} />
         </Pressable>
       </View>
 
@@ -80,15 +81,20 @@ export default function ProfileScreen() {
         {/* Stats */}
         <View style={[styles.statsRow, { borderTopColor: colors.border }]}>
           {[
-            { label: "Tickets", value: tickets.length.toString() },
-            { label: "Saved", value: savedEvents.length.toString() },
-            { label: "Cities", value: "3" },
+            { label: "Tickets", value: tickets.length.toString(), onPress: () => router.push("/(tabs)/tickets") },
+            { label: "Saved", value: savedEvents.length.toString(), onPress: () => router.push("/saved") },
+            { label: "Cities", value: "3", onPress: null },
           ].map((stat, i) => (
             <React.Fragment key={stat.label}>
-              <View style={styles.statItem}>
+              <Pressable
+                style={styles.statItem}
+                onPress={stat.onPress ?? undefined}
+              >
                 <Text style={[styles.statValue, { color: colors.foreground }]}>{stat.value}</Text>
-                <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>{stat.label}</Text>
-              </View>
+                <Text style={[styles.statLabel, { color: stat.onPress ? "#FF6B00" : colors.mutedForeground }]}>
+                  {stat.label}
+                </Text>
+              </Pressable>
               {i < 2 && <View style={[styles.statDivider, { backgroundColor: colors.border }]} />}
             </React.Fragment>
           ))}
@@ -116,6 +122,7 @@ export default function ProfileScreen() {
         {MENU_ITEMS.map((item, index) => (
           <Pressable
             key={item.label}
+            onPress={() => item.route && router.push(item.route as any)}
             style={({ pressed }) => [
               styles.menuItem,
               {
@@ -126,7 +133,7 @@ export default function ProfileScreen() {
             ]}
           >
             <View style={[styles.menuIconWrapper, { backgroundColor: colors.muted }]}>
-              <Feather name={item.icon as any} size={16} color={colors.foreground} />
+              <Feather name={item.icon as any} size={16} color={item.route ? "#FF6B00" : colors.foreground} />
             </View>
             <Text style={[styles.menuLabel, { color: colors.foreground }]}>{item.label}</Text>
             <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
@@ -140,7 +147,9 @@ export default function ProfileScreen() {
         <Text style={styles.signOutText}>Sign Out</Text>
       </Pressable>
 
-      <Text style={[styles.version, { color: colors.mutedForeground }]}>Kultr v1.0 · Bold Culture. Timeless Impact.</Text>
+      <Text style={[styles.version, { color: colors.mutedForeground }]}>
+        Kultr v1.0 · Bold Culture. Timeless Impact.
+      </Text>
     </ScrollView>
   );
 }
@@ -156,7 +165,24 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   headerTitle: { fontSize: 28, fontWeight: "800" },
-  iconBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
+  iconBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  notifDot: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#FF6B00",
+    borderWidth: 1.5,
+    borderColor: "#111111",
+  },
   userCard: {
     marginHorizontal: 16,
     borderRadius: 16,
@@ -188,9 +214,9 @@ const styles = StyleSheet.create({
   editBtn: { borderWidth: 1, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
   editBtnText: { fontSize: 13, fontWeight: "600" },
   statsRow: { flexDirection: "row", borderTopWidth: 1, paddingVertical: 12 },
-  statItem: { flex: 1, alignItems: "center" },
+  statItem: { flex: 1, alignItems: "center", paddingVertical: 4 },
   statValue: { fontSize: 20, fontWeight: "800" },
-  statLabel: { fontSize: 11, marginTop: 2 },
+  statLabel: { fontSize: 11, marginTop: 2, fontWeight: "600" },
   statDivider: { width: 1, marginVertical: 4 },
   creatorCard: {
     marginHorizontal: 16,
