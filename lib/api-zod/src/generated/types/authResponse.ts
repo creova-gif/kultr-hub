@@ -5,7 +5,9 @@
  * Kultr Hub API
  * OpenAPI spec version: 0.2.0
  */
+import type { UserProfile } from "./userProfile";
 
-export interface HealthStatus {
-  status: string;
+export interface AuthResponse {
+  token: string;
+  user: UserProfile;
 }

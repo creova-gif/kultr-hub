@@ -12,11 +12,21 @@ import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import Constants from "expo-constants";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppProvider, useApp } from "@/context/AppContext";
+import { setBaseUrl } from "@workspace/api-client-react";
 
 SplashScreen.preventAutoHideAsync();
+
+// Point the API client at the backend server.
+// In dev the API server runs on port 3001; in production set EXPO_PUBLIC_API_URL.
+const apiUrl =
+  (Constants.expoConfig?.extra?.apiUrl as string | undefined) ??
+  process.env.EXPO_PUBLIC_API_URL ??
+  "http://localhost:3001";
+setBaseUrl(apiUrl);
 
 const queryClient = new QueryClient();
 

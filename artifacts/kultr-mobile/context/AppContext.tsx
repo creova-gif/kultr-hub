@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useCallback } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { EA_COUNTRIES, type EACountry } from "@/constants/currencies";
+import { setAuthTokenGetter } from "@workspace/api-client-react";
 
 export interface PurchasedTicket {
   id: string;
@@ -32,6 +34,15 @@ export interface CreatedEvent {
   createdAt: string;
 }
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  displayName: string;
+  avatarUrl: string | null;
+  countryCode: string;
+  isCreator: boolean;
+}
+
 interface AppContextType {
   tickets: PurchasedTicket[];
   savedEvents: string[];
@@ -39,6 +50,8 @@ interface AppContextType {
   onboardingDone: boolean;
   userInterests: string[];
   createdEvents: CreatedEvent[];
+  authToken: string | null;
+  authUser: AuthUser | null;
   addTicket: (ticket: PurchasedTicket) => void;
   toggleSaved: (eventId: string) => void;
   isSaved: (eventId: string) => boolean;
@@ -46,6 +59,8 @@ interface AppContextType {
   setOnboardingDone: (done: boolean) => void;
   setUserInterests: (interests: string[]) => void;
   addCreatedEvent: (event: CreatedEvent) => void;
+  setAuth: (token: string, user: AuthUser) => Promise<void>;
+  clearAuth: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -72,6 +87,8 @@ const DEMO_CREATED_EVENTS: CreatedEvent[] = [
   },
 ];
 
+const TOKEN_KEY = "kultr_auth_token";
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [tickets, setTickets] = useState<PurchasedTicket[]>([
     {
@@ -92,6 +109,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [onboardingDone, setOnboardingDone] = useState(false);
   const [userInterests, setUserInterests] = useState<string[]>([]);
   const [createdEvents, setCreatedEvents] = useState<CreatedEvent[]>(DEMO_CREATED_EVENTS);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+
+  // Register token getter with the API client so every request is authenticated
+  React.useEffect(() => {
+    setAuthTokenGetter(async () => {
+      if (authToken) return authToken;
+      return AsyncStorage.getItem(TOKEN_KEY);
+    });
+    return () => setAuthTokenGetter(null);
+  }, [authToken]);
+
+  // Restore persisted token on mount
+  React.useEffect(() => {
+    AsyncStorage.getItem(TOKEN_KEY).then((stored) => {
+      if (stored) setAuthToken(stored);
+    });
+  }, []);
+
+  const setAuth = useCallback(async (token: string, user: AuthUser) => {
+    await AsyncStorage.setItem(TOKEN_KEY, token);
+    setAuthToken(token);
+    setAuthUser(user);
+  }, []);
+
+  const clearAuth = useCallback(async () => {
+    await AsyncStorage.removeItem(TOKEN_KEY);
+    setAuthToken(null);
+    setAuthUser(null);
+  }, []);
 
   const addTicket = (ticket: PurchasedTicket) => {
     setTickets((prev) => [ticket, ...prev]);
@@ -118,6 +165,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         onboardingDone,
         userInterests,
         createdEvents,
+        authToken,
+        authUser,
         addTicket,
         toggleSaved,
         isSaved,
@@ -125,6 +174,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setOnboardingDone,
         setUserInterests,
         addCreatedEvent,
+        setAuth,
+        clearAuth,
       }}
     >
       {children}
