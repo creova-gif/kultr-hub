@@ -3,6 +3,7 @@ import healthRouter from "./health.js";
 import authRouter from "./auth.js";
 import eventsRouter from "./events.js";
 import ticketsRouter from "./tickets.js";
+import paymentsRouter from "./payments.js";
 
 const router: IRouter = Router();
 
@@ -10,5 +11,7 @@ router.use(healthRouter);
 router.use("/auth", authRouter);
 router.use("/events", eventsRouter);
 router.use("/tickets", ticketsRouter);
+router.use("/payments", paymentsRouter);
 
 export default router;
+

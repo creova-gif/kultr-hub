@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import * as WebBrowser from "expo-web-browser";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -31,7 +32,7 @@ export default function CheckoutScreen() {
   }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { addTicket, userCountry, setUserCountry } = useApp();
+  const { addTicket, userCountry, setUserCountry, authToken } = useApp();
 
   const event = getEventById(eventId ?? "");
   const typeIdx = Number(ticketTypeIndex ?? "0");
@@ -84,9 +85,79 @@ export default function CheckoutScreen() {
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1800));
-    setLoading(false);
 
+    try {
+      // Attempt real payment via backend (works when user is authenticated + API is live)
+      if (authToken) {
+        const initRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001"}/api/payments/init`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+          body: JSON.stringify({ eventId: event.id, ticketTypeId: ticketType.id, quantity }),
+        });
+
+        if (initRes.ok) {
+          const initData = await initRes.json() as {
+            reference: string;
+            authorizationUrl: string | null;
+            simulated: boolean;
+            totalAmount: number;
+            currency: string;
+          };
+
+          if (initData.authorizationUrl) {
+            // Open Paystack payment page
+            const browserResult = await WebBrowser.openBrowserAsync(initData.authorizationUrl);
+            if (browserResult.type !== "opened" && browserResult.type !== "cancel") {
+              // User closed browser — verify payment
+              const verifyRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001"}/api/payments/verify`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+                body: JSON.stringify({
+                  reference: initData.reference,
+                  eventId: event.id,
+                  ticketTypeId: ticketType.id,
+                  quantity,
+                }),
+              });
+
+              if (verifyRes.ok) {
+                const verifyData = await verifyRes.json() as { ticketId: string; ticketNumber: string };
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                setLoading(false);
+                router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}`);
+                return;
+              }
+            }
+          } else if (initData.simulated) {
+            // Dev/demo mode: no Paystack key — verify immediately
+            const verifyRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001"}/api/payments/verify`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+              body: JSON.stringify({
+                reference: initData.reference,
+                simulated: true,
+                eventId: event.id,
+                ticketTypeId: ticketType.id,
+                quantity,
+              }),
+            });
+
+            if (verifyRes.ok) {
+              const verifyData = await verifyRes.json() as { ticketId: string; ticketNumber: string };
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              setLoading(false);
+              router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}`);
+              return;
+            }
+          }
+        }
+      }
+    } catch {
+      // Fall through to demo mode
+    }
+
+    // Demo fallback: create ticket locally (used when API is unavailable or user is not authenticated)
+    await new Promise((r) => setTimeout(r, 1200));
     const newTicket = {
       id: `ticket-${Date.now()}`,
       eventId: event.id,
@@ -101,6 +172,7 @@ export default function CheckoutScreen() {
     };
     addTicket(newTicket);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setLoading(false);
     router.replace(
       `/ticket/${newTicket.id}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${newTicket.ticketNumber}`
     );

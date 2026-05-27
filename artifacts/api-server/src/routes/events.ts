@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq, desc, and, sql, inArray } from "drizzle-orm";
+import { eq, desc, and, sql, inArray, ilike, or } from "drizzle-orm";
 import { db, eventsTable, ticketTypesTable } from "@workspace/db";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import type { Request, Response } from "express";
@@ -29,6 +29,49 @@ function toEventSummary(event: typeof eventsTable.$inferSelect, ticketTypes: typ
     status: event.status,
   };
 }
+
+router.get("/search", async (req: Request, res: Response) => {
+  const { q = "", limit = "20", offset = "0" } = req.query as Record<string, string>;
+  const term = `%${q.trim()}%`;
+
+  const conditions = [
+    eq(eventsTable.status, "live"),
+    or(
+      ilike(eventsTable.title, term),
+      ilike(eventsTable.city, term),
+      ilike(eventsTable.venue, term),
+      ilike(eventsTable.country, term),
+    ),
+  ];
+
+  const [events, [{ count }]] = await Promise.all([
+    db.select().from(eventsTable)
+      .where(and(...conditions))
+      .orderBy(desc(eventsTable.featured), desc(eventsTable.eventDate))
+      .limit(parseInt(limit))
+      .offset(parseInt(offset)),
+    db.select({ count: sql<number>`count(*)::int` }).from(eventsTable).where(and(...conditions)),
+  ]);
+
+  const eventIds = events.map((e) => e.id);
+  const allTicketTypes = eventIds.length > 0
+    ? await db.select().from(ticketTypesTable).where(inArray(ticketTypesTable.eventId, eventIds))
+    : [];
+
+  const byEvent = new Map<string, typeof ticketTypesTable.$inferSelect[]>();
+  for (const tt of allTicketTypes) {
+    const arr = byEvent.get(tt.eventId) ?? [];
+    arr.push(tt);
+    byEvent.set(tt.eventId, arr);
+  }
+
+  res.json({
+    events: events.map((e) => toEventSummary(e, byEvent.get(e.id) ?? [])),
+    total: count,
+    limit: parseInt(limit),
+    offset: parseInt(offset),
+  });
+});
 
 router.get("/", async (req: Request, res: Response) => {
   const { category, city, countryCode, featured, limit = "20", offset = "0" } = req.query as Record<string, string>;
