@@ -191,6 +191,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/EventListResponse"
 
+  /events/creator/analytics:
+    get:
+      operationId: getCreatorAnalytics
+      tags: [events]
+      summary: Get sales analytics for the creator's events
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Creator analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatorAnalytics"
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /events/{id}:
     get:
       operationId: getEvent
@@ -642,3 +663,44 @@ components:
       required:
         - tickets
         - total
+
+    CreatedEventStats:
+      type: object
+      required: [id, title, category, eventDate, venue, city, status, ticketsSold, revenue, currency]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+        eventDate:
+          type: string
+          format: date-time
+        venue:
+          type: string
+        city:
+          type: string
+        status:
+          type: string
+        ticketsSold:
+          type: integer
+        revenue:
+          type: number
+        currency:
+          type: string
+
+    CreatorAnalytics:
+      type: object
+      required: [events, totalRevenue, totalTicketsSold, liveEvents]
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreatedEventStats"
+        totalRevenue:
+          type: number
+        totalTicketsSold:
+          type: integer
+        liveEvents:
+          type: integer

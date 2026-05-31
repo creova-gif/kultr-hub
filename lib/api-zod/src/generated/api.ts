@@ -169,6 +169,29 @@ export const ListMyEventsResponse = zod.object({
 });
 
 /**
+ * @summary Get sales analytics for the creator's events
+ */
+export const GetCreatorAnalyticsResponse = zod.object({
+  events: zod.array(
+    zod.object({
+      id: zod.string(),
+      title: zod.string(),
+      category: zod.string(),
+      eventDate: zod.coerce.date(),
+      venue: zod.string(),
+      city: zod.string(),
+      status: zod.string(),
+      ticketsSold: zod.number(),
+      revenue: zod.number(),
+      currency: zod.string(),
+    }),
+  ),
+  totalRevenue: zod.number(),
+  totalTicketsSold: zod.number(),
+  liveEvents: zod.number(),
+});
+
+/**
  * @summary Get a single event by ID
  */
 export const GetEventParams = zod.object({

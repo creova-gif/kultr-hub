@@ -150,6 +150,26 @@ export interface TicketListResponse {
   total: number;
 }
 
+export interface CreatedEventStats {
+  id: string;
+  title: string;
+  category: string;
+  eventDate: string;
+  venue: string;
+  city: string;
+  status: string;
+  ticketsSold: number;
+  revenue: number;
+  currency: string;
+}
+
+export interface CreatorAnalytics {
+  events: CreatedEventStats[];
+  totalRevenue: number;
+  totalTicketsSold: number;
+  liveEvents: number;
+}
+
 export type ListEventsParams = {
   category?: string;
   city?: string;

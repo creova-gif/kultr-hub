@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { eq, desc, and, sql, inArray, ilike, or } from "drizzle-orm";
-import { db, eventsTable, ticketTypesTable } from "@workspace/db";
+import { db, eventsTable, ticketTypesTable, ticketsTable } from "@workspace/db";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import type { Request, Response } from "express";
 
@@ -135,6 +135,65 @@ router.get("/creator/me", requireAuth, async (req: Request, res: Response) => {
     limit: events.length,
     offset: 0,
   });
+});
+
+router.get("/creator/analytics", requireAuth, async (req: Request, res: Response) => {
+  const authed = req as AuthedRequest;
+
+  const events = await db.select().from(eventsTable)
+    .where(eq(eventsTable.creatorId, authed.userId))
+    .orderBy(desc(eventsTable.createdAt));
+
+  if (events.length === 0) {
+    res.json({ events: [], totalRevenue: 0, totalTicketsSold: 0, liveEvents: 0 });
+    return;
+  }
+
+  const eventIds = events.map((e) => e.id);
+
+  const salesData = await db
+    .select({
+      eventId: ticketsTable.eventId,
+      ticketsSold: sql<number>`coalesce(sum(${ticketsTable.quantity}), 0)::int`,
+      revenue: sql<number>`coalesce(sum(${ticketsTable.totalAmount}), 0)`,
+    })
+    .from(ticketsTable)
+    .where(and(inArray(ticketsTable.eventId, eventIds), eq(ticketsTable.status, "confirmed")))
+    .groupBy(ticketsTable.eventId);
+
+  const salesMap = new Map(salesData.map((s) => [s.eventId, s]));
+
+  const firstTicketTypes = eventIds.length > 0
+    ? await db.select({ eventId: ticketTypesTable.eventId, currency: ticketTypesTable.currency })
+        .from(ticketTypesTable)
+        .where(inArray(ticketTypesTable.eventId, eventIds))
+    : [];
+  const currencyMap = new Map<string, string>();
+  for (const tt of firstTicketTypes) {
+    if (!currencyMap.has(tt.eventId)) currencyMap.set(tt.eventId, tt.currency);
+  }
+
+  const eventStats = events.map((event) => {
+    const sales = salesMap.get(event.id);
+    return {
+      id: event.id,
+      title: event.title,
+      category: event.category,
+      eventDate: event.eventDate.toISOString(),
+      venue: event.venue,
+      city: event.city,
+      status: event.status,
+      ticketsSold: sales?.ticketsSold ?? 0,
+      revenue: Number(sales?.revenue ?? 0),
+      currency: currencyMap.get(event.id) ?? "KES",
+    };
+  });
+
+  const totalRevenue = eventStats.reduce((s, e) => s + e.revenue, 0);
+  const totalTicketsSold = eventStats.reduce((s, e) => s + e.ticketsSold, 0);
+  const liveEvents = eventStats.filter((e) => e.status === "live").length;
+
+  res.json({ events: eventStats, totalRevenue, totalTicketsSold, liveEvents });
 });
 
 router.get("/:id", async (req: Request, res: Response) => {

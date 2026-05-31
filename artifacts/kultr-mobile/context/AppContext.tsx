@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { EA_COUNTRIES, type EACountry } from "@/constants/currencies";
-import { setAuthTokenGetter } from "@workspace/api-client-react";
+import { EA_COUNTRIES, getCountryByCurrency, type EACountry } from "@/constants/currencies";
+import { setAuthTokenGetter, useGetCreatorAnalytics, getGetCreatorAnalyticsQueryKey, type CreatedEventStats } from "@workspace/api-client-react";
 
 export interface PurchasedTicket {
   id: string;
@@ -89,6 +89,29 @@ const DEMO_CREATED_EVENTS: CreatedEvent[] = [
 
 const TOKEN_KEY = "kultr_auth_token";
 
+function adaptAnalyticsStat(stat: CreatedEventStats): CreatedEvent {
+  const date = stat.eventDate.slice(0, 10);
+  const time = stat.eventDate.length > 10 ? new Date(stat.eventDate).toISOString().slice(11, 16) : "19:00";
+  const currencySymbol = getCountryByCurrency(stat.currency)?.currencySymbol ?? stat.currency;
+  return {
+    id: stat.id,
+    title: stat.title,
+    category: stat.category,
+    date,
+    time,
+    venue: stat.venue,
+    city: stat.city,
+    price: 0,
+    currency: stat.currency,
+    currencySymbol,
+    description: "",
+    ticketsSold: stat.ticketsSold,
+    revenue: stat.revenue,
+    status: stat.status as "draft" | "live" | "ended",
+    createdAt: date,
+  };
+}
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [tickets, setTickets] = useState<PurchasedTicket[]>([
     {
@@ -111,6 +134,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [createdEvents, setCreatedEvents] = useState<CreatedEvent[]>(DEMO_CREATED_EVENTS);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+
+  // Fetch creator analytics when authenticated
+  const { data: analyticsData } = useGetCreatorAnalytics({
+    query: { queryKey: getGetCreatorAnalyticsQueryKey(), enabled: !!authToken },
+  });
+
+  React.useEffect(() => {
+    if (analyticsData?.events?.length) {
+      const adapted = analyticsData.events.map(adaptAnalyticsStat);
+      setCreatedEvents(adapted);
+    }
+  }, [analyticsData]);
 
   // Register token getter with the API client so every request is authenticated
   React.useEffect(() => {

@@ -19,6 +19,7 @@ import type {
 import type {
   AuthResponse,
   CreateEventRequest,
+  CreatorAnalytics,
   ErrorResponse,
   EventDetail,
   EventListResponse,
@@ -678,6 +679,81 @@ export function useListMyEvents<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListMyEventsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get sales analytics for the creator's events
+ */
+export const getGetCreatorAnalyticsUrl = () => {
+  return `/api/events/creator/analytics`;
+};
+
+export const getCreatorAnalytics = async (
+  options?: RequestInit,
+): Promise<CreatorAnalytics> => {
+  return customFetch<CreatorAnalytics>(getGetCreatorAnalyticsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCreatorAnalyticsQueryKey = () => {
+  return [`/api/events/creator/analytics`] as const;
+};
+
+export const getGetCreatorAnalyticsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCreatorAnalytics>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getCreatorAnalytics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCreatorAnalyticsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCreatorAnalytics>>
+  > = ({ signal }) => getCreatorAnalytics({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCreatorAnalytics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCreatorAnalyticsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCreatorAnalytics>>
+>;
+export type GetCreatorAnalyticsQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get sales analytics for the creator's events
+ */
+
+export function useGetCreatorAnalytics<
+  TData = Awaited<ReturnType<typeof getCreatorAnalytics>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getCreatorAnalytics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCreatorAnalyticsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

@@ -7,9 +7,11 @@
  */
 
 export * from "./authResponse";
+export * from "./createdEventStats";
 export * from "./createEventRequest";
 export * from "./createEventRequestCategory";
 export * from "./createTicketTypeRequest";
+export * from "./creatorAnalytics";
 export * from "./errorResponse";
 export * from "./eventDetail";
 export * from "./eventListResponse";
