@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { EA_COUNTRIES, getCountryByCurrency, type EACountry } from "@/constants/currencies";
+import type { Language } from "@/constants/translations";
 import { setAuthTokenGetter, useGetCreatorAnalytics, getGetCreatorAnalyticsQueryKey, type CreatedEventStats } from "@workspace/api-client-react";
 
 export interface PurchasedTicket {
@@ -52,6 +53,8 @@ interface AppContextType {
   createdEvents: CreatedEvent[];
   authToken: string | null;
   authUser: AuthUser | null;
+  language: Language;
+  lowBandwidth: boolean;
   addTicket: (ticket: PurchasedTicket) => void;
   toggleSaved: (eventId: string) => void;
   isSaved: (eventId: string) => boolean;
@@ -61,6 +64,8 @@ interface AppContextType {
   addCreatedEvent: (event: CreatedEvent) => void;
   setAuth: (token: string, user: AuthUser) => Promise<void>;
   clearAuth: () => Promise<void>;
+  setLanguage: (lang: Language) => void;
+  setLowBandwidth: (val: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -134,6 +139,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [createdEvents, setCreatedEvents] = useState<CreatedEvent[]>(DEMO_CREATED_EVENTS);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [language, setLanguage] = useState<Language>("en");
+  const [lowBandwidth, setLowBandwidth] = useState(false);
 
   // Fetch creator analytics when authenticated
   const { data: analyticsData } = useGetCreatorAnalytics({
@@ -202,6 +209,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         createdEvents,
         authToken,
         authUser,
+        language,
+        lowBandwidth,
         addTicket,
         toggleSaved,
         isSaved,
@@ -211,6 +220,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addCreatedEvent,
         setAuth,
         clearAuth,
+        setLanguage,
+        setLowBandwidth,
       }}
     >
       {children}

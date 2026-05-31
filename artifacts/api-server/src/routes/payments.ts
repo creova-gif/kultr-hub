@@ -4,6 +4,7 @@ import { nanoid } from "nanoid";
 import { db, ticketsTable, ticketTypesTable, eventsTable, usersTable } from "@workspace/db";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { initializePayment, verifyPayment } from "../lib/paystack.js";
+import { initiateStkPush, queryStkPush } from "../lib/mpesa.js";
 import type { Request, Response } from "express";
 
 const router = Router();
@@ -234,6 +235,191 @@ router.get("/callback", async (req: Request, res: Response) => {
   });
 
   res.redirect(`${appCallback}?status=success&ticketId=${ticket.id}&ref=${ref}`);
+});
+
+/**
+ * POST /api/payments/mpesa/stk-push
+ * Initiate M-Pesa STK Push (Lipa na M-Pesa Online).
+ * Returns { checkoutRequestId, simulated } — frontend polls /mpesa/status.
+ */
+router.post("/mpesa/stk-push", requireAuth, async (req: Request, res: Response) => {
+  const authed = req as AuthedRequest;
+  const { eventId, ticketTypeId, quantity = 1, phone } = req.body as {
+    eventId: string;
+    ticketTypeId: string;
+    quantity?: number;
+    phone: string;
+  };
+
+  if (!eventId || !ticketTypeId || !phone) {
+    res.status(400).json({ message: "eventId, ticketTypeId, and phone are required" });
+    return;
+  }
+
+  const [[event], [ticketType]] = await Promise.all([
+    db.select().from(eventsTable).where(eq(eventsTable.id, eventId)).limit(1),
+    db.select().from(ticketTypesTable).where(eq(ticketTypesTable.id, ticketTypeId)).limit(1),
+  ]);
+
+  if (!event) { res.status(404).json({ message: "Event not found" }); return; }
+  if (!ticketType) { res.status(404).json({ message: "Ticket type not found" }); return; }
+
+  const available = ticketType.totalQuantity - ticketType.soldQuantity;
+  if (available < quantity) {
+    res.status(400).json({ message: `Only ${available} ticket(s) remaining` });
+    return;
+  }
+
+  const totalAmount = Number(ticketType.price) * quantity;
+  const reference = generatePaymentRef();
+
+  // Normalise phone to 254XXXXXXXXX format
+  const normalised = phone.replace(/^\+/, "").replace(/^0/, "254");
+
+  try {
+    const stkResult = await initiateStkPush({
+      phone: normalised,
+      amountKES: totalAmount,
+      reference,
+      description: `${event.title} ticket`,
+    });
+
+    if (!stkResult) {
+      // Simulated mode (no M-Pesa credentials)
+      res.json({
+        checkoutRequestId: `sim_${reference}`,
+        merchantRequestId: `sim_${reference}`,
+        reference,
+        simulated: true,
+        totalAmount,
+        currency: ticketType.currency,
+        customerMessage: "Enter your M-Pesa PIN to complete payment (simulated)",
+      });
+      return;
+    }
+
+    res.json({
+      checkoutRequestId: stkResult.checkoutRequestId,
+      merchantRequestId: stkResult.merchantRequestId,
+      reference,
+      simulated: false,
+      totalAmount,
+      currency: ticketType.currency,
+      customerMessage: stkResult.customerMessage,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "STK Push failed";
+    res.status(502).json({ message });
+  }
+});
+
+/**
+ * POST /api/payments/mpesa/verify
+ * Poll / confirm an STK Push result. On success, atomically creates the ticket.
+ */
+router.post("/mpesa/verify", requireAuth, async (req: Request, res: Response) => {
+  const authed = req as AuthedRequest;
+  const { checkoutRequestId, reference, simulated, eventId, ticketTypeId, quantity = 1 } = req.body as {
+    checkoutRequestId: string;
+    reference: string;
+    simulated?: boolean;
+    eventId: string;
+    ticketTypeId: string;
+    quantity?: number;
+  };
+
+  if (!reference || !eventId || !ticketTypeId) {
+    res.status(400).json({ message: "reference, eventId and ticketTypeId are required" });
+    return;
+  }
+
+  const [ticketType] = await db.select().from(ticketTypesTable)
+    .where(eq(ticketTypesTable.id, ticketTypeId)).limit(1);
+
+  if (!ticketType) { res.status(404).json({ message: "Ticket type not found" }); return; }
+
+  let paid = simulated === true;
+
+  if (!paid && checkoutRequestId) {
+    const status = await queryStkPush(checkoutRequestId);
+    paid = status?.resultCode === "0";
+  }
+
+  if (!paid) {
+    res.status(402).json({ message: "M-Pesa payment not yet confirmed. Retry or cancel." });
+    return;
+  }
+
+  const available = ticketType.totalQuantity - ticketType.soldQuantity;
+  if (available < quantity) {
+    res.status(400).json({ message: `Only ${available} ticket(s) remaining` });
+    return;
+  }
+
+  const unitPrice = Number(ticketType.price);
+  const totalAmount = unitPrice * quantity;
+
+  const [ticket] = await db.transaction(async (tx) => {
+    await tx.update(ticketTypesTable)
+      .set({ soldQuantity: sql`${ticketTypesTable.soldQuantity} + ${quantity}` })
+      .where(eq(ticketTypesTable.id, ticketTypeId));
+
+    return tx.insert(ticketsTable).values({
+      ticketNumber: generateTicketNumber(),
+      userId: authed.userId,
+      eventId,
+      ticketTypeId,
+      quantity,
+      unitPrice: String(unitPrice),
+      totalAmount: String(totalAmount),
+      currency: ticketType.currency,
+      status: "confirmed",
+      paymentReference: reference,
+      paymentProvider: simulated ? "mpesa_simulated" : "mpesa",
+    }).returning();
+  });
+
+  res.status(201).json({
+    ticketId: ticket.id,
+    ticketNumber: ticket.ticketNumber,
+    status: ticket.status,
+    totalAmount,
+    currency: ticketType.currency,
+  });
+});
+
+/**
+ * POST /api/payments/mpesa/callback
+ * Safaricom calls this URL when the STK Push completes.
+ * This is a webhook — no auth header from Safaricom.
+ */
+router.post("/mpesa/callback", async (req: Request, res: Response) => {
+  // Acknowledge immediately — Safaricom requires a quick 200
+  res.json({ ResultCode: 0, ResultDesc: "Accepted" });
+
+  const body = req.body as {
+    Body?: {
+      stkCallback?: {
+        ResultCode: number;
+        ResultDesc: string;
+        CheckoutRequestID: string;
+        CallbackMetadata?: {
+          Item: Array<{ Name: string; Value: string | number }>;
+        };
+      };
+    };
+  };
+
+  const callback = body?.Body?.stkCallback;
+  if (!callback || callback.ResultCode !== 0) return;
+
+  // Extract phone and amount from callback metadata
+  const items = callback.CallbackMetadata?.Item ?? [];
+  const get = (name: string) => items.find((i) => i.Name === name)?.Value;
+  const mpesaReceiptNumber = String(get("MpesaReceiptNumber") ?? "");
+
+  // Log for audit — actual ticket creation happens via /mpesa/verify polling
+  console.log(`M-Pesa callback OK: ${callback.CheckoutRequestID} receipt=${mpesaReceiptNumber}`);
 });
 
 export default router;

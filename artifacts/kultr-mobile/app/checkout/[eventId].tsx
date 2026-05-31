@@ -86,34 +86,98 @@ export default function CheckoutScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
 
+    const apiBase = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
+    const authHeader = { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` };
+
     try {
-      // Attempt real payment via backend (works when user is authenticated + API is live)
       if (authToken) {
-        const initRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001"}/api/payments/init`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
-          body: JSON.stringify({ eventId: event.id, ticketTypeId: ticketType.id, quantity }),
-        });
+        // M-Pesa STK Push path for mobile_money payments
+        if (activeMethod?.type === "mobile_money") {
+          const stkRes = await fetch(`${apiBase}/api/payments/mpesa/stk-push`, {
+            method: "POST",
+            headers: authHeader,
+            body: JSON.stringify({ eventId: event.id, ticketTypeId: ticketType.id, quantity, phone }),
+          });
 
-        if (initRes.ok) {
-          const initData = await initRes.json() as {
-            reference: string;
-            authorizationUrl: string | null;
-            simulated: boolean;
-            totalAmount: number;
-            currency: string;
-          };
+          if (stkRes.ok) {
+            const stkData = await stkRes.json() as {
+              checkoutRequestId: string;
+              reference: string;
+              simulated: boolean;
+            };
 
-          if (initData.authorizationUrl) {
-            // Open Paystack payment page
-            const browserResult = await WebBrowser.openBrowserAsync(initData.authorizationUrl);
-            if (browserResult.type !== "opened" && browserResult.type !== "cancel") {
-              // User closed browser — verify payment
-              const verifyRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001"}/api/payments/verify`, {
+            // Wait for user to enter PIN (or instant for simulated)
+            if (!stkData.simulated) {
+              await new Promise((r) => setTimeout(r, 5000));
+            }
+
+            const verifyRes = await fetch(`${apiBase}/api/payments/mpesa/verify`, {
+              method: "POST",
+              headers: authHeader,
+              body: JSON.stringify({
+                checkoutRequestId: stkData.checkoutRequestId,
+                reference: stkData.reference,
+                simulated: stkData.simulated,
+                eventId: event.id,
+                ticketTypeId: ticketType.id,
+                quantity,
+              }),
+            });
+
+            if (verifyRes.ok) {
+              const verifyData = await verifyRes.json() as { ticketId: string; ticketNumber: string };
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              setLoading(false);
+              router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}`);
+              return;
+            }
+          }
+        } else {
+          // Paystack path for card / bank / ussd
+          const initRes = await fetch(`${apiBase}/api/payments/init`, {
+            method: "POST",
+            headers: authHeader,
+            body: JSON.stringify({ eventId: event.id, ticketTypeId: ticketType.id, quantity }),
+          });
+
+          if (initRes.ok) {
+            const initData = await initRes.json() as {
+              reference: string;
+              authorizationUrl: string | null;
+              simulated: boolean;
+              totalAmount: number;
+              currency: string;
+            };
+
+            if (initData.authorizationUrl) {
+              const browserResult = await WebBrowser.openBrowserAsync(initData.authorizationUrl);
+              if (browserResult.type !== "opened" && browserResult.type !== "cancel") {
+                const verifyRes = await fetch(`${apiBase}/api/payments/verify`, {
+                  method: "POST",
+                  headers: authHeader,
+                  body: JSON.stringify({
+                    reference: initData.reference,
+                    eventId: event.id,
+                    ticketTypeId: ticketType.id,
+                    quantity,
+                  }),
+                });
+
+                if (verifyRes.ok) {
+                  const verifyData = await verifyRes.json() as { ticketId: string; ticketNumber: string };
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  setLoading(false);
+                  router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}`);
+                  return;
+                }
+              }
+            } else if (initData.simulated) {
+              const verifyRes = await fetch(`${apiBase}/api/payments/verify`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+                headers: authHeader,
                 body: JSON.stringify({
                   reference: initData.reference,
+                  simulated: true,
                   eventId: event.id,
                   ticketTypeId: ticketType.id,
                   quantity,
@@ -127,27 +191,6 @@ export default function CheckoutScreen() {
                 router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}`);
                 return;
               }
-            }
-          } else if (initData.simulated) {
-            // Dev/demo mode: no Paystack key — verify immediately
-            const verifyRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001"}/api/payments/verify`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
-              body: JSON.stringify({
-                reference: initData.reference,
-                simulated: true,
-                eventId: event.id,
-                ticketTypeId: ticketType.id,
-                quantity,
-              }),
-            });
-
-            if (verifyRes.ok) {
-              const verifyData = await verifyRes.json() as { ticketId: string; ticketNumber: string };
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              setLoading(false);
-              router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}`);
-              return;
             }
           }
         }
