@@ -25,6 +25,15 @@ const MENU_ITEMS = [
   { icon: "help-circle", label: "Help & Support", route: null },
 ] as const;
 
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 function formatRevenue(amount: number, symbol: string) {
   if (amount >= 1_000_000) return `${symbol}${(amount / 1_000_000).toFixed(1)}M`;
   if (amount >= 1_000) return `${symbol}${(amount / 1_000).toFixed(0)}K`;
@@ -34,10 +43,16 @@ function formatRevenue(amount: number, symbol: string) {
 export default function ProfileScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { tickets, savedEvents, createdEvents } = useApp();
+  const { tickets, savedEvents, createdEvents, authUser, clearAuth } = useApp();
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
   const isCreator = createdEvents.length > 0;
+
+  const displayName = authUser?.displayName ?? "Kultr Member";
+  const initials = getInitials(displayName);
+  const handle = authUser
+    ? `@${authUser.displayName.toLowerCase().replace(/\s+/g, "")}`
+    : "@kultruser";
   const totalRevenue = createdEvents.reduce((s, e) => s + e.revenue, 0);
   const totalTicketsSold = createdEvents.reduce((s, e) => s + e.ticketsSold, 0);
   const liveEvents = createdEvents.filter((e) => e.status === "live").length;
@@ -68,15 +83,15 @@ export default function ProfileScreen() {
         <View style={styles.userCardTop}>
           <View style={styles.avatarWrapper}>
             <View style={[styles.avatar, { backgroundColor: "#FF6B00" }]}>
-              <Text style={styles.avatarText}>AK</Text>
+              <Text style={styles.avatarText}>{initials}</Text>
             </View>
             <View style={[styles.verifiedBadge, { backgroundColor: "#00C853" }]}>
               <Feather name="check" size={8} color="#fff" />
             </View>
           </View>
           <View style={styles.userInfo}>
-            <Text style={[styles.userName, { color: colors.foreground }]}>Alex Kamau</Text>
-            <Text style={[styles.userHandle, { color: colors.mutedForeground }]}>@alexkamau</Text>
+            <Text style={[styles.userName, { color: colors.foreground }]}>{displayName}</Text>
+            <Text style={[styles.userHandle, { color: colors.mutedForeground }]}>{handle}</Text>
             <View style={styles.memberRow}>
               <Feather name="award" size={11} color="#FF6B00" />
               <Text style={[styles.memberText, { color: "#FF6B00" }]}>
@@ -233,7 +248,7 @@ export default function ProfileScreen() {
       </View>
 
       {/* Sign out */}
-      <Pressable style={[styles.signOutBtn, { borderColor: colors.border }]}>
+      <Pressable style={[styles.signOutBtn, { borderColor: colors.border }]} onPress={() => clearAuth()}>
         <Feather name="log-out" size={16} color="#D32F2F" />
         <Text style={styles.signOutText}>Sign Out</Text>
       </Pressable>
