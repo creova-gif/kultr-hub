@@ -25,6 +25,7 @@ import {
 } from "@/constants/currencies";
 import { useColors } from "@/hooks/useColors";
 import { useEventDetail } from "@/hooks/useEventDetail";
+import { useGetFxRates } from "@workspace/api-client-react";
 
 export default function CheckoutScreen() {
   const { eventId, ticketTypeIndex } = useLocalSearchParams<{
@@ -53,11 +54,20 @@ export default function CheckoutScreen() {
   const eventCurrencyCode = event?.currency ?? "KES";
   const isSameCurrency = eventCurrencyCode === userCountry.currencyCode;
 
+  // Prefer live FX rates from the API; fall back to static table when unavailable.
+  const { data: fxData } = useGetFxRates({ base: userCountry.currencyCode });
+
   const convertedPrice = useMemo(() => {
     if (!ticketType) return 0;
     if (isSameCurrency) return ticketType.price;
+    // Live rate: fxData.rates[eventCurrencyCode] = units of event currency per 1 user currency
+    // So price / rate = user-currency amount
+    const liveRate = fxData?.rates?.[eventCurrencyCode];
+    if (liveRate && liveRate > 0) {
+      return Math.round(ticketType.price / liveRate);
+    }
     return convertCurrency(ticketType.price, eventCurrencyCode, userCountry.code);
-  }, [ticketType, eventCurrencyCode, userCountry.code, isSameCurrency]);
+  }, [ticketType, eventCurrencyCode, userCountry.code, isSameCurrency, fxData]);
 
   const total = convertedPrice * quantity;
   const fee = Math.round(total * 0.05);

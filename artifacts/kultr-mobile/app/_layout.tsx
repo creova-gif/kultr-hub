@@ -28,7 +28,24 @@ const apiUrl =
   "http://localhost:3001";
 setBaseUrl(apiUrl);
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Keep data fresh for 5 minutes; serve stale while revalidating in background.
+      staleTime: 5 * 60 * 1000,
+      // Retain cached data for 30 minutes so navigating back doesn't flash empty state.
+      gcTime: 30 * 60 * 1000,
+      // On poor connections, retry up to 2 times with exponential backoff.
+      retry: 2,
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10_000),
+      // Serve cached data even when the network request fails (offline/2G resilience).
+      networkMode: "offlineFirst",
+    },
+    mutations: {
+      networkMode: "offlineFirst",
+    },
+  },
+});
 
 function RootLayoutNav() {
   const { onboardingDone } = useApp();

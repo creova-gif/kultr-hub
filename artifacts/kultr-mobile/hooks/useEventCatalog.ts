@@ -3,6 +3,7 @@ import { useListEvents } from "@workspace/api-client-react";
 import type { EventSummary } from "@workspace/api-client-react";
 import { EVENTS, type Event } from "@/constants/data";
 import { getCountryByCurrency } from "@/constants/currencies";
+import { useApp } from "@/context/AppContext";
 
 const VALID_IMAGE_KEYS = ["concert", "art", "food", "culture"] as const;
 type ImageKey = (typeof VALID_IMAGE_KEYS)[number];
@@ -45,7 +46,8 @@ export function adaptEventSummary(e: EventSummary): Event {
 }
 
 export function useEventCatalog() {
-  const { data, isLoading, isError } = useListEvents({ limit: 100 });
+  const { lowBandwidth } = useApp();
+  const { data, isLoading, isError } = useListEvents({ limit: lowBandwidth ? 20 : 100 });
 
   const events = useMemo<Event[]>(() => {
     if (!data?.events?.length) return EVENTS;

@@ -5,6 +5,7 @@ import { db, ticketsTable, ticketTypesTable, eventsTable, usersTable } from "@wo
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { initializePayment, verifyPayment } from "../lib/paystack.js";
 import { initiateStkPush, queryStkPush } from "../lib/mpesa.js";
+import { initiateMoMoRequest, getMoMoPaymentStatus } from "../lib/mtn-momo.js";
 import { normalizeMsisdn } from "../lib/phone.js";
 import type { Request, Response } from "express";
 
@@ -430,6 +431,167 @@ router.post("/mpesa/callback", async (req: Request, res: Response) => {
 
   // Log for audit — actual ticket creation happens via /mpesa/verify polling
   console.log(`M-Pesa callback OK: ${callback.CheckoutRequestID} receipt=${mpesaReceiptNumber}`);
+});
+
+/**
+ * POST /api/payments/momo/request
+ * Initiate an MTN MoMo Request-to-Pay.
+ * Returns { referenceId, simulated } — frontend polls /momo/verify until resolved.
+ */
+router.post("/momo/request", requireAuth, async (req: Request, res: Response) => {
+  const authed = req as AuthedRequest;
+  const { eventId, ticketTypeId, quantity = 1, phone, countryCode } = req.body as {
+    eventId: string;
+    ticketTypeId: string;
+    quantity?: number;
+    phone: string;
+    countryCode?: string;
+  };
+
+  if (!eventId || !ticketTypeId || !phone) {
+    res.status(400).json({ message: "eventId, ticketTypeId, and phone are required" });
+    return;
+  }
+
+  const [[event], [ticketType], [user]] = await Promise.all([
+    db.select().from(eventsTable).where(eq(eventsTable.id, eventId)).limit(1),
+    db.select().from(ticketTypesTable).where(eq(ticketTypesTable.id, ticketTypeId)).limit(1),
+    db.select().from(usersTable).where(eq(usersTable.id, authed.userId)).limit(1),
+  ]);
+
+  if (!event) { res.status(404).json({ message: "Event not found" }); return; }
+  if (!ticketType) { res.status(404).json({ message: "Ticket type not found" }); return; }
+
+  const available = ticketType.totalQuantity - ticketType.soldQuantity;
+  if (available < quantity) {
+    res.status(400).json({ message: `Only ${available} ticket(s) remaining` });
+    return;
+  }
+
+  const totalAmount = Number(ticketType.price) * quantity;
+  const reference = generatePaymentRef();
+
+  let normalised: string;
+  try {
+    normalised = normalizeMsisdn(phone, countryCode ?? user?.countryCode);
+  } catch (err) {
+    res.status(400).json({ message: err instanceof Error ? err.message : "Invalid phone number" });
+    return;
+  }
+
+  try {
+    const momoResult = await initiateMoMoRequest({
+      phone: normalised,
+      amount: totalAmount,
+      currency: ticketType.currency,
+      externalId: reference,
+      payerMessage: `${event.title} ticket`,
+      payeeNote: "Kultr",
+    });
+
+    if (!momoResult) {
+      res.json({
+        referenceId: `sim_${reference}`,
+        reference,
+        simulated: true,
+        totalAmount,
+        currency: ticketType.currency,
+        customerMessage: "Approve the MoMo payment request on your phone (simulated)",
+      });
+      return;
+    }
+
+    res.json({
+      referenceId: momoResult.referenceId,
+      reference,
+      simulated: false,
+      totalAmount,
+      currency: ticketType.currency,
+      customerMessage: "Check your phone and approve the MoMo payment request",
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "MoMo request failed";
+    res.status(502).json({ message });
+  }
+});
+
+/**
+ * POST /api/payments/momo/verify
+ * Poll MoMo payment status. On SUCCESSFUL, atomically creates the ticket.
+ */
+router.post("/momo/verify", requireAuth, async (req: Request, res: Response) => {
+  const authed = req as AuthedRequest;
+  const { referenceId, reference, simulated, eventId, ticketTypeId, quantity = 1 } = req.body as {
+    referenceId: string;
+    reference: string;
+    simulated?: boolean;
+    eventId: string;
+    ticketTypeId: string;
+    quantity?: number;
+  };
+
+  if (!referenceId || !reference || !eventId || !ticketTypeId) {
+    res.status(400).json({ message: "referenceId, reference, eventId and ticketTypeId are required" });
+    return;
+  }
+
+  const [ticketType] = await db.select().from(ticketTypesTable)
+    .where(eq(ticketTypesTable.id, ticketTypeId)).limit(1);
+
+  if (!ticketType) { res.status(404).json({ message: "Ticket type not found" }); return; }
+
+  let paid = simulated === true;
+
+  if (!paid) {
+    const status = await getMoMoPaymentStatus(referenceId);
+    paid = status?.status === "SUCCESSFUL";
+    if (status?.status === "FAILED") {
+      res.status(402).json({ message: "MoMo payment was declined or failed." });
+      return;
+    }
+  }
+
+  if (!paid) {
+    res.status(202).json({ message: "MoMo payment still pending. Poll again shortly.", status: "PENDING" });
+    return;
+  }
+
+  const available = ticketType.totalQuantity - ticketType.soldQuantity;
+  if (available < quantity) {
+    res.status(400).json({ message: `Only ${available} ticket(s) remaining` });
+    return;
+  }
+
+  const unitPrice = Number(ticketType.price);
+  const totalAmount = unitPrice * quantity;
+
+  const [ticket] = await db.transaction(async (tx) => {
+    await tx.update(ticketTypesTable)
+      .set({ soldQuantity: sql`${ticketTypesTable.soldQuantity} + ${quantity}` })
+      .where(eq(ticketTypesTable.id, ticketTypeId));
+
+    return tx.insert(ticketsTable).values({
+      ticketNumber: generateTicketNumber(),
+      userId: authed.userId,
+      eventId,
+      ticketTypeId,
+      quantity,
+      unitPrice: String(unitPrice),
+      totalAmount: String(totalAmount),
+      currency: ticketType.currency,
+      status: "confirmed",
+      paymentReference: reference,
+      paymentProvider: simulated ? "momo_simulated" : "mtn_momo",
+    }).returning();
+  });
+
+  res.status(201).json({
+    ticketId: ticket.id,
+    ticketNumber: ticket.ticketNumber,
+    status: ticket.status,
+    totalAmount,
+    currency: ticketType.currency,
+  });
 });
 
 export default router;
