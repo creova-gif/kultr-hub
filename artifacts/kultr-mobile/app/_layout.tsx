@@ -77,6 +77,7 @@ function RootLayoutNav() {
       <Stack.Screen name="settings" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="gamification" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="tribe-leaders" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="vibe-tribes" options={{ headerShown: false, presentation: "card" }} />
     </Stack>
   );
 }

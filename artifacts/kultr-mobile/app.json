@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo-icon.png",
-    "scheme": "kultr-mobile",
+    "scheme": "kultr",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
@@ -14,10 +14,22 @@
       "backgroundColor": "#111111"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.kultr.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDisplayName": "Kultr"
+      }
     },
     "android": {
-      "backgroundColor": "#111111"
+      "package": "com.kultr.app",
+      "versionCode": 1,
+      "backgroundColor": "#111111",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/logo-icon.png",
+        "backgroundColor": "#111111"
+      }
     },
     "web": {
       "favicon": "./assets/images/logo-icon.png"
@@ -26,11 +38,24 @@
       [
         "expo-router",
         {
-          "origin": "https://replit.com/"
+          "origin": "https://kultr.app"
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Kultr uses your location to show cultural events happening near you."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Kultr needs access to your photos so you can set your profile picture and upload event images.",
+          "cameraPermission": "Kultr needs camera access so you can take photos for your profile and events."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

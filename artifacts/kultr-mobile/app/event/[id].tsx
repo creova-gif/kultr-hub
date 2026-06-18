@@ -5,6 +5,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   Platform,
@@ -16,6 +17,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { CheckinCelebration } from "@/components/CheckinCelebration";
 import { EventCardCompact } from "@/components/EventCardCompact";
 import { useApp } from "@/context/AppContext";
 import {
@@ -24,17 +26,39 @@ import {
   formatTime,
 } from "@/constants/data";
 import { useColors } from "@/hooks/useColors";
+import { useCheckIn } from "@/hooks/useQuests";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
 import { useEventDetail } from "@/hooks/useEventDetail";
+
+// Avatar palette for the synthetic "who's going" stack.
+const GOING_AVATARS = [
+  { color: "#FF6B00", initial: "A" },
+  { color: "#7B61FF", initial: "M" },
+  { color: "#00C853", initial: "K" },
+  { color: "#4F9DFF", initial: "J" },
+  { color: "#E1306C", initial: "S" },
+];
+
+/** Deterministic "people going" count seeded from the event id (80–499). */
+function seededGoing(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return 80 + (h % 420);
+}
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { isSaved, toggleSaved } = useApp();
+  const { isSaved, toggleSaved, tickets, authToken } = useApp();
   const [selectedTicketType, setSelectedTicketType] = useState(0);
   const { event, isLoading } = useEventDetail(id);
   const { events } = useEventCatalog();
+  const checkIn = useCheckIn();
+  const [celebration, setCelebration] = useState<{ visible: boolean; pointsEarned: number }>({
+    visible: false,
+    pointsEarned: 0,
+  });
 
   const relatedEvents = useMemo(
     () =>
@@ -45,6 +69,36 @@ export default function EventDetailScreen() {
         : [],
     [event, events],
   );
+
+  const goingCount = useMemo(() => (event ? seededGoing(event.id) : 0), [event]);
+  const hasTicket = useMemo(
+    () => !!event && tickets.some((t) => t.eventId === event.id),
+    [event, tickets],
+  );
+
+  const handleCheckIn = () => {
+    if (!event) return;
+    if (!authToken) {
+      router.push("/login");
+      return;
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    checkIn.mutate(event.id, {
+      onSuccess: (res) => {
+        if (res.alreadyCheckedIn) {
+          Alert.alert("Already checked in", `You've already checked in to ${event.title}.`);
+          return;
+        }
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        if (res.legendAwarded) {
+          Alert.alert("🏆 Kultr Legend unlocked!", "You've completed all quests!");
+        }
+        setCelebration({ visible: true, pointsEarned: res.pointsEarned });
+      },
+      onError: (e) =>
+        Alert.alert("Check-in failed", e instanceof Error ? e.message : "Please try again."),
+    });
+  };
 
   if (isLoading && !event) {
     return (
@@ -71,6 +125,13 @@ export default function EventDetailScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <CheckinCelebration
+        visible={celebration.visible}
+        eventTitle={event.title}
+        eventVenue={`${event.venue}, ${event.city}`}
+        pointsEarned={celebration.pointsEarned}
+        onDismiss={() => setCelebration((s) => ({ ...s, visible: false }))}
+      />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: bottomPad + 100 }}
@@ -183,6 +244,47 @@ export default function EventDetailScreen() {
               label="Venue"
               value={`${event.venue}, ${event.city}`}
             />
+          </View>
+
+          {/* Who's going / Social check-in */}
+          <View style={[styles.goingCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.avatarStack}>
+              {GOING_AVATARS.map((g, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.goingAvatar,
+                    {
+                      backgroundColor: g.color,
+                      marginLeft: i === 0 ? 0 : -10,
+                      borderColor: colors.card,
+                    },
+                  ]}
+                >
+                  <Text style={styles.goingAvatarText}>{g.initial}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={styles.goingInfo}>
+              <Text style={[styles.goingCount, { color: colors.foreground }]}>
+                {goingCount}+ going
+              </Text>
+              <Text style={[styles.goingSub, { color: colors.mutedForeground }]}>
+                {hasTicket ? "You're on the list — check in at the venue" : "Join the tribe pulling up"}
+              </Text>
+            </View>
+            {hasTicket && (
+              <Pressable
+                onPress={handleCheckIn}
+                disabled={checkIn.isPending}
+                style={[styles.eventCheckinBtn, { opacity: checkIn.isPending ? 0.6 : 1 }]}
+                accessibilityLabel="Check in to this event"
+                accessibilityRole="button"
+              >
+                <Feather name="map-pin" size={13} color="#fff" />
+                <Text style={styles.eventCheckinText}>Check in</Text>
+              </Pressable>
+            )}
           </View>
 
           {/* Tags */}
@@ -567,6 +669,38 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 16,
   },
+  goingCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 16,
+  },
+  avatarStack: { flexDirection: "row" },
+  goingAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+  },
+  goingAvatarText: { color: "#fff", fontSize: 12, fontWeight: "800" },
+  goingInfo: { flex: 1 },
+  goingCount: { fontSize: 14, fontWeight: "800" },
+  goingSub: { fontSize: 11, marginTop: 2 },
+  eventCheckinBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#FF6B00",
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  eventCheckinText: { color: "#fff", fontSize: 12, fontWeight: "700" },
   tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 20 },
   tag: {
     borderRadius: 20,

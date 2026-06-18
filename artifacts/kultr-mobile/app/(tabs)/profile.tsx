@@ -17,6 +17,7 @@ import { useColors } from "@/hooks/useColors";
 
 const MENU_ITEMS = [
   { icon: "compass", label: "Cultural Quests", route: "/quests" },
+  { icon: "users", label: "Vibe Tribes", route: "/vibe-tribes" },
   { icon: "activity", label: "Streaks & Badges", route: "/gamification" },
   { icon: "flag", label: "Tribe Leaders Program", route: "/tribe-leaders" },
   { icon: "gift", label: "Rewards", route: "/rewards" },
