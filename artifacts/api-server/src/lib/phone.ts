@@ -28,6 +28,10 @@ const DIALING_CODES: Record<string, string> = {
   ZM: "260", // Zambia
   ZW: "263", // Zimbabwe
   MW: "265", // Malawi
+  BW: "267", // Botswana
+  AO: "244", // Angola
+  MZ: "258", // Mozambique
+  NZ: "64", // New Zealand (diaspora)
   // ── Key diaspora markets ──
   US: "1",
   CA: "1",

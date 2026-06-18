@@ -71,6 +71,9 @@ function RootLayoutNav() {
       <Stack.Screen name="culture-compass" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="quests" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="rewards" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="legal/privacy" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="legal/terms" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="privacy-data" options={{ headerShown: false, presentation: "card" }} />
     </Stack>
   );
 }

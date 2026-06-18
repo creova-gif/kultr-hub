@@ -368,7 +368,23 @@ export default function LoginScreen() {
         </Animated.View>
 
         <Text style={[styles.legal, { color: colors.mutedForeground }]}>
-          By continuing you agree to our Terms of Service and Privacy Policy.
+          By continuing you agree to our{" "}
+          <Text
+            style={styles.legalLink}
+            accessibilityRole="link"
+            onPress={() => router.push("/legal/terms")}
+          >
+            Terms of Service
+          </Text>{" "}
+          and{" "}
+          <Text
+            style={styles.legalLink}
+            accessibilityRole="link"
+            onPress={() => router.push("/legal/privacy")}
+          >
+            Privacy Policy
+          </Text>
+          .
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -463,4 +479,5 @@ const styles = StyleSheet.create({
   devText: { fontSize: 12, color: "#FF6B00" },
 
   legal: { fontSize: 11, textAlign: "center", marginTop: 36, lineHeight: 17 },
+  legalLink: { color: "#FF6B00", fontWeight: "700" },
 });

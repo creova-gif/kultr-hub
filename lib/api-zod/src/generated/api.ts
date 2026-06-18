@@ -104,6 +104,19 @@ export const AuthMeResponse = zod.object({
 });
 
 /**
+ * @summary Export all data held about the current user
+ */
+export const ExportMyDataResponse = zod
+  .object({
+    exportedAt: zod.coerce.date(),
+    profile: zod.record(zod.string(), zod.unknown()),
+    tickets: zod.array(zod.record(zod.string(), zod.unknown())),
+    eventsCreated: zod.array(zod.record(zod.string(), zod.unknown())),
+    rewards: zod.record(zod.string(), zod.unknown()),
+  })
+  .describe("Full machine-readable copy of the data held about a user.");
+
+/**
  * @summary List events with optional filters
  */
 export const listEventsQueryLimitDefault = 20;

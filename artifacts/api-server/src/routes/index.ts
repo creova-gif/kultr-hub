@@ -6,6 +6,7 @@ import ticketsRouter from "./tickets.js";
 import paymentsRouter from "./payments.js";
 import fxRouter from "./fx.js";
 import gamificationRouter from "./gamification.js";
+import usersRouter from "./users.js";
 
 const router: IRouter = Router();
 
@@ -15,6 +16,7 @@ router.use("/events", eventsRouter);
 router.use("/tickets", ticketsRouter);
 router.use("/payments", paymentsRouter);
 router.use("/fx", fxRouter);
+router.use("/users", usersRouter);
 router.use(gamificationRouter);
 
 export default router;

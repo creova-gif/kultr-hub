@@ -11,6 +11,11 @@ export type AuthTokenGetter = () => Promise<string | null> | string | null;
 const NO_BODY_STATUS = new Set([204, 205, 304]);
 const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
+// Fail fast on dead/very-slow networks (common on 2G/3G) instead of hanging on
+// the runtime default. Combined with the caller's own signal (e.g. React
+// Query's cancellation) so neither is lost.
+const DEFAULT_TIMEOUT_MS = 20_000;
+
 // ---------------------------------------------------------------------------
 // Module-level configuration
 // ---------------------------------------------------------------------------
@@ -360,7 +365,24 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  const response = await fetch(input, { ...init, method, headers });
+  // Abort the request after DEFAULT_TIMEOUT_MS, while still forwarding any
+  // caller-supplied signal (React Query passes one for cancellation).
+  const timeoutController = new AbortController();
+  const callerSignal = init.signal ?? undefined;
+  const onCallerAbort = () => timeoutController.abort((callerSignal as AbortSignal)?.reason);
+  if (callerSignal) {
+    if (callerSignal.aborted) timeoutController.abort(callerSignal.reason);
+    else callerSignal.addEventListener("abort", onCallerAbort, { once: true });
+  }
+  const timeoutId = setTimeout(() => timeoutController.abort(), DEFAULT_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(input, { ...init, method, headers, signal: timeoutController.signal });
+  } finally {
+    clearTimeout(timeoutId);
+    callerSignal?.removeEventListener("abort", onCallerAbort);
+  }
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);

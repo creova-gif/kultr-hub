@@ -279,9 +279,12 @@ export const EVENTS: Event[] = [
 
 export const CATEGORIES = ["For You", "Music", "Art", "Food", "Heritage", "Comedy", "Sports", "Nightlife"] as const;
 
-export function formatDate(dateStr: string): string {
+// Passing `undefined` lets Intl use the device locale, so dates/times render in
+// each user's regional convention (e.g. "20 Jul 2026" / "20/07", 24h clocks)
+// instead of being hardcoded to en-US. Callers may pass an explicit locale.
+export function formatDate(dateStr: string, locale?: string): string {
   const date = new Date(dateStr + "T00:00:00");
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString(locale, {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -289,11 +292,11 @@ export function formatDate(dateStr: string): string {
   });
 }
 
-export function formatTime(timeStr: string): string {
+export function formatTime(timeStr: string, locale?: string): string {
   const [h, m] = timeStr.split(":").map(Number);
-  const period = h >= 12 ? "PM" : "AM";
-  const hour = h > 12 ? h - 12 : h === 0 ? 12 : h;
-  return `${hour}:${m.toString().padStart(2, "0")} ${period}`;
+  const date = new Date();
+  date.setHours(h, m, 0, 0);
+  return date.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
 }
 
 export function getEventById(id: string): Event | undefined {

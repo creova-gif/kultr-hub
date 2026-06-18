@@ -77,6 +77,25 @@ export interface OtpVerifyRequest {
   displayName?: string;
 }
 
+export type UserDataExportProfile = { [key: string]: unknown };
+
+export type UserDataExportTicketsItem = { [key: string]: unknown };
+
+export type UserDataExportEventsCreatedItem = { [key: string]: unknown };
+
+export type UserDataExportRewards = { [key: string]: unknown };
+
+/**
+ * Full machine-readable copy of the data held about a user.
+ */
+export interface UserDataExport {
+  exportedAt: string;
+  profile: UserDataExportProfile;
+  tickets: UserDataExportTicketsItem[];
+  eventsCreated: UserDataExportEventsCreatedItem[];
+  rewards: UserDataExportRewards;
+}
+
 export interface TicketTypeSummary {
   id: string;
   name: string;

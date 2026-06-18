@@ -44,6 +44,7 @@ import type {
   TicketListResponse,
   UnlockPerkRequest,
   UnlockPerkResponse,
+  UserDataExport,
   UserProfile,
 } from "./api.schemas";
 
@@ -617,6 +618,160 @@ export function useAuthMe<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Export all data held about the current user
+ */
+export const getExportMyDataUrl = () => {
+  return `/api/users/me/export`;
+};
+
+export const exportMyData = async (
+  options?: RequestInit,
+): Promise<UserDataExport> => {
+  return customFetch<UserDataExport>(getExportMyDataUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportMyDataQueryKey = () => {
+  return [`/api/users/me/export`] as const;
+};
+
+export const getExportMyDataQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportMyData>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof exportMyData>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getExportMyDataQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof exportMyData>>> = ({
+    signal,
+  }) => exportMyData({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportMyData>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportMyDataQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportMyData>>
+>;
+export type ExportMyDataQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Export all data held about the current user
+ */
+
+export function useExportMyData<
+  TData = Awaited<ReturnType<typeof exportMyData>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof exportMyData>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportMyDataQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Permanently delete the current user's account and data
+ */
+export const getDeleteMyAccountUrl = () => {
+  return `/api/users/me`;
+};
+
+export const deleteMyAccount = async (options?: RequestInit): Promise<void> => {
+  return customFetch<void>(getDeleteMyAccountUrl(), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteMyAccountMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMyAccount>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteMyAccount>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["deleteMyAccount"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteMyAccount>>,
+    void
+  > = () => {
+    return deleteMyAccount(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteMyAccountMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteMyAccount>>
+>;
+
+export type DeleteMyAccountMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Permanently delete the current user's account and data
+ */
+export const useDeleteMyAccount = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMyAccount>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteMyAccount>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getDeleteMyAccountMutationOptions(options));
+};
 
 /**
  * @summary List events with optional filters

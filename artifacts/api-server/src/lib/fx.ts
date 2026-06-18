@@ -33,6 +33,10 @@ const STATIC_USD_RATES: Record<string, number> = {
   XAF: 600, // Central African CFA franc (CM, …)
   MAD: 9.9,
   ZMW: 26,
+  ZWL: 26, // Zimbabwe (indicative)
+  BWP: 13.5, // Botswana Pula
+  AOA: 910, // Angolan Kwanza
+  MZN: 64, // Mozambican Metical
   EUR: 0.92,
   GBP: 0.79,
   CAD: 1.36,
