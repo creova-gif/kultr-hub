@@ -318,7 +318,7 @@ export default function LoginScreen() {
                 onChangeText={setName}
                 autoComplete="name"
                 returnKeyType="done"
-                onSubmitEditing={handleVerify}
+                onSubmitEditing={() => handleVerify()}
               />
 
               {!!error && (
@@ -327,7 +327,7 @@ export default function LoginScreen() {
 
               <Pressable
                 style={[styles.primaryBtn, verifyOtp.isPending && styles.btnDim]}
-                onPress={handleVerify}
+                onPress={() => handleVerify()}
                 disabled={verifyOtp.isPending}
               >
                 {verifyOtp.isPending ? (
