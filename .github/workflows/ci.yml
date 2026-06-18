@@ -110,3 +110,4 @@ jobs:
         env:
           EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL || 'http://localhost:3001' }}
           EXPO_PUBLIC_SHARE_BASE_URL: ${{ vars.EXPO_PUBLIC_SHARE_BASE_URL || 'https://kultr.io' }}
+          EXPO_PUBLIC_DOMAIN: ${{ vars.EXPO_PUBLIC_DOMAIN || 'kultr.io' }}
