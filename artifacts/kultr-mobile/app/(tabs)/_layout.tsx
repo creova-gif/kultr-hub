@@ -43,6 +43,8 @@ function FloatingTabBar({ state, navigation }: FloatingTabBarProps) {
           const tab = TABS[index];
           if (!tab) return null;
 
+          const tint = focused ? "#FF6B00" : "#8A8A8A";
+
           return (
             <Pressable
               key={route.key}
@@ -62,16 +64,13 @@ function FloatingTabBar({ state, navigation }: FloatingTabBarProps) {
               accessibilityRole="tab"
               accessibilityState={{ selected: focused }}
             >
-              {focused ? (
-                <View style={styles.activeContent}>
-                  <Feather name={tab.icon} size={15} color="#FF6B00" />
-                  <Text style={styles.activeLabel}>{tab.label}</Text>
-                </View>
-              ) : (
-                <View style={styles.inactiveContent}>
-                  <Feather name={tab.icon} size={22} color="#888" />
-                </View>
-              )}
+              <View style={styles.tabContent}>
+                <Feather name={tab.icon} size={22} color={tint} />
+                <Text style={[styles.tabLabel, { color: tint }]} numberOfLines={1}>
+                  {tab.label}
+                </Text>
+                {focused && <View style={styles.activeDot} />}
+              </View>
             </Pressable>
           );
         })}
@@ -109,11 +108,11 @@ const styles = StyleSheet.create({
   glow: {
     position: "absolute",
     width: PILL_WIDTH,
-    height: 60,
-    borderRadius: 40,
+    height: 64,
+    borderRadius: 28,
     backgroundColor: "#FF6B00",
-    opacity: 0.12,
-    top: 2,
+    opacity: 0.1,
+    top: 4,
     shadowColor: "#FF6B00",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
@@ -122,15 +121,14 @@ const styles = StyleSheet.create({
   },
   pill: {
     width: PILL_WIDTH,
-    height: 62,
-    borderRadius: 31,
+    height: 68,
+    borderRadius: 28,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 8,
-    gap: 2,
-    backgroundColor: "#1A1A1A",
+    paddingHorizontal: 6,
+    backgroundColor: "#161616",
     borderWidth: 1,
-    borderColor: "#2A2A2A",
+    borderColor: "#262626",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.6,
@@ -139,32 +137,26 @@ const styles = StyleSheet.create({
   },
   tabItem: {
     flex: 1,
-    height: 46,
+    height: 60,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 23,
   },
-  activeContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(255,107,0,0.15)",
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 23,
-    borderWidth: 1,
-    borderColor: "rgba(255,107,0,0.3)",
-  },
-  activeLabel: {
-    color: "#FF6B00",
-    fontSize: 13,
-    fontWeight: "700",
-    letterSpacing: 0.2,
-  },
-  inactiveContent: {
+  tabContent: {
     alignItems: "center",
     justifyContent: "center",
-    width: 44,
-    height: 44,
+    gap: 4,
+  },
+  tabLabel: {
+    fontSize: 10.5,
+    fontWeight: "600",
+    letterSpacing: 0.1,
+  },
+  activeDot: {
+    position: "absolute",
+    bottom: -8,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#FF6B00",
   },
 });
