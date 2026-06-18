@@ -205,6 +205,145 @@ export interface CreatorAnalytics {
   liveEvents: number;
 }
 
+export type CollectibleRarity =
+  (typeof CollectibleRarity)[keyof typeof CollectibleRarity];
+
+export const CollectibleRarity = {
+  common: "common",
+  rare: "rare",
+  epic: "epic",
+  legendary: "legendary",
+} as const;
+
+export interface PassStatus {
+  active: boolean;
+  multiplier: number;
+}
+
+export interface OverallProgress {
+  total: number;
+  completed: number;
+  percent: number;
+  allCompleted: boolean;
+}
+
+export interface QuestView {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  target: number;
+  progress: number;
+  completed: boolean;
+  completedAt?: string | null;
+  points: number;
+  collectibleName: string;
+  collectibleRarity: CollectibleRarity;
+  badgeImageKey?: string | null;
+  percent: number;
+}
+
+export interface CollectibleView {
+  slug: string;
+  name: string;
+  rarity: CollectibleRarity;
+  imageKey?: string | null;
+  earnedAt: string;
+}
+
+export interface QuestProgress {
+  balance: number;
+  lifetimeEarned: number;
+  pass: PassStatus;
+  quests: QuestView[];
+  overall: OverallProgress;
+  collectibles: CollectibleView[];
+}
+
+export interface CheckinRequest {
+  eventId: string;
+  ticketId?: string;
+}
+
+export interface QuestCompletion {
+  slug: string;
+  name: string;
+  points: number;
+}
+
+export interface GrantedCollectible {
+  slug: string;
+  name: string;
+  rarity: string;
+}
+
+export interface CheckinResult {
+  alreadyCheckedIn: boolean;
+  pointsEarned: number;
+  questsCompleted: QuestCompletion[];
+  collectiblesGranted: GrantedCollectible[];
+  allCompleted?: boolean;
+  legendAwarded?: boolean;
+}
+
+export interface PerkView {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string | null;
+  cost: number;
+  repeatable: boolean;
+  active: boolean;
+}
+
+export interface PerkListResponse {
+  perks: PerkView[];
+}
+
+export interface UnlockPerkRequest {
+  perkSlug: string;
+}
+
+export type UnlockPerkResponsePerk = {
+  slug: string;
+  name: string;
+};
+
+export interface UnlockPerkResponse {
+  unlocked: boolean;
+  perk: UnlockPerkResponsePerk;
+  balanceAfter: number;
+}
+
+export interface LedgerEntry {
+  id: string;
+  seq: number;
+  userId: string;
+  delta: number;
+  reason: string;
+  balanceAfter: number;
+  referenceType?: string | null;
+  referenceId?: string | null;
+  idempotencyKey: string;
+  prevHash?: string | null;
+  txHash: string;
+  createdAt: string;
+}
+
+export interface LedgerResponse {
+  entries: LedgerEntry[];
+}
+
+export interface PassActivateRequest {
+  multiplier?: string;
+}
+
+export interface PassActivateResponse {
+  active: boolean;
+  multiplier: number;
+  tier: string;
+}
+
 export type ListEventsParams = {
   category?: string;
   city?: string;

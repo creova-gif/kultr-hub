@@ -3,6 +3,7 @@ import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect } from "react";
 import {
+  Alert,
   Image,
   Platform,
   Pressable,
@@ -20,6 +21,7 @@ import { useApp } from "@/context/AppContext";
 import { formatDate, formatTime } from "@/constants/data";
 import { useColors } from "@/hooks/useColors";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
+import { useCheckIn } from "@/hooks/useQuests";
 
 const LOGO_WORDMARK = require("@/assets/images/logo-wordmark.png");
 
@@ -33,8 +35,9 @@ export default function TicketViewScreen() {
   }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { tickets } = useApp();
+  const { tickets, authToken } = useApp();
   const { getEventById } = useEventCatalog();
+  const checkIn = useCheckIn();
 
   const ticket = tickets.find((t) => t.id === id);
   const resolvedEventId = ticket?.eventId ?? eventId ?? "";
@@ -50,6 +53,26 @@ export default function TicketViewScreen() {
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
   const bottomPad = Platform.OS === "web" ? Math.max(insets.bottom, 34) : insets.bottom;
+
+  const handleCheckIn = () => {
+    if (!resolvedEventId) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    checkIn.mutate(resolvedEventId, {
+      onSuccess: (res) => {
+        if (res.alreadyCheckedIn) {
+          Alert.alert("Already checked in", "You've already checked in to this event.");
+          return;
+        }
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        const lines: string[] = [];
+        if (res.pointsEarned > 0) lines.push(`+${res.pointsEarned} KULTROINS`);
+        if (res.questsCompleted.length) lines.push(`Completed: ${res.questsCompleted.map((q) => q.name).join(", ")}`);
+        if (res.legendAwarded) lines.push("🏆 Kultr Legend unlocked!");
+        Alert.alert("Checked in!", lines.join("\n") || "Welcome — enjoy the event.");
+      },
+      onError: (e) => Alert.alert("Check-in failed", e instanceof Error ? e.message : "Please try again."),
+    });
+  };
 
   if (!event) {
     return (
@@ -140,6 +163,18 @@ export default function TicketViewScreen() {
             <Text style={[styles.qrNote, { color: colors.mutedForeground }]}>
               Present this QR code at the venue entrance
             </Text>
+            {!!authToken && (
+              <Pressable
+                onPress={handleCheckIn}
+                disabled={checkIn.isPending}
+                style={[styles.checkInBtn, { borderColor: "#FF6B00", opacity: checkIn.isPending ? 0.6 : 1 }]}
+                accessibilityLabel="Check in and earn rewards"
+                accessibilityRole="button"
+              >
+                <Feather name="check-circle" size={15} color="#FF6B00" />
+                <Text style={styles.checkInBtnText}>Check in & earn rewards</Text>
+              </Pressable>
+            )}
           </View>
 
           {/* Perforated divider */}
@@ -276,6 +311,17 @@ const styles = StyleSheet.create({
   eventSubtitle: { color: "#FF6B00", fontSize: 13, marginBottom: 16 },
   qrSection: { alignItems: "center", paddingVertical: 24, paddingHorizontal: 20 },
   qrNote: { fontSize: 11, marginTop: 12, textAlign: "center" },
+  checkInBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1.5,
+    borderRadius: 22,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    marginTop: 16,
+  },
+  checkInBtnText: { color: "#FF6B00", fontSize: 13, fontWeight: "700" },
   dividerRow: { flexDirection: "row", alignItems: "center", height: 24 },
   cutoutLeft: { width: 18, height: 36, borderTopRightRadius: 18, borderBottomRightRadius: 18, marginLeft: -1 },
   cutoutRight: { width: 18, height: 36, borderTopLeftRadius: 18, borderBottomLeftRadius: 18, marginRight: -1 },

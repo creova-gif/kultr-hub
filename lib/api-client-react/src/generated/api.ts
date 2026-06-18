@@ -18,6 +18,8 @@ import type {
 
 import type {
   AuthResponse,
+  CheckinRequest,
+  CheckinResult,
   CreateEventRequest,
   CreatorAnalytics,
   ErrorResponse,
@@ -26,15 +28,22 @@ import type {
   FxRates,
   GetFxRatesParams,
   HealthStatus,
+  LedgerResponse,
   ListEventsParams,
   LoginRequest,
   OtpRequest,
   OtpRequestResponse,
   OtpVerifyRequest,
+  PassActivateRequest,
+  PassActivateResponse,
+  PerkListResponse,
   PurchaseTicketRequest,
+  QuestProgress,
   SignupRequest,
   TicketDetail,
   TicketListResponse,
+  UnlockPerkRequest,
+  UnlockPerkResponse,
   UserProfile,
 } from "./api.schemas";
 
@@ -1363,3 +1372,478 @@ export function useGetFxRates<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Get the signed-in user's quest progress, balance and collectibles
+ */
+export const getGetQuestProgressUrl = () => {
+  return `/api/quests/progress`;
+};
+
+export const getQuestProgress = async (
+  options?: RequestInit,
+): Promise<QuestProgress> => {
+  return customFetch<QuestProgress>(getGetQuestProgressUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetQuestProgressQueryKey = () => {
+  return [`/api/quests/progress`] as const;
+};
+
+export const getGetQuestProgressQueryOptions = <
+  TData = Awaited<ReturnType<typeof getQuestProgress>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getQuestProgress>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetQuestProgressQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getQuestProgress>>
+  > = ({ signal }) => getQuestProgress({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getQuestProgress>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetQuestProgressQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getQuestProgress>>
+>;
+export type GetQuestProgressQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get the signed-in user's quest progress, balance and collectibles
+ */
+
+export function useGetQuestProgress<
+  TData = Awaited<ReturnType<typeof getQuestProgress>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getQuestProgress>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetQuestProgressQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Verify event attendance and advance quests
+ */
+export const getVerifyCheckinUrl = () => {
+  return `/api/check-in/verify`;
+};
+
+export const verifyCheckin = async (
+  checkinRequest: CheckinRequest,
+  options?: RequestInit,
+): Promise<CheckinResult> => {
+  return customFetch<CheckinResult>(getVerifyCheckinUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(checkinRequest),
+  });
+};
+
+export const getVerifyCheckinMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyCheckin>>,
+    TError,
+    { data: BodyType<CheckinRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof verifyCheckin>>,
+  TError,
+  { data: BodyType<CheckinRequest> },
+  TContext
+> => {
+  const mutationKey = ["verifyCheckin"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof verifyCheckin>>,
+    { data: BodyType<CheckinRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return verifyCheckin(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type VerifyCheckinMutationResult = NonNullable<
+  Awaited<ReturnType<typeof verifyCheckin>>
+>;
+export type VerifyCheckinMutationBody = BodyType<CheckinRequest>;
+export type VerifyCheckinMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Verify event attendance and advance quests
+ */
+export const useVerifyCheckin = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verifyCheckin>>,
+    TError,
+    { data: BodyType<CheckinRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof verifyCheckin>>,
+  TError,
+  { data: BodyType<CheckinRequest> },
+  TContext
+> => {
+  return useMutation(getVerifyCheckinMutationOptions(options));
+};
+
+/**
+ * @summary List redeemable perks
+ */
+export const getListPerksUrl = () => {
+  return `/api/perks`;
+};
+
+export const listPerks = async (
+  options?: RequestInit,
+): Promise<PerkListResponse> => {
+  return customFetch<PerkListResponse>(getListPerksUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListPerksQueryKey = () => {
+  return [`/api/perks`] as const;
+};
+
+export const getListPerksQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPerks>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listPerks>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListPerksQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listPerks>>> = ({
+    signal,
+  }) => listPerks({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPerks>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPerksQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPerks>>
+>;
+export type ListPerksQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List redeemable perks
+ */
+
+export function useListPerks<
+  TData = Awaited<ReturnType<typeof listPerks>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listPerks>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPerksQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Spend KULTROINS to unlock a perk
+ */
+export const getUnlockPerkUrl = () => {
+  return `/api/perks/unlock`;
+};
+
+export const unlockPerk = async (
+  unlockPerkRequest: UnlockPerkRequest,
+  options?: RequestInit,
+): Promise<UnlockPerkResponse> => {
+  return customFetch<UnlockPerkResponse>(getUnlockPerkUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(unlockPerkRequest),
+  });
+};
+
+export const getUnlockPerkMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof unlockPerk>>,
+    TError,
+    { data: BodyType<UnlockPerkRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof unlockPerk>>,
+  TError,
+  { data: BodyType<UnlockPerkRequest> },
+  TContext
+> => {
+  const mutationKey = ["unlockPerk"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof unlockPerk>>,
+    { data: BodyType<UnlockPerkRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return unlockPerk(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UnlockPerkMutationResult = NonNullable<
+  Awaited<ReturnType<typeof unlockPerk>>
+>;
+export type UnlockPerkMutationBody = BodyType<UnlockPerkRequest>;
+export type UnlockPerkMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Spend KULTROINS to unlock a perk
+ */
+export const useUnlockPerk = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof unlockPerk>>,
+    TError,
+    { data: BodyType<UnlockPerkRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof unlockPerk>>,
+  TError,
+  { data: BodyType<UnlockPerkRequest> },
+  TContext
+> => {
+  return useMutation(getUnlockPerkMutationOptions(options));
+};
+
+/**
+ * @summary Get the signed-in user's KULTROIN ledger history
+ */
+export const getGetWalletLedgerUrl = () => {
+  return `/api/wallet/ledger`;
+};
+
+export const getWalletLedger = async (
+  options?: RequestInit,
+): Promise<LedgerResponse> => {
+  return customFetch<LedgerResponse>(getGetWalletLedgerUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetWalletLedgerQueryKey = () => {
+  return [`/api/wallet/ledger`] as const;
+};
+
+export const getGetWalletLedgerQueryOptions = <
+  TData = Awaited<ReturnType<typeof getWalletLedger>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getWalletLedger>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetWalletLedgerQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getWalletLedger>>> = ({
+    signal,
+  }) => getWalletLedger({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getWalletLedger>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetWalletLedgerQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getWalletLedger>>
+>;
+export type GetWalletLedgerQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get the signed-in user's KULTROIN ledger history
+ */
+
+export function useGetWalletLedger<
+  TData = Awaited<ReturnType<typeof getWalletLedger>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getWalletLedger>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetWalletLedgerQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Activate or refresh the KULTR PASS entitlement
+ */
+export const getActivatePassUrl = () => {
+  return `/api/pass/activate`;
+};
+
+export const activatePass = async (
+  passActivateRequest?: PassActivateRequest,
+  options?: RequestInit,
+): Promise<PassActivateResponse> => {
+  return customFetch<PassActivateResponse>(getActivatePassUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(passActivateRequest),
+  });
+};
+
+export const getActivatePassMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof activatePass>>,
+    TError,
+    { data: BodyType<PassActivateRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof activatePass>>,
+  TError,
+  { data: BodyType<PassActivateRequest> },
+  TContext
+> => {
+  const mutationKey = ["activatePass"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof activatePass>>,
+    { data: BodyType<PassActivateRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return activatePass(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ActivatePassMutationResult = NonNullable<
+  Awaited<ReturnType<typeof activatePass>>
+>;
+export type ActivatePassMutationBody = BodyType<PassActivateRequest>;
+export type ActivatePassMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Activate or refresh the KULTR PASS entitlement
+ */
+export const useActivatePass = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof activatePass>>,
+    TError,
+    { data: BodyType<PassActivateRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof activatePass>>,
+  TError,
+  { data: BodyType<PassActivateRequest> },
+  TContext
+> => {
+  return useMutation(getActivatePassMutationOptions(options));
+};

@@ -382,3 +382,129 @@ export const GetFxRatesResponse = zod.object({
   source: zod.enum(["live", "static"]),
   fetchedAt: zod.coerce.date(),
 });
+
+/**
+ * @summary Get the signed-in user's quest progress, balance and collectibles
+ */
+export const GetQuestProgressResponse = zod.object({
+  balance: zod.number(),
+  lifetimeEarned: zod.number(),
+  pass: zod.object({
+    active: zod.boolean(),
+    multiplier: zod.number(),
+  }),
+  quests: zod.array(
+    zod.object({
+      id: zod.string(),
+      slug: zod.string(),
+      name: zod.string(),
+      description: zod.string(),
+      target: zod.number(),
+      progress: zod.number(),
+      completed: zod.boolean(),
+      completedAt: zod.coerce.date().nullish(),
+      points: zod.number(),
+      collectibleName: zod.string(),
+      collectibleRarity: zod.enum(["common", "rare", "epic", "legendary"]),
+      badgeImageKey: zod.string().nullish(),
+      percent: zod.number(),
+    }),
+  ),
+  overall: zod.object({
+    total: zod.number(),
+    completed: zod.number(),
+    percent: zod.number(),
+    allCompleted: zod.boolean(),
+  }),
+  collectibles: zod.array(
+    zod.object({
+      slug: zod.string(),
+      name: zod.string(),
+      rarity: zod.enum(["common", "rare", "epic", "legendary"]),
+      imageKey: zod.string().nullish(),
+      earnedAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Verify event attendance and advance quests
+ */
+export const VerifyCheckinBody = zod.object({
+  eventId: zod.string(),
+  ticketId: zod.string().optional(),
+});
+
+export const VerifyCheckinResponse = zod.object({
+  alreadyCheckedIn: zod.boolean(),
+  pointsEarned: zod.number(),
+  questsCompleted: zod.array(
+    zod.object({
+      slug: zod.string(),
+      name: zod.string(),
+      points: zod.number(),
+    }),
+  ),
+  collectiblesGranted: zod.array(
+    zod.object({
+      slug: zod.string(),
+      name: zod.string(),
+      rarity: zod.string(),
+    }),
+  ),
+  allCompleted: zod.boolean().optional(),
+  legendAwarded: zod.boolean().optional(),
+});
+
+/**
+ * @summary List redeemable perks
+ */
+export const ListPerksResponse = zod.object({
+  perks: zod.array(
+    zod.object({
+      id: zod.string(),
+      slug: zod.string(),
+      name: zod.string(),
+      description: zod.string().nullish(),
+      cost: zod.number(),
+      repeatable: zod.boolean(),
+      active: zod.boolean(),
+    }),
+  ),
+});
+
+/**
+ * @summary Spend KULTROINS to unlock a perk
+ */
+export const UnlockPerkBody = zod.object({
+  perkSlug: zod.string(),
+});
+
+/**
+ * @summary Get the signed-in user's KULTROIN ledger history
+ */
+export const GetWalletLedgerResponse = zod.object({
+  entries: zod.array(
+    zod.object({
+      id: zod.string(),
+      seq: zod.number(),
+      userId: zod.string(),
+      delta: zod.number(),
+      reason: zod.string(),
+      balanceAfter: zod.number(),
+      referenceType: zod.string().nullish(),
+      referenceId: zod.string().nullish(),
+      idempotencyKey: zod.string(),
+      prevHash: zod.string().nullish(),
+      txHash: zod.string(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Activate or refresh the KULTR PASS entitlement
+ */
+export const ActivatePassBody = zod.object({
+  multiplier: zod.string().optional(),
+});

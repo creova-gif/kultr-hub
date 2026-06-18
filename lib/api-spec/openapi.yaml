@@ -18,6 +18,8 @@ tags:
     description: Ticket purchase and retrieval
   - name: fx
     description: Foreign-exchange rates
+  - name: gamification
+    description: Quests, KULTROIN rewards, perks and collectibles
 
 paths:
   /healthz:
@@ -378,6 +380,145 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FxRates"
+
+  # ── GAMIFICATION ──────────────────────────────────────────────────────────
+  /quests/progress:
+    get:
+      operationId: getQuestProgress
+      tags: [gamification]
+      summary: Get the signed-in user's quest progress, balance and collectibles
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Quest progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestProgress"
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /check-in/verify:
+    post:
+      operationId: verifyCheckin
+      tags: [gamification]
+      summary: Verify event attendance and advance quests
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckinRequest"
+      responses:
+        "200":
+          description: Already checked in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckinResult"
+        "201":
+          description: Checked in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckinResult"
+        "403":
+          description: No confirmed ticket for this event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /perks:
+    get:
+      operationId: listPerks
+      tags: [gamification]
+      summary: List redeemable perks
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Perks catalog
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PerkListResponse"
+
+  /perks/unlock:
+    post:
+      operationId: unlockPerk
+      tags: [gamification]
+      summary: Spend KULTROINS to unlock a perk
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UnlockPerkRequest"
+      responses:
+        "201":
+          description: Perk unlocked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnlockPerkResponse"
+        "402":
+          description: Insufficient KULTROINS
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Perk already unlocked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /wallet/ledger:
+    get:
+      operationId: getWalletLedger
+      tags: [gamification]
+      summary: Get the signed-in user's KULTROIN ledger history
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Ledger entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LedgerResponse"
+
+  /pass/activate:
+    post:
+      operationId: activatePass
+      tags: [gamification]
+      summary: Activate or refresh the KULTR PASS entitlement
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PassActivateRequest"
+      responses:
+        "201":
+          description: Pass activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PassActivateResponse"
 
 components:
   securitySchemes:
@@ -837,3 +978,277 @@ components:
           type: integer
         liveEvents:
           type: integer
+
+    # ── GAMIFICATION ──────────────────────────────────────────────────────────
+    CollectibleRarity:
+      type: string
+      enum: [common, rare, epic, legendary]
+
+    PassStatus:
+      type: object
+      required: [active, multiplier]
+      properties:
+        active:
+          type: boolean
+        multiplier:
+          type: number
+
+    OverallProgress:
+      type: object
+      required: [total, completed, percent, allCompleted]
+      properties:
+        total:
+          type: integer
+        completed:
+          type: integer
+        percent:
+          type: integer
+        allCompleted:
+          type: boolean
+
+    QuestView:
+      type: object
+      required:
+        - id
+        - slug
+        - name
+        - description
+        - target
+        - progress
+        - completed
+        - points
+        - collectibleName
+        - collectibleRarity
+        - percent
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        target:
+          type: integer
+        progress:
+          type: integer
+        completed:
+          type: boolean
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        points:
+          type: integer
+        collectibleName:
+          type: string
+        collectibleRarity:
+          $ref: "#/components/schemas/CollectibleRarity"
+        badgeImageKey:
+          type: string
+          nullable: true
+        percent:
+          type: integer
+
+    CollectibleView:
+      type: object
+      required: [slug, name, rarity, earnedAt]
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        rarity:
+          $ref: "#/components/schemas/CollectibleRarity"
+        imageKey:
+          type: string
+          nullable: true
+        earnedAt:
+          type: string
+          format: date-time
+
+    QuestProgress:
+      type: object
+      required: [balance, lifetimeEarned, pass, quests, overall, collectibles]
+      properties:
+        balance:
+          type: integer
+        lifetimeEarned:
+          type: integer
+        pass:
+          $ref: "#/components/schemas/PassStatus"
+        quests:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuestView"
+        overall:
+          $ref: "#/components/schemas/OverallProgress"
+        collectibles:
+          type: array
+          items:
+            $ref: "#/components/schemas/CollectibleView"
+
+    CheckinRequest:
+      type: object
+      required: [eventId]
+      properties:
+        eventId:
+          type: string
+        ticketId:
+          type: string
+
+    QuestCompletion:
+      type: object
+      required: [slug, name, points]
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        points:
+          type: integer
+
+    GrantedCollectible:
+      type: object
+      required: [slug, name, rarity]
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        rarity:
+          type: string
+
+    CheckinResult:
+      type: object
+      required: [alreadyCheckedIn, pointsEarned, questsCompleted, collectiblesGranted]
+      properties:
+        alreadyCheckedIn:
+          type: boolean
+        pointsEarned:
+          type: integer
+        questsCompleted:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuestCompletion"
+        collectiblesGranted:
+          type: array
+          items:
+            $ref: "#/components/schemas/GrantedCollectible"
+        allCompleted:
+          type: boolean
+        legendAwarded:
+          type: boolean
+
+    PerkView:
+      type: object
+      required: [id, slug, name, cost, repeatable, active]
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        cost:
+          type: integer
+        repeatable:
+          type: boolean
+        active:
+          type: boolean
+
+    PerkListResponse:
+      type: object
+      required: [perks]
+      properties:
+        perks:
+          type: array
+          items:
+            $ref: "#/components/schemas/PerkView"
+
+    UnlockPerkRequest:
+      type: object
+      required: [perkSlug]
+      properties:
+        perkSlug:
+          type: string
+
+    UnlockPerkResponse:
+      type: object
+      required: [unlocked, perk, balanceAfter]
+      properties:
+        unlocked:
+          type: boolean
+        perk:
+          type: object
+          required: [slug, name]
+          properties:
+            slug:
+              type: string
+            name:
+              type: string
+        balanceAfter:
+          type: integer
+
+    LedgerEntry:
+      type: object
+      required: [id, seq, userId, delta, reason, balanceAfter, idempotencyKey, txHash, createdAt]
+      properties:
+        id:
+          type: string
+        seq:
+          type: integer
+        userId:
+          type: string
+        delta:
+          type: integer
+        reason:
+          type: string
+        balanceAfter:
+          type: integer
+        referenceType:
+          type: string
+          nullable: true
+        referenceId:
+          type: string
+          nullable: true
+        idempotencyKey:
+          type: string
+        prevHash:
+          type: string
+          nullable: true
+        txHash:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    LedgerResponse:
+      type: object
+      required: [entries]
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/LedgerEntry"
+
+    PassActivateRequest:
+      type: object
+      properties:
+        multiplier:
+          type: string
+
+    PassActivateResponse:
+      type: object
+      required: [active, multiplier, tier]
+      properties:
+        active:
+          type: boolean
+        multiplier:
+          type: number
+        tier:
+          type: string
