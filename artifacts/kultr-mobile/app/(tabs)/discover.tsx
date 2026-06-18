@@ -62,6 +62,13 @@ export default function DiscoverScreen() {
           <Text style={[styles.headerTitle, { color: colors.foreground }]}>
             Culture <Text style={{ color: "#FF6B00" }}>Compass</Text>
           </Text>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); router.push("/culture-compass" as any); }}
+            style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(255,107,0,0.1)", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: "rgba(255,107,0,0.25)" }}
+          >
+            <Feather name="map" size={12} color="#FF6B00" />
+            <Text style={{ color: "#FF6B00", fontSize: 12, fontWeight: "700" }}>Map View</Text>
+          </Pressable>
           {/* Location chip — now tappable */}
           <Pressable
             onPress={() => { Haptics.selectionAsync(); setShowCountryPicker(true); }}

@@ -18,7 +18,9 @@ const { width } = Dimensions.get("window");
 
 const TABS = [
   { name: "index", label: "Home", icon: "home" },
+  { name: "foryou", label: "For You", icon: "star" },
   { name: "discover", label: "Discover", icon: "compass" },
+  { name: "social", label: "Social", icon: "users" },
   { name: "tickets", label: "Tickets", icon: "tag" },
   { name: "profile", label: "Profile", icon: "user" },
 ] as const;
@@ -83,7 +85,9 @@ export default function TabLayout() {
       screenOptions={{ headerShown: false }}
     >
       <Tabs.Screen name="index" options={{ title: "Home" }} />
+      <Tabs.Screen name="foryou" options={{ title: "For You" }} />
       <Tabs.Screen name="discover" options={{ title: "Discover" }} />
+      <Tabs.Screen name="social" options={{ title: "Social" }} />
       <Tabs.Screen name="tickets" options={{ title: "Tickets" }} />
       <Tabs.Screen name="profile" options={{ title: "Profile" }} />
     </Tabs>
