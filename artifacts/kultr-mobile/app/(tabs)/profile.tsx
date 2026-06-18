@@ -25,7 +25,7 @@ const MENU_ITEMS = [
   { icon: "users", label: "Following", route: null },
   { icon: "bell", label: "Notifications", route: "/notifications" },
   { icon: "shield", label: "Privacy & Data", route: "/privacy-data" },
-  { icon: "settings", label: "Settings", route: null },
+  { icon: "settings", label: "Settings", route: "/settings" },
   { icon: "help-circle", label: "Help & Support", route: null },
 ] as const;
 

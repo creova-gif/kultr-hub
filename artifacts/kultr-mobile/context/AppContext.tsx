@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { I18nManager, Alert } from "react-native";
 import { EA_COUNTRIES, getCountryByCurrency, type EACountry } from "@/constants/currencies";
 import type { Language } from "@/constants/translations";
 import { setAuthTokenGetter, useGetCreatorAnalytics, getGetCreatorAnalyticsQueryKey, type CreatedEventStats } from "@workspace/api-client-react";
@@ -54,6 +55,7 @@ interface AppContextType {
   authToken: string | null;
   authUser: AuthUser | null;
   language: Language;
+  isRTL: boolean;
   lowBandwidth: boolean;
   addTicket: (ticket: PurchasedTicket) => void;
   toggleSaved: (eventId: string) => void;
@@ -64,7 +66,7 @@ interface AppContextType {
   addCreatedEvent: (event: CreatedEvent) => void;
   setAuth: (token: string, user: AuthUser) => Promise<void>;
   clearAuth: () => Promise<void>;
-  setLanguage: (lang: Language) => void;
+  setLanguage: (lang: Language) => Promise<void>;
   setLowBandwidth: (val: boolean) => void;
 }
 
@@ -93,6 +95,7 @@ const DEMO_CREATED_EVENTS: CreatedEvent[] = [
 ];
 
 const TOKEN_KEY = "kultr_auth_token";
+const LANG_KEY = "kultr_language";
 
 function adaptAnalyticsStat(stat: CreatedEventStats): CreatedEvent {
   const date = stat.eventDate.slice(0, 10);
@@ -139,7 +142,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [createdEvents, setCreatedEvents] = useState<CreatedEvent[]>(DEMO_CREATED_EVENTS);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
-  const [language, setLanguage] = useState<Language>("en");
+  const [language, setLanguageState] = useState<Language>("en");
   const [lowBandwidth, setLowBandwidth] = useState(false);
 
   // Fetch creator analytics when authenticated
@@ -163,12 +166,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => setAuthTokenGetter(null);
   }, [authToken]);
 
-  // Restore persisted token on mount
+  // Restore persisted token + language on mount
   React.useEffect(() => {
     AsyncStorage.getItem(TOKEN_KEY).then((stored) => {
       if (stored) setAuthToken(stored);
     });
+    AsyncStorage.getItem(LANG_KEY).then((stored) => {
+      if (stored && ["en", "fr", "sw", "ar"].includes(stored)) {
+        const lang = stored as Language;
+        setLanguageState(lang);
+        I18nManager.allowRTL(true);
+        I18nManager.forceRTL(lang === "ar");
+      }
+    });
   }, []);
+
+  const isRTL = language === "ar";
+
+  const setLanguage = useCallback(async (lang: Language) => {
+    await AsyncStorage.setItem(LANG_KEY, lang);
+    setLanguageState(lang);
+    const needsRTLFlip = (lang === "ar") !== I18nManager.isRTL;
+    I18nManager.allowRTL(true);
+    I18nManager.forceRTL(lang === "ar");
+    if (needsRTLFlip) {
+      Alert.alert(
+        lang === "ar" ? "إعادة التشغيل مطلوبة" : "Restart required",
+        lang === "ar"
+          ? "أغلق التطبيق وأعد فتحه لتطبيق تخطيط اليمين إلى اليسار."
+          : "Close and reopen the app to apply the new layout direction.",
+        [{ text: lang === "ar" ? "حسناً" : "OK" }],
+      );
+    }
+  }, [language]);
 
   const setAuth = useCallback(async (token: string, user: AuthUser) => {
     await AsyncStorage.setItem(TOKEN_KEY, token);
@@ -210,6 +240,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         authToken,
         authUser,
         language,
+        isRTL,
         lowBandwidth,
         addTicket,
         toggleSaved,
