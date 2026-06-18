@@ -103,6 +103,7 @@ export default function DiscoverScreen() {
             placeholderTextColor={colors.mutedForeground}
             style={[styles.searchInput, { color: colors.foreground }]}
             returnKeyType="search"
+            maxLength={100}
           />
           {search.length > 0 && (
             <Pressable onPress={() => setSearch("")}>

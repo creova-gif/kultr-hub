@@ -102,6 +102,8 @@ export default function TicketsScreen() {
               <Pressable
                 key={ticket.id}
                 onPress={() => router.push(`/ticket/${ticket.id}`)}
+                accessibilityLabel={`${event.title}, ${isUpcoming ? "Upcoming" : "Past event"}, ticket number ${ticket.ticketNumber}`}
+                accessibilityRole="button"
                 style={({ pressed }) => [
                   styles.ticketCard,
                   {

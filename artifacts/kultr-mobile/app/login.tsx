@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -40,6 +40,11 @@ export default function LoginScreen() {
   const [devCode, setDevCode] = useState<string | undefined>();
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
+  const stepTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => { if (stepTimer.current) clearTimeout(stepTimer.current); };
+  }, []);
 
   const country = EA_COUNTRIES.find((c) => c.code === selectedCode) ?? EA_COUNTRIES[0];
 
@@ -51,13 +56,17 @@ export default function LoginScreen() {
       Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
       Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
     ]).start();
-    setTimeout(cb, 150);
+    stepTimer.current = setTimeout(cb, 150);
   };
 
   const handleSendCode = () => {
     const trimmed = phone.trim();
     if (!trimmed) {
       setError("Enter your phone number");
+      return;
+    }
+    if (!/^\d{6,15}$/.test(trimmed.replace(/[\s\-()]/g, ""))) {
+      setError("Enter a valid phone number (digits only)");
       return;
     }
     setError("");
@@ -318,6 +327,7 @@ export default function LoginScreen() {
                 onChangeText={setName}
                 autoComplete="name"
                 returnKeyType="done"
+                maxLength={50}
                 onSubmitEditing={() => handleVerify()}
               />
 

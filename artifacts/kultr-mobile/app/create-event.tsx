@@ -3,6 +3,7 @@ import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
+  Alert,
   Image,
   Platform,
   Pressable,
@@ -50,10 +51,23 @@ export default function CreateEventScreen() {
   const [publishing, setPublishing] = useState(false);
   const [published, setPublished] = useState(false);
 
-  const isValid = title.trim().length > 2 && date.length > 0 && venue.trim().length > 0;
+  const isDateValid = (() => {
+    if (!date) return false;
+    const d = new Date(date);
+    return !isNaN(d.getTime()) && d > new Date();
+  })();
+  const isPriceValid = Object.values(prices).every((p) => p === "" || (!isNaN(parseFloat(p)) && parseFloat(p) >= 0));
+  const isValid = title.trim().length > 2 && isDateValid && venue.trim().length > 0 && isPriceValid;
 
   const handlePublish = async () => {
-    if (!isValid) return;
+    if (!isValid) {
+      if (!isDateValid) {
+        Alert.alert("Invalid Date", "Event date must be in the future (YYYY-MM-DD).");
+      } else if (!isPriceValid) {
+        Alert.alert("Invalid Price", "All prices must be valid numbers.");
+      }
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setPublishing(true);
 

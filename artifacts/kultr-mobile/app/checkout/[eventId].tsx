@@ -2,7 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as WebBrowser from "expo-web-browser";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Image,
@@ -44,6 +44,16 @@ export default function CheckoutScreen() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string>("");
+  const isMounted = useRef(true);
+  const demoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+      if (demoTimer.current) clearTimeout(demoTimer.current);
+    };
+  }, []);
 
   // Active payment methods for user's country
   const paymentMethods = userCountry.paymentMethods;
@@ -89,10 +99,14 @@ export default function CheckoutScreen() {
     activeMethod?.type === "mobile_money" || activeMethod?.type === "ussd";
 
   const handleConfirm = async () => {
-    if (needsPhone && phone.trim().length < 8) {
-      Alert.alert("Invalid Number", "Please enter a valid mobile number.");
-      return;
+    if (needsPhone) {
+      const cleaned = phone.trim().replace(/[\s\-()]/g, "");
+      if (cleaned.length < 7 || !/^\+?\d+$/.test(cleaned)) {
+        Alert.alert("Invalid Number", "Please enter a valid mobile number (digits only).");
+        return;
+      }
     }
+    setCheckoutError("");
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
 
@@ -136,6 +150,7 @@ export default function CheckoutScreen() {
 
             if (verifyRes.ok) {
               const verifyData = await verifyRes.json() as { ticketId: string; ticketNumber: string };
+              if (typeof verifyData.ticketId !== "string") throw new Error("Invalid verify response");
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               setLoading(false);
               router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}`);
@@ -175,6 +190,7 @@ export default function CheckoutScreen() {
 
                 if (verifyRes.ok) {
                   const verifyData = await verifyRes.json() as { ticketId: string; ticketNumber: string };
+                  if (typeof verifyData.ticketId !== "string") throw new Error("Invalid verify response");
                   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                   setLoading(false);
                   router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}`);
@@ -196,6 +212,7 @@ export default function CheckoutScreen() {
 
               if (verifyRes.ok) {
                 const verifyData = await verifyRes.json() as { ticketId: string; ticketNumber: string };
+                if (typeof verifyData.ticketId !== "string") throw new Error("Invalid verify response");
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 setLoading(false);
                 router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}`);
@@ -206,11 +223,12 @@ export default function CheckoutScreen() {
         }
       }
     } catch {
-      // Fall through to demo mode
+      if (isMounted.current) setCheckoutError("Payment unavailable — completing in demo mode.");
     }
 
     // Demo fallback: create ticket locally (used when API is unavailable or user is not authenticated)
-    await new Promise((r) => setTimeout(r, 1200));
+    await new Promise<void>((r) => { demoTimer.current = setTimeout(r, 1200); });
+    if (!isMounted.current) return;
     const newTicket = {
       id: `ticket-${Date.now()}`,
       eventId: event.id,
@@ -518,6 +536,14 @@ export default function CheckoutScreen() {
         </View>
       </ScrollView>
 
+      {/* Error message */}
+      {!!checkoutError && (
+        <View style={[styles.errorBanner, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Feather name="alert-circle" size={14} color="#FF6B00" />
+          <Text style={[styles.errorBannerText, { color: colors.mutedForeground }]}>{checkoutError}</Text>
+        </View>
+      )}
+
       {/* CTA */}
       <View
         style={[
@@ -728,6 +754,20 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   securityText: { fontSize: 12 },
+  // Error banner
+  errorBanner: {
+    position: "absolute",
+    bottom: 90,
+    left: 16,
+    right: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  errorBannerText: { fontSize: 12, flex: 1 },
   // CTA
   ctaBar: {
     position: "absolute",

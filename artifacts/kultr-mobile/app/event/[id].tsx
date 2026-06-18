@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   Platform,
@@ -32,7 +33,7 @@ export default function EventDetailScreen() {
   const insets = useSafeAreaInsets();
   const { isSaved, toggleSaved } = useApp();
   const [selectedTicketType, setSelectedTicketType] = useState(0);
-  const { event } = useEventDetail(id);
+  const { event, isLoading } = useEventDetail(id);
   const { events } = useEventCatalog();
 
   const relatedEvents = useMemo(
@@ -44,6 +45,14 @@ export default function EventDetailScreen() {
         : [],
     [event, events],
   );
+
+  if (isLoading && !event) {
+    return (
+      <View style={[styles.notFound, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color="#FF6B00" />
+      </View>
+    );
+  }
 
   if (!event) {
     return (
@@ -90,6 +99,8 @@ export default function EventDetailScreen() {
             <Pressable
               onPress={() => router.back()}
               style={[styles.heroBtn, { backgroundColor: "rgba(0,0,0,0.5)" }]}
+              accessibilityLabel="Go back"
+              accessibilityRole="button"
             >
               <Feather name="arrow-left" size={20} color="#fff" />
             </Pressable>
@@ -100,6 +111,8 @@ export default function EventDetailScreen() {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   toggleSaved(event.id);
                 }}
+                accessibilityLabel={saved ? "Unsave event" : "Save event"}
+                accessibilityRole="button"
               >
                 <Feather
                   name="heart"
@@ -117,6 +130,8 @@ export default function EventDetailScreen() {
                     message: `Check out "${event.title}" on Kultr — ${event.venue}, ${event.city} on ${event.date}. Get your tickets now!`,
                   });
                 }}
+                accessibilityLabel="Share event"
+                accessibilityRole="button"
               >
                 <Feather name="share-2" size={20} color="#fff" />
               </Pressable>
@@ -232,7 +247,7 @@ export default function EventDetailScreen() {
                           { color: i === 0 ? "#FF6B00" : colors.foreground },
                         ]}
                       >
-                        {artist.name.charAt(0)}
+                        {artist.name?.[0] ?? "?"}
                       </Text>
                     </View>
                     <View style={styles.lineupInfo}>

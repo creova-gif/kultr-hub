@@ -98,6 +98,8 @@ export default function HomeScreen() {
             <Pressable
               onPress={() => router.push("/notifications")}
               style={styles.navBtn}
+              accessibilityLabel="Notifications"
+              accessibilityRole="button"
             >
               <Feather name="bell" size={17} color="#ccc" />
               <View style={styles.notifDot} />
@@ -105,6 +107,8 @@ export default function HomeScreen() {
             <Pressable
               onPress={() => router.push("/(tabs)/profile")}
               style={styles.avatar}
+              accessibilityLabel="Profile"
+              accessibilityRole="button"
             >
               <Text style={styles.avatarText}>A</Text>
             </Pressable>
@@ -141,6 +145,9 @@ export default function HomeScreen() {
                     borderColor: active ? "#FF6B00" : "#2A2A2A",
                   },
                 ]}
+                accessibilityLabel={cat}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
               >
                 <Feather name={icon as any} size={12} color={active ? "#fff" : "#666"} />
                 <Text style={[styles.categoryLabel, { color: active ? "#fff" : "#888" }]}>
@@ -157,12 +164,12 @@ export default function HomeScreen() {
         <View style={styles.filteredSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionLabel}>{selectedCategory}</Text>
-            <Text style={{ color: "#555", fontSize: 13 }}>{displayed.length} events</Text>
+            <Text style={{ color: "#888", fontSize: 13 }}>{displayed.length} events</Text>
           </View>
           {displayed.length === 0 ? (
             <View style={styles.emptyState}>
               <Feather name="calendar" size={36} color="#333" />
-              <Text style={{ color: "#555", fontSize: 15 }}>No {selectedCategory} events yet</Text>
+              <Text style={{ color: "#888", fontSize: 15 }}>No {selectedCategory} events yet</Text>
             </View>
           ) : (
             displayed.map((event) => (
@@ -371,7 +378,7 @@ const styles = StyleSheet.create({
   avatarText: { color: "#fff", fontSize: 15, fontWeight: "800" },
 
   greetingBlock: { paddingHorizontal: 20, marginBottom: 24 },
-  greetingSmall: { color: "#555", fontSize: 11, fontWeight: "600", letterSpacing: 1, marginBottom: 6 },
+  greetingSmall: { color: "#888", fontSize: 11, fontWeight: "600", letterSpacing: 1, marginBottom: 6 },
   greetingBig: { color: "#fff", fontSize: 38, fontWeight: "900", lineHeight: 44, letterSpacing: -1 },
 
   categoryScroll: { paddingHorizontal: 20, gap: 8 },

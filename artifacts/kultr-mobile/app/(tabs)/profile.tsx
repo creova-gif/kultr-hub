@@ -135,14 +135,26 @@ export default function ProfileScreen() {
             </View>
             <View style={{ flexDirection: "row", gap: 8 }}>
               <Pressable
-                onPress={() => router.push("/creator-studio" as any)}
+                onPress={() => {
+                  if (!authUser) {
+                    Alert.alert("Sign In Required", "Please sign in to access Creator Studio.");
+                    return;
+                  }
+                  router.push("/creator-studio" as any);
+                }}
                 style={[styles.newEventBtn, { backgroundColor: "rgba(255,107,0,0.1)" }]}
               >
                 <Feather name="bar-chart-2" size={14} color="#FF6B00" />
                 <Text style={styles.newEventBtnText}>Studio</Text>
               </Pressable>
               <Pressable
-                onPress={() => router.push("/create-event")}
+                onPress={() => {
+                  if (!authUser) {
+                    Alert.alert("Sign In Required", "Please sign in to create events.");
+                    return;
+                  }
+                  router.push("/create-event");
+                }}
                 style={styles.newEventBtn}
               >
                 <Feather name="plus" size={14} color="#FF6B00" />

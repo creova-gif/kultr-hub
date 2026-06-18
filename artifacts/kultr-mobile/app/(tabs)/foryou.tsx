@@ -164,7 +164,7 @@ export default function ForYouScreen() {
 
         {/* ── Match Cards ── */}
         <View style={styles.cardList}>
-          {isLoading && (
+          {isLoading && scored.length === 0 && (
             <View style={styles.loadingWrap}>
               <ActivityIndicator size="large" color="#FF6B00" />
               <Text style={[styles.loadingText, { color: "#888" }]}>Finding your matches…</Text>
@@ -224,7 +224,11 @@ export default function ForYouScreen() {
                 </View>
 
                 {/* Score */}
-                <View style={styles.matchCardScore}>
+                <View
+                  style={styles.matchCardScore}
+                  accessible={true}
+                  accessibilityLabel={`Match score ${event.score}%, ${event.vibe} vibe`}
+                >
                   <Text style={[styles.matchScoreLabel, { color: colors.mutedForeground }]}>
                     Match Score
                   </Text>

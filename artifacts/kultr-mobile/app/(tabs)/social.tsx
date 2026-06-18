@@ -77,7 +77,10 @@ export default function SocialScreen() {
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
 
   const socialEvents = useMemo(() => {
-    const upcoming = events.filter((e) => new Date(e.date) >= new Date());
+    const upcoming = events.filter((e) => {
+      const d = new Date(e.date);
+      return !isNaN(d.getTime()) && d >= new Date();
+    });
     if (activeTab === "friends") return upcoming.slice(0, 4);
     if (activeTab === "invites") return upcoming.slice(1, 3);
     return upcoming;
@@ -232,6 +235,8 @@ export default function SocialScreen() {
                     {friends.map((f, i) => (
                       <View
                         key={i}
+                        accessible={true}
+                        accessibilityLabel={f.name}
                         style={[
                           styles.avatar,
                           {
