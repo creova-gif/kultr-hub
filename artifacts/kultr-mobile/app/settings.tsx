@@ -70,6 +70,31 @@ export default function SettingsScreen() {
       <Text style={[styles.footnote, { color: colors.mutedForeground }]}>
         Arabic uses a right-to-left layout. Changing the language requires restarting the app for the layout to fully apply.
       </Text>
+
+      <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>PROGRAMS</Text>
+
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Pressable
+          onPress={() => router.push("/tribe-leaders")}
+          accessibilityRole="button"
+          accessibilityLabel="Kultr Tribe Leaders ambassador program"
+          style={({ pressed }) => [
+            styles.row,
+            { backgroundColor: pressed ? colors.muted : "transparent" },
+          ]}
+        >
+          <View style={[styles.programIcon, { backgroundColor: "rgba(255,107,0,0.12)" }]}>
+            <Feather name="flag" size={16} color="#FF6B00" />
+          </View>
+          <View style={styles.rowText}>
+            <Text style={[styles.rowLabel, { color: colors.foreground }]}>Kultr Tribe Leaders</Text>
+            <Text style={[styles.rowSub, { color: colors.mutedForeground }]}>
+              Ambassador program — lead & earn
+            </Text>
+          </View>
+          <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -87,6 +112,7 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: 11, fontWeight: "700", letterSpacing: 1, marginBottom: 8, marginLeft: 4 },
   card: { borderRadius: 16, borderWidth: 1, overflow: "hidden", marginBottom: 20 },
   row: { flexDirection: "row", alignItems: "center", padding: 16, gap: 12 },
+  programIcon: { width: 32, height: 32, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   rowText: { flex: 1 },
   rowLabel: { fontSize: 16, fontWeight: "600" },
   rowSub: { fontSize: 12, marginTop: 2 },
