@@ -1,9 +1,8 @@
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { Tabs } from "expo-router";
+import { router, Tabs } from "expo-router";
 import React from "react";
 import {
-  Dimensions,
   Platform,
   Pressable,
   StyleSheet,
@@ -12,68 +11,91 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useColors } from "@/hooks/useColors";
-
-const { width } = Dimensions.get("window");
-
-const TABS = [
-  { name: "foryou", label: "For You", icon: "star" },
-  { name: "discover", label: "Discover", icon: "compass" },
-  { name: "social", label: "Social", icon: "users" },
-  { name: "tickets", label: "Tickets", icon: "tag" },
-  { name: "profile", label: "Profile", icon: "user" },
+const LEFT_TABS = [
+  { name: "foryou",   label: "Home",     icon: "home"           },
+  { name: "discover", label: "Discover", icon: "compass"        },
 ] as const;
 
-type FloatingTabBarProps = Parameters<NonNullable<React.ComponentProps<typeof Tabs>["tabBar"]>>[0];
+const RIGHT_TABS = [
+  { name: "social",   label: "Messages", icon: "message-circle" },
+  { name: "profile",  label: "Profile",  icon: "user"           },
+] as const;
 
-function FloatingTabBar({ state, navigation }: FloatingTabBarProps) {
-  const insets = useSafeAreaInsets();
-  useColors(); // ensure hook runs in right context
+const BAR_HEIGHT = 64;
+const FAB_SIZE   = 54;
+const FAB_LIFT   = 14; // how far the FAB rises above the bar top
 
-  const bottomOffset = Platform.OS === "web"
-    ? Math.max(insets.bottom, 20) + 8
-    : insets.bottom + 8;
+type TabBarProps = Parameters<NonNullable<React.ComponentProps<typeof Tabs>["tabBar"]>>[0];
+
+function TabBar({ state, navigation }: TabBarProps) {
+  const insets  = useSafeAreaInsets();
+  const bottomPad = Platform.OS === "web" ? Math.max(insets.bottom, 20) : insets.bottom;
+  const activeRoute = state.routes[state.index]?.name;
+
+  const pressTab = (name: string) => {
+    const route = state.routes.find((r: { name: string }) => r.name === name);
+    if (!route) return;
+    const focused = activeRoute === name;
+    const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
+    if (!focused && !event.defaultPrevented) {
+      Haptics.selectionAsync();
+      navigation.navigate(name, {});
+    }
+  };
+
+  const renderTab = (tab: { name: string; label: string; icon: string }) => {
+    const focused = activeRoute === tab.name;
+    const tint = focused ? "#FF6B00" : "#5A5A5A";
+    return (
+      <Pressable
+        key={tab.name}
+        onPress={() => pressTab(tab.name)}
+        style={styles.tabItem}
+        accessibilityLabel={tab.label}
+        accessibilityRole="tab"
+        accessibilityState={{ selected: focused }}
+      >
+        <Feather name={tab.icon as any} size={22} color={tint} />
+        <Text style={[styles.tabLabel, { color: tint }]}>{tab.label}</Text>
+        {focused && <View style={styles.activeDot} />}
+      </Pressable>
+    );
+  };
 
   return (
-    <View style={[styles.wrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
-      <View style={styles.glow} />
-      <View style={styles.pill}>
-        {state.routes.map((route: { key: string; name: string }, index: number) => {
-          const focused = state.index === index;
-          const tab = TABS[index];
-          if (!tab) return null;
+    <View
+      style={[styles.container, { paddingBottom: bottomPad }]}
+      pointerEvents="box-none"
+    >
+      {/* Subtle top border line */}
+      <View style={styles.topBorder} />
 
-          const tint = focused ? "#FF6B00" : "#8A8A8A";
+      {/* Tab row sits at BAR_HEIGHT; FAB lifts above it */}
+      <View style={[styles.row, { height: BAR_HEIGHT }]}>
+        {/* Left side tabs */}
+        <View style={styles.side}>
+          {LEFT_TABS.map(renderTab)}
+        </View>
 
-          return (
-            <Pressable
-              key={route.key}
-              onPress={() => {
-                const event = navigation.emit({
-                  type: "tabPress",
-                  target: route.key,
-                  canPreventDefault: true,
-                });
-                if (!focused && !event.defaultPrevented) {
-                  Haptics.selectionAsync();
-                  navigation.navigate(route.name, {});
-                }
-              }}
-              style={styles.tabItem}
-              accessibilityLabel={tab.label}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: focused }}
-            >
-              <View style={styles.tabContent}>
-                <Feather name={tab.icon} size={22} color={tint} />
-                <Text style={[styles.tabLabel, { color: tint }]} numberOfLines={1}>
-                  {tab.label}
-                </Text>
-                {focused && <View style={styles.activeDot} />}
-              </View>
-            </Pressable>
-          );
-        })}
+        {/* Center FAB — raised above the bar */}
+        <View style={[styles.fabWrap, { marginTop: -FAB_LIFT }]}>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              router.push("/create-event" as any);
+            }}
+            style={styles.fab}
+            accessibilityLabel="Create event"
+            accessibilityRole="button"
+          >
+            <Feather name="plus" size={24} color="#fff" />
+          </Pressable>
+        </View>
+
+        {/* Right side tabs */}
+        <View style={styles.side}>
+          {RIGHT_TABS.map(renderTab)}
+        </View>
       </View>
     </View>
   );
@@ -82,81 +104,81 @@ function FloatingTabBar({ state, navigation }: FloatingTabBarProps) {
 export default function TabLayout() {
   return (
     <Tabs
-      tabBar={(props) => <FloatingTabBar {...props} />}
+      tabBar={(props) => <TabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
-      <Tabs.Screen name="index" options={{ title: "Home", href: null }} />
-      <Tabs.Screen name="foryou" options={{ title: "For You" }} />
+      <Tabs.Screen name="index"    options={{ href: null }} />
+      <Tabs.Screen name="foryou"   options={{ title: "Home"     }} />
       <Tabs.Screen name="discover" options={{ title: "Discover" }} />
-      <Tabs.Screen name="social" options={{ title: "Social" }} />
-      <Tabs.Screen name="tickets" options={{ title: "Tickets" }} />
-      <Tabs.Screen name="profile" options={{ title: "Profile" }} />
+      <Tabs.Screen name="social"   options={{ title: "Messages" }} />
+      <Tabs.Screen name="tickets"  options={{ href: null        }} />
+      <Tabs.Screen name="profile"  options={{ title: "Profile"  }} />
     </Tabs>
   );
 }
 
-const PILL_WIDTH = Math.min(width - 40, 360);
-
 const styles = StyleSheet.create({
-  wrapper: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    alignItems: "center",
-    zIndex: 100,
+  container: {
+    backgroundColor: "#0D0D0D",
+    width: "100%",
+    overflow: "visible",
   },
-  glow: {
-    position: "absolute",
-    width: PILL_WIDTH,
-    height: 64,
-    borderRadius: 28,
-    backgroundColor: "#FF6B00",
-    opacity: 0.1,
-    top: 4,
-    shadowColor: "#FF6B00",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 24,
-    elevation: 0,
+  topBorder: {
+    height: 1,
+    backgroundColor: "#1E1E1E",
   },
-  pill: {
-    width: PILL_WIDTH,
-    height: 68,
-    borderRadius: 28,
+  row: {
+    flexDirection: "row",
+    alignItems: "flex-end",  // tabs anchor to bottom; FAB lifts via negative marginTop
+    overflow: "visible",
+  },
+  side: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 6,
-    backgroundColor: "#161616",
-    borderWidth: 1,
-    borderColor: "#262626",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.6,
-    shadowRadius: 24,
-    elevation: 20,
+    justifyContent: "space-around",
+    height: "100%",
   },
   tabItem: {
     flex: 1,
-    height: 60,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tabContent: {
     alignItems: "center",
     justifyContent: "center",
     gap: 4,
+    height: "100%",
   },
   tabLabel: {
-    fontSize: 10.5,
+    fontSize: 10,
     fontWeight: "600",
-    letterSpacing: 0.1,
+    letterSpacing: 0.2,
   },
   activeDot: {
     position: "absolute",
-    bottom: -8,
+    bottom: 6,
     width: 4,
     height: 4,
     borderRadius: 2,
     backgroundColor: "#FF6B00",
+  },
+  fabWrap: {
+    width: FAB_SIZE + 16,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingBottom: 10,
+    overflow: "visible",
+  },
+  fab: {
+    width: FAB_SIZE,
+    height: FAB_SIZE,
+    borderRadius: FAB_SIZE / 2,
+    backgroundColor: "#FF6B00",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 3,
+    borderColor: "#0D0D0D",
+    shadowColor: "#FF6B00",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.55,
+    shadowRadius: 12,
+    elevation: 14,
   },
 });
