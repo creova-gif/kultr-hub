@@ -48,15 +48,6 @@ function seededGoing(id: string): number {
   return 80 + (h % 420);
 }
 
-function openDirections(venue: string, city: string): void {
-  const query = encodeURIComponent(`${venue}, ${city}`);
-  const appleUrl = `maps:?q=${query}`;
-  const googleUrl = `https://www.google.com/maps/search/?api=1&query=${query}`;
-  Linking.canOpenURL(appleUrl).then((can) => {
-    Linking.openURL(can ? appleUrl : googleUrl);
-  });
-}
-
 const TRIBE_COMMENTS = [
   { emoji: "🔥", text: "This event is going to be legendary!" },
   { emoji: "🎶", text: "Can't wait for the music." },
@@ -87,6 +78,33 @@ function getTribeComments(eventId: string): Array<{ emoji: string; text: string;
     avatar: TRIBE_AVATARS[(h + i * 3) % TRIBE_AVATARS.length],
     name: names[(h + i * 5) % names.length],
   }));
+}
+
+function openCalendar(event: { title: string; date: string; time: string; venue: string; city: string }): void {
+  const [hours, minutes] = event.time.split(":").map(Number);
+  const start = new Date(`${event.date}T${String(hours).padStart(2, "0")}:${String(minutes ?? 0).padStart(2, "0")}:00`);
+  const end = new Date(start.getTime() + 3 * 60 * 60 * 1000); // 3 hours later
+  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  // iOS native calendar URL
+  const iosUrl = `calshow:${start.getTime() / 1000}`;
+  Linking.canOpenURL(iosUrl).then((can) => {
+    if (can) {
+      Linking.openURL(iosUrl);
+    } else {
+      // Google Calendar fallback
+      const gCalUrl = `https://www.google.com/calendar/event?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${fmt(start)}/${fmt(end)}&location=${encodeURIComponent(`${event.venue}, ${event.city}`)}`;
+      Linking.openURL(gCalUrl);
+    }
+  });
+}
+
+function openDirections(venue: string, city: string): void {
+  const query = encodeURIComponent(`${venue}, ${city}`);
+  const appleUrl = `maps:?q=${query}`;
+  const googleUrl = `https://www.google.com/maps/search/?api=1&query=${query}`;
+  Linking.canOpenURL(appleUrl).then((can) => {
+    Linking.openURL(can ? appleUrl : googleUrl);
+  });
 }
 
 export default function EventDetailScreen() {
@@ -367,6 +385,22 @@ export default function EventDetailScreen() {
             </View>
           )}
 
+          {/* Add to Calendar */}
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              openCalendar({ title: event.title, date: event.date, time: event.time, venue: event.venue, city: event.city });
+            }}
+            style={[styles.directionsBtn, { backgroundColor: colors.muted, borderColor: colors.border }]}
+            accessibilityLabel={`Add ${event.title} to calendar`}
+            accessibilityRole="button"
+          >
+            <Feather name="calendar" size={14} color="#7B61FF" />
+            <Text style={[styles.directionsBtnText, { color: colors.foreground }]}>
+              Add to Calendar
+            </Text>
+            <Feather name="external-link" size={12} color={colors.mutedForeground} />
+          </Pressable>
 
           {/* Demand indicator — show when ≥1 ticket type has <30 left */}
           {event.ticketTypes.some((t) => t.available > 0 && t.available < 30) && (
@@ -829,6 +863,16 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   tagText: { fontSize: 12, fontWeight: "500" },
+  directionsBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  directionsBtnText: { flex: 1, fontSize: 13, fontWeight: "600" },
   section: { marginBottom: 28 },
   sectionTitle: { fontSize: 18, fontWeight: "700", marginBottom: 14 },
   description: { fontSize: 14, lineHeight: 22 },
@@ -897,16 +941,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  directionsBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
-  directionsBtnText: { flex: 1, fontSize: 13, fontWeight: "600" },
   demandBanner: {
     flexDirection: "row",
     alignItems: "center",

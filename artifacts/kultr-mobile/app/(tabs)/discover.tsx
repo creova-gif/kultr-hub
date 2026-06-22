@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import React, { useState } from "react";
@@ -29,9 +30,26 @@ export default function DiscoverScreen() {
   const insets = useSafeAreaInsets();
   const { userCountry, setUserCountry } = useApp();
   const [search, setSearch] = useState("");
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("For You");
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const { events } = useEventCatalog();
+
+  React.useEffect(() => {
+    AsyncStorage.getItem("kultr_search_history").then((stored) => {
+      if (stored) {
+        try { setSearchHistory(JSON.parse(stored)); } catch { /* ignore */ }
+      }
+    });
+  }, []);
+
+  const saveSearch = async (term: string) => {
+    const trimmed = term.trim();
+    if (!trimmed || trimmed.length < 2) return;
+    const next = [trimmed, ...searchHistory.filter((h) => h !== trimmed)].slice(0, 5);
+    setSearchHistory(next);
+    await AsyncStorage.setItem("kultr_search_history", JSON.stringify(next));
+  };
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
 
@@ -106,6 +124,7 @@ export default function DiscoverScreen() {
             style={[styles.searchInput, { color: colors.foreground }]}
             returnKeyType="search"
             maxLength={100}
+            onSubmitEditing={() => saveSearch(search)}
           />
           {search.length > 0 && (
             <Pressable onPress={() => setSearch("")}>
@@ -113,6 +132,39 @@ export default function DiscoverScreen() {
             </Pressable>
           )}
         </View>
+
+        {/* Recent Searches */}
+        {search.length === 0 && searchHistory.length > 0 && (
+          <View style={styles.recentSection}>
+            <View style={styles.recentHeader}>
+              <Text style={[styles.recentTitle, { color: colors.mutedForeground }]}>Recent</Text>
+              <Pressable
+                onPress={async () => {
+                  setSearchHistory([]);
+                  await AsyncStorage.removeItem("kultr_search_history");
+                }}
+                accessibilityLabel="Clear search history"
+                accessibilityRole="button"
+              >
+                <Text style={{ color: "#FF6B00", fontSize: 12, fontWeight: "600" }}>Clear</Text>
+              </Pressable>
+            </View>
+            <View style={styles.recentChips}>
+              {searchHistory.map((term) => (
+                <Pressable
+                  key={term}
+                  onPress={() => setSearch(term)}
+                  style={[styles.recentChip, { backgroundColor: colors.muted, borderColor: colors.border }]}
+                  accessibilityLabel={`Search for ${term}`}
+                  accessibilityRole="button"
+                >
+                  <Feather name="clock" size={11} color={colors.mutedForeground} />
+                  <Text style={[styles.recentChipText, { color: colors.foreground }]}>{term}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
 
         {/* Categories */}
         <View style={styles.categories}>
@@ -350,6 +402,20 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   paymentTypeText: { fontSize: 8, fontWeight: "700", letterSpacing: 0.3 },
+  recentSection: { paddingHorizontal: 16, marginBottom: 16 },
+  recentHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  recentTitle: { fontSize: 12, fontWeight: "600", letterSpacing: 0.5 },
+  recentChips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  recentChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  recentChipText: { fontSize: 12 },
   empty: { alignItems: "center", gap: 10, paddingVertical: 48 },
   emptyTitle: { fontSize: 17, fontWeight: "700" },
   emptyText: { fontSize: 14, textAlign: "center" },

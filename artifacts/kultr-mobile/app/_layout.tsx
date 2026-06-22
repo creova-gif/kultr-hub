@@ -6,6 +6,7 @@ import {
   useFonts,
 } from "@expo-google-fonts/inter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import * as Linking from "expo-linking";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
@@ -56,6 +57,22 @@ function RootLayoutNav() {
       router.replace("/onboarding");
     }
   }, [onboardingDone]);
+
+  React.useEffect(() => {
+    const handleUrl = (event: { url: string }) => {
+      const parsed = Linking.parse(event.url);
+      if (parsed.path?.startsWith("event/")) {
+        const id = parsed.path.replace("event/", "");
+        if (id) router.push(`/event/${id}` as any);
+      }
+    };
+    const sub = Linking.addEventListener("url", handleUrl);
+    // Handle app opened from a deep link
+    Linking.getInitialURL().then((url) => {
+      if (url) handleUrl({ url });
+    });
+    return () => sub.remove();
+  }, []);
 
   return (
     <Stack screenOptions={{ headerShown: false, animation: "slide_from_right" }}>
