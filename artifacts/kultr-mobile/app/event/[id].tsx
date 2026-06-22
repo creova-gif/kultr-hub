@@ -18,6 +18,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { CheckinCelebration } from "@/components/CheckinCelebration";
+import { shareEventToWhatsApp } from "@/utils/share";
 import { EventCardCompact } from "@/components/EventCardCompact";
 import { useApp } from "@/context/AppContext";
 import {
@@ -29,7 +30,6 @@ import { useColors } from "@/hooks/useColors";
 import { useCheckIn } from "@/hooks/useQuests";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
 import { useEventDetail } from "@/hooks/useEventDetail";
-import { shareEventToWhatsApp } from "@/utils/share";
 
 // Avatar palette for the synthetic "who's going" stack.
 const GOING_AVATARS = [
@@ -186,7 +186,14 @@ export default function EventDetailScreen() {
                 style={[styles.heroBtn, { backgroundColor: "rgba(0,0,0,0.5)" }]}
                 onPress={async () => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  await shareEventToWhatsApp(event);
+                  await shareEventToWhatsApp({
+                    id: event.id,
+                    title: event.title,
+                    city: event.city,
+                    country: event.country ?? event.city,
+                    date: event.date,
+                    venue: event.venue,
+                  });
                 }}
                 accessibilityLabel="Share event"
                 accessibilityRole="button"
@@ -538,23 +545,26 @@ export default function EventDetailScreen() {
           </Text>
         </View>
         <Pressable
+          disabled={(event.ticketTypes[selectedTicketType]?.available ?? 1) === 0}
           style={({ pressed }) => [
             styles.ctaBtn,
             {
-              opacity: event.ticketTypes[selectedTicketType]?.available === 0 ? 0.5 : pressed ? 0.9 : 1,
+              opacity: (event.ticketTypes[selectedTicketType]?.available ?? 1) === 0 ? 0.45 : pressed ? 0.9 : 1,
               transform: [{ scale: pressed ? 0.97 : 1 }],
             },
           ]}
-          disabled={event.ticketTypes[selectedTicketType]?.available === 0}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             router.push(
               `/checkout/${event.id}?ticketTypeIndex=${selectedTicketType}`
             );
           }}
+          accessibilityLabel={(event.ticketTypes[selectedTicketType]?.available ?? 1) === 0 ? "Sold out" : "Get tickets"}
         >
-          <Text style={styles.ctaBtnText}>{event.ticketTypes[selectedTicketType]?.available === 0 ? "Sold Out" : "Get Tickets"}</Text>
-          <Feather name="arrow-right" size={16} color="#fff" />
+          <Text style={styles.ctaBtnText}>
+            {(event.ticketTypes[selectedTicketType]?.available ?? 1) === 0 ? "Sold Out" : "Get Tickets"}
+          </Text>
+          {(event.ticketTypes[selectedTicketType]?.available ?? 1) > 0 && <Feather name="arrow-right" size={16} color="#fff" />}
         </Pressable>
       </View>
     </View>

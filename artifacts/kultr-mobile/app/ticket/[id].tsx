@@ -78,7 +78,7 @@ export default function TicketViewScreen() {
     return (
       <View style={[styles.root, { backgroundColor: colors.background }]}>
         <Pressable
-          onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
+          onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)" as any)}
           style={{ padding: 20 }}
           accessibilityLabel="Go back"
           accessibilityRole="button"

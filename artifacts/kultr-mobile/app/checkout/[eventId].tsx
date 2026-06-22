@@ -90,8 +90,8 @@ export default function CheckoutScreen() {
     return (
       <View style={[styles.notFound, { backgroundColor: colors.background }]}>
         <Pressable
-          onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
-          style={{ padding: 16 }}
+          onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)" as any)}
+          style={{ padding: 20 }}
           accessibilityLabel="Go back"
           accessibilityRole="button"
         >
@@ -128,9 +128,8 @@ export default function CheckoutScreen() {
     const authHeader = { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` };
 
     try {
-      if (authToken) {
-        // M-Pesa STK Push path for mobile_money payments
-        if (activeMethod?.type === "mobile_money") {
+      // M-Pesa STK Push path for mobile_money payments
+      if (activeMethod?.type === "mobile_money") {
           const stkRes = await fetch(`${apiBase}/api/payments/mpesa/stk-push`, {
             method: "POST",
             headers: authHeader,
@@ -235,7 +234,6 @@ export default function CheckoutScreen() {
             }
           }
         }
-      }
     } catch {
       if (isMounted.current) setCheckoutError("Payment unavailable — completing in demo mode.");
     }

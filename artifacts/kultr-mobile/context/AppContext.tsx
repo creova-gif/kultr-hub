@@ -95,10 +95,10 @@ const DEMO_CREATED_EVENTS: CreatedEvent[] = [
 ];
 
 const TOKEN_KEY = "kultr_auth_token";
+const USER_KEY = "kultr_auth_user";
 const LANG_KEY = "kultr_language";
 const ONBOARDING_KEY = "kultr_onboarding_done";
 const INTERESTS_KEY = "kultr_user_interests";
-const USER_KEY = "kultr_auth_user";
 
 function adaptAnalyticsStat(stat: CreatedEventStats): CreatedEvent {
   const date = stat.eventDate.slice(0, 10);
@@ -176,7 +176,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
     AsyncStorage.getItem(USER_KEY).then((stored) => {
       if (stored) {
-        try { setAuthUser(JSON.parse(stored) as AuthUser); } catch { /* ignore */ }
+        try { setAuthUser(JSON.parse(stored) as AuthUser); } catch { /* ignore corrupt data */ }
       }
     });
     AsyncStorage.getItem(LANG_KEY).then((stored) => {
@@ -228,16 +228,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const setAuth = useCallback(async (token: string, user: AuthUser) => {
     await AsyncStorage.setItem(TOKEN_KEY, token);
+    await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
     setAuthToken(token);
     setAuthUser(user);
-    await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
   }, []);
 
   const clearAuth = useCallback(async () => {
     await AsyncStorage.removeItem(TOKEN_KEY);
+    await AsyncStorage.removeItem(USER_KEY);
     setAuthToken(null);
     setAuthUser(null);
-    await AsyncStorage.removeItem(USER_KEY);
   }, []);
 
   const addTicket = (ticket: PurchasedTicket) => {
