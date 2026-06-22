@@ -544,10 +544,11 @@ export default function EventDetailScreen() {
           style={({ pressed }) => [
             styles.ctaBtn,
             {
-              opacity: pressed ? 0.9 : 1,
+              opacity: event.ticketTypes[selectedTicketType]?.available === 0 ? 0.5 : pressed ? 0.9 : 1,
               transform: [{ scale: pressed ? 0.97 : 1 }],
             },
           ]}
+          disabled={event.ticketTypes[selectedTicketType]?.available === 0}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             router.push(
@@ -555,7 +556,7 @@ export default function EventDetailScreen() {
             );
           }}
         >
-          <Text style={styles.ctaBtnText}>Get Tickets</Text>
+          <Text style={styles.ctaBtnText}>{event.ticketTypes[selectedTicketType]?.available === 0 ? "Sold Out" : "Get Tickets"}</Text>
           <Feather name="arrow-right" size={16} color="#fff" />
         </Pressable>
       </View>

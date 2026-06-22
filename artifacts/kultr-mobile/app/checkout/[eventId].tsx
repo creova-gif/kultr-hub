@@ -89,7 +89,15 @@ export default function CheckoutScreen() {
   if (!event || !ticketType) {
     return (
       <View style={[styles.notFound, { backgroundColor: colors.background }]}>
-        <Text style={{ color: colors.foreground }}>Event not found</Text>
+        <Pressable
+          onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
+          style={{ padding: 16 }}
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+        >
+          <Feather name="arrow-left" size={22} color={colors.foreground} />
+        </Pressable>
+        <Text style={{ color: colors.foreground, marginTop: 40, fontSize: 16 }}>Event not found</Text>
       </View>
     );
   }
@@ -109,6 +117,12 @@ export default function CheckoutScreen() {
     setCheckoutError("");
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
+
+    if (!authToken) {
+      setLoading(false);
+      router.push("/login");
+      return;
+    }
 
     const apiBase = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
     const authHeader = { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` };
@@ -176,7 +190,7 @@ export default function CheckoutScreen() {
 
             if (initData.authorizationUrl) {
               const browserResult = await WebBrowser.openBrowserAsync(initData.authorizationUrl);
-              if (browserResult.type !== "opened" && browserResult.type !== "cancel") {
+              if (browserResult.type !== "opened") {
                 const verifyRes = await fetch(`${apiBase}/api/payments/verify`, {
                   method: "POST",
                   headers: authHeader,

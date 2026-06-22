@@ -77,7 +77,15 @@ export default function TicketViewScreen() {
   if (!event) {
     return (
       <View style={[styles.root, { backgroundColor: colors.background }]}>
-        <Text style={{ color: colors.foreground, padding: 24 }}>Ticket not found</Text>
+        <Pressable
+          onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)")}
+          style={{ padding: 20 }}
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+        >
+          <Feather name="arrow-left" size={22} color={colors.foreground} />
+        </Pressable>
+        <Text style={{ color: colors.foreground, padding: 24, fontSize: 16 }}>Ticket not found</Text>
       </View>
     );
   }
