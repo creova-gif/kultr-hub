@@ -1,13 +1,16 @@
 import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
   Alert,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -50,7 +53,7 @@ function formatRevenue(amount: number, symbol: string) {
 export default function ProfileScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { tickets, savedEvents, createdEvents, authUser, clearAuth } = useApp();
+  const { tickets, savedEvents, createdEvents, authUser, authToken, setAuth, clearAuth } = useApp();
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
   const isCreator = createdEvents.length > 0;
@@ -63,6 +66,23 @@ export default function ProfileScreen() {
   const totalRevenue = createdEvents.reduce((s, e) => s + e.revenue, 0);
   const totalTicketsSold = createdEvents.reduce((s, e) => s + e.ticketsSold, 0);
   const liveEvents = createdEvents.filter((e) => e.status === "live").length;
+
+  const totalSpent = tickets.reduce((sum, t) => sum + t.totalPaid, 0);
+  const spentSymbol = tickets[0]?.currencySymbol ?? "KSh";
+
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editName, setEditName] = useState(displayName);
+
+  const handleSaveProfile = async () => {
+    const trimmed = editName.trim();
+    if (!trimmed) return;
+    if (authUser) {
+      const updated = { ...authUser, displayName: trimmed };
+      await setAuth(authUser.id ? authToken ?? "" : "", updated);
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setShowEditModal(false);
+  };
 
   return (
     <ScrollView
@@ -110,7 +130,11 @@ export default function ProfileScreen() {
           </View>
           <Pressable
             style={[styles.editBtn, { borderColor: "#FF6B00" }]}
-            onPress={() => Alert.alert("Edit Profile", "Profile editing coming soon.")}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setEditName(displayName);
+              setShowEditModal(true);
+            }}
             accessibilityLabel="Edit profile"
             accessibilityRole="button"
           >
@@ -124,13 +148,14 @@ export default function ProfileScreen() {
             { label: "Tickets", value: tickets.length.toString(), onPress: () => router.push("/(tabs)/tickets") },
             { label: "Saved", value: savedEvents.length.toString(), onPress: () => router.push("/saved") },
             { label: "Events", value: createdEvents.length.toString(), onPress: () => router.push("/create-event") },
+            { label: "Spent", value: formatRevenue(totalSpent, spentSymbol), onPress: undefined },
           ].map((stat, i) => (
             <React.Fragment key={stat.label}>
-              <Pressable style={styles.statItem} onPress={stat.onPress ?? undefined}>
+              <Pressable style={styles.statItem} onPress={stat.onPress}>
                 <Text style={[styles.statValue, { color: colors.foreground }]}>{stat.value}</Text>
                 <Text style={[styles.statLabel, { color: "#FF6B00" }]}>{stat.label}</Text>
               </Pressable>
-              {i < 2 && <View style={[styles.statDivider, { backgroundColor: colors.border }]} />}
+              {i < 3 && <View style={[styles.statDivider, { backgroundColor: colors.border }]} />}
             </React.Fragment>
           ))}
         </View>
@@ -292,7 +317,14 @@ export default function ProfileScreen() {
               "Are you sure you want to sign out?",
               [
                 { text: "Cancel", style: "cancel" },
-                { text: "Sign Out", style: "destructive", onPress: clearAuth },
+                {
+                  text: "Sign Out",
+                  style: "destructive",
+                  onPress: async () => {
+                    await clearAuth();
+                    router.replace("/login");
+                  },
+                },
               ],
             );
           }}
@@ -313,6 +345,57 @@ export default function ProfileScreen() {
       <Text style={[styles.version, { color: colors.mutedForeground }]}>
         Kultr v1.0 · Bold Culture. Timeless Impact.
       </Text>
+
+      {/* Profile Edit Modal */}
+      <Modal visible={showEditModal} animationType="slide" transparent onRequestClose={() => setShowEditModal(false)}>
+        <Pressable style={styles.editOverlay} onPress={() => setShowEditModal(false)}>
+          <Pressable
+            style={[styles.editSheet, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.editHandle} />
+            <Text style={[styles.editSheetTitle, { color: colors.foreground }]}>Edit Profile</Text>
+
+            {/* Avatar placeholder */}
+            <View style={styles.editAvatarRow}>
+              <View style={[styles.editAvatar, { backgroundColor: "#FF6B00" }]}>
+                <Text style={styles.editAvatarText}>{initials}</Text>
+              </View>
+              <Text style={[styles.editAvatarHint, { color: colors.mutedForeground }]}>
+                Avatar updates coming soon
+              </Text>
+            </View>
+
+            <Text style={[styles.editLabel, { color: colors.mutedForeground }]}>DISPLAY NAME</Text>
+            <TextInput
+              value={editName}
+              onChangeText={setEditName}
+              style={[styles.editInput, { color: colors.foreground, backgroundColor: colors.muted, borderColor: colors.border }]}
+              placeholder="Your display name"
+              placeholderTextColor={colors.mutedForeground}
+              maxLength={40}
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={handleSaveProfile}
+            />
+
+            <View style={styles.editActions}>
+              <Pressable
+                onPress={() => setShowEditModal(false)}
+                style={[styles.editCancelBtn, { borderColor: colors.border }]}
+              >
+                <Text style={[styles.editCancelText, { color: colors.mutedForeground }]}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleSaveProfile}
+                style={[styles.editSaveBtn, { opacity: editName.trim().length === 0 ? 0.5 : 1 }]}
+              >
+                <Text style={styles.editSaveBtnText}>Save Changes</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 }
@@ -378,8 +461,8 @@ const styles = StyleSheet.create({
   editBtnText: { fontSize: 13, fontWeight: "600" },
   statsRow: { flexDirection: "row", borderTopWidth: 1, paddingVertical: 12 },
   statItem: { flex: 1, alignItems: "center", paddingVertical: 4 },
-  statValue: { fontSize: 20, fontWeight: "800" },
-  statLabel: { fontSize: 11, marginTop: 2, fontWeight: "600" },
+  statValue: { fontSize: 18, fontWeight: "800" },
+  statLabel: { fontSize: 10, marginTop: 2, fontWeight: "600" },
   statDivider: { width: 1, marginVertical: 4 },
 
   // Creator Dashboard
@@ -495,4 +578,63 @@ const styles = StyleSheet.create({
   },
   signOutText: { color: "#D32F2F", fontSize: 15, fontWeight: "600" },
   version: { fontSize: 11, textAlign: "center", marginBottom: 8 },
+
+  // Edit Modal
+  editOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "flex-end",
+  },
+  editSheet: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderWidth: 1,
+    padding: 24,
+    paddingBottom: 40,
+    gap: 16,
+  },
+  editHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#333",
+    alignSelf: "center",
+    marginBottom: 4,
+  },
+  editSheetTitle: { fontSize: 20, fontWeight: "800" },
+  editAvatarRow: { flexDirection: "row", alignItems: "center", gap: 14 },
+  editAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  editAvatarText: { color: "#fff", fontSize: 20, fontWeight: "800" },
+  editAvatarHint: { fontSize: 12, flex: 1 },
+  editLabel: { fontSize: 10, fontWeight: "700", letterSpacing: 1.2 },
+  editInput: {
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+  },
+  editActions: { flexDirection: "row", gap: 12, marginTop: 4 },
+  editCancelBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 28,
+    paddingVertical: 13,
+    alignItems: "center",
+  },
+  editCancelText: { fontSize: 15, fontWeight: "600" },
+  editSaveBtn: {
+    flex: 1,
+    backgroundColor: "#FF6B00",
+    borderRadius: 28,
+    paddingVertical: 13,
+    alignItems: "center",
+  },
+  editSaveBtnText: { color: "#fff", fontSize: 15, fontWeight: "800" },
 });
