@@ -15,7 +15,7 @@ export function adaptEventDetail(e: EventDetail): Event {
     latitude: e.latitude ?? undefined,
     longitude: e.longitude ?? undefined,
     currencySymbol,
-    ticketTypes: (e.ticketTypes ?? []).map((tt) => ({
+    ticketTypes: (e.ticketTypes ?? []).map((tt: { id: string; name: string; description?: string | null; price: number; available: number }) => ({
       id: tt.id,
       name: tt.name,
       description: tt.description ?? undefined,

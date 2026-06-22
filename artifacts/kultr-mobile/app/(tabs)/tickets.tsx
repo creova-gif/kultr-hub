@@ -49,7 +49,7 @@ export default function TicketsScreen() {
     if (!apiData?.tickets?.length) return localTickets;
     const apiTickets = apiData.tickets.map(adaptApiTicket);
     const localOnly = localTickets.filter(
-      (lt) => !apiTickets.some((at) => at.id === lt.id)
+      (lt) => !apiTickets.some((at: PurchasedTicket) => at.id === lt.id)
     );
     return [...apiTickets, ...localOnly];
   }, [apiData, localTickets]);

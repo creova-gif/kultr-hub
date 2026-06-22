@@ -68,7 +68,7 @@ export default function TicketViewScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         const lines: string[] = [];
         if (res.pointsEarned > 0) lines.push(`+${res.pointsEarned} KULTROINS`);
-        if (res.questsCompleted.length) lines.push(`Completed: ${res.questsCompleted.map((q) => q.name).join(", ")}`);
+        if (res.questsCompleted.length) lines.push(`Completed: ${res.questsCompleted.map((q: { name: string }) => q.name).join(", ")}`);
         if (res.legendAwarded) lines.push("🏆 Kultr Legend unlocked!");
         Alert.alert("Checked in!", lines.join("\n") || "Welcome — enjoy the event.");
       },
