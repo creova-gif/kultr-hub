@@ -29,6 +29,7 @@ import { useColors } from "@/hooks/useColors";
 import { useCheckIn } from "@/hooks/useQuests";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
 import { useEventDetail } from "@/hooks/useEventDetail";
+import { shareEventToWhatsApp } from "@/utils/share";
 
 // Avatar palette for the synthetic "who's going" stack.
 const GOING_AVATARS = [
@@ -183,13 +184,9 @@ export default function EventDetailScreen() {
               </Pressable>
               <Pressable
                 style={[styles.heroBtn, { backgroundColor: "rgba(0,0,0,0.5)" }]}
-                onPress={() => {
+                onPress={async () => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  const { Share } = require("react-native");
-                  Share.share({
-                    title: event.title,
-                    message: `Check out "${event.title}" on Kultr — ${event.venue}, ${event.city} on ${event.date}. Get your tickets now!`,
-                  });
+                  await shareEventToWhatsApp(event);
                 }}
                 accessibilityLabel="Share event"
                 accessibilityRole="button"

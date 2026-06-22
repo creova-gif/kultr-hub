@@ -98,6 +98,7 @@ const TOKEN_KEY = "kultr_auth_token";
 const LANG_KEY = "kultr_language";
 const ONBOARDING_KEY = "kultr_onboarding_done";
 const INTERESTS_KEY = "kultr_user_interests";
+const USER_KEY = "kultr_auth_user";
 
 function adaptAnalyticsStat(stat: CreatedEventStats): CreatedEvent {
   const date = stat.eventDate.slice(0, 10);
@@ -173,6 +174,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.getItem(TOKEN_KEY).then((stored) => {
       if (stored) setAuthToken(stored);
     });
+    AsyncStorage.getItem(USER_KEY).then((stored) => {
+      if (stored) {
+        try { setAuthUser(JSON.parse(stored) as AuthUser); } catch { /* ignore */ }
+      }
+    });
     AsyncStorage.getItem(LANG_KEY).then((stored) => {
       if (stored && ["en", "fr", "sw", "ar"].includes(stored)) {
         const lang = stored as Language;
@@ -224,12 +230,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(TOKEN_KEY, token);
     setAuthToken(token);
     setAuthUser(user);
+    await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
   }, []);
 
   const clearAuth = useCallback(async () => {
     await AsyncStorage.removeItem(TOKEN_KEY);
     setAuthToken(null);
     setAuthUser(null);
+    await AsyncStorage.removeItem(USER_KEY);
   }, []);
 
   const addTicket = (ticket: PurchasedTicket) => {

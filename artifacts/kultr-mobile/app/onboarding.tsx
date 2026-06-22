@@ -494,7 +494,7 @@ export default function OnboardingScreen() {
                             {country.currencySymbol} · {country.currencyCode}
                           </Text>
                           <View style={styles.metaDot} />
-                          <Feather name="users" size={10} color="#555" />
+                          <Feather name="users" size={10} color="#AAA" />
                           <Text style={styles.locationMembers}>{members}</Text>
                         </View>
                       </View>
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: "rgba(255,255,255,0.07)",
   },
-  skipTopText: { color: "#777", fontSize: 13, fontWeight: "600" },
+  skipTopText: { color: "#AAA", fontSize: 13, fontWeight: "600" },
 
   // ── Welcome center hero ───────────────────────────────────────────────────
   welcomeCenter: {
@@ -616,7 +616,7 @@ const styles = StyleSheet.create({
   },
   welcomeSub: {
     fontSize: 15,
-    color: "#666",
+    color: "#999",
     textAlign: "center",
     lineHeight: 22,
     marginBottom: 28,
@@ -641,7 +641,7 @@ const styles = StyleSheet.create({
   welcomeCta: { paddingHorizontal: 20, gap: 14 },
 
   signinLink: { alignItems: "center", paddingVertical: 4 },
-  signinText: { fontSize: 13, color: "#555" },
+  signinText: { fontSize: 13, color: "#AAA" },
   signinAccent: { color: "#FF6B00", fontWeight: "700" },
 
   // ── Steps 1-3 page wrapper ────────────────────────────────────────────────
@@ -680,7 +680,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.8,
     lineHeight: 40,
   },
-  stepSub: { fontSize: 14, color: "#666", lineHeight: 20, marginTop: 2 },
+  stepSub: { fontSize: 14, color: "#999", lineHeight: 20, marginTop: 2 },
 
   // ── Feature Carousel ──────────────────────────────────────────────────────
   featureSlide: {
@@ -700,7 +700,7 @@ const styles = StyleSheet.create({
   featureTitle: { fontSize: 26, fontWeight: "900", letterSpacing: -0.5, marginBottom: 10, textAlign: "center" },
   featureSub: {
     fontSize: 15,
-    color: "#777",
+    color: "#AAA",
     textAlign: "center",
     lineHeight: 22,
     marginBottom: 28,
@@ -774,7 +774,7 @@ const styles = StyleSheet.create({
   interestLabel: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#777",
+    color: "#AAA",
   },
   interestLabelOn: { color: "#FF6B00" },
 
@@ -821,9 +821,9 @@ const styles = StyleSheet.create({
   locationName: { fontSize: 15, fontWeight: "800", color: "#ccc" },
   locationNameOn: { color: "#FF6B00" },
   locationMeta: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 3 },
-  locationCurrency: { fontSize: 11, color: "#555" },
+  locationCurrency: { fontSize: 11, color: "#AAA" },
   metaDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: "#333" },
-  locationMembers: { fontSize: 11, color: "#555" },
+  locationMembers: { fontSize: 11, color: "#AAA" },
 
   checkCircle: {
     width: 22,
@@ -862,6 +862,6 @@ const styles = StyleSheet.create({
   },
   primaryBtnText: { color: "#fff", fontSize: 17, fontWeight: "800" },
 
-  legalNote: { fontSize: 11, color: "#444", textAlign: "center", lineHeight: 17 },
+  legalNote: { fontSize: 11, color: "#999", textAlign: "center", lineHeight: 17 },
   legalLink: { color: "#FF6B00", fontWeight: "700" },
 });
