@@ -99,6 +99,7 @@ const USER_KEY = "kultr_auth_user";
 const LANG_KEY = "kultr_language";
 const ONBOARDING_KEY = "kultr_onboarding_done";
 const INTERESTS_KEY = "kultr_user_interests";
+const TICKETS_KEY = "kultr_tickets";
 
 function adaptAnalyticsStat(stat: CreatedEventStats): CreatedEvent {
   const date = stat.eventDate.slice(0, 10);
@@ -195,6 +196,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         try { setUserInterests(JSON.parse(stored)); } catch { /* ignore corrupt data */ }
       }
     });
+    AsyncStorage.getItem(TICKETS_KEY).then((stored) => {
+      if (stored) {
+        try { setTickets(JSON.parse(stored) as PurchasedTicket[]); } catch { /* ignore corrupt data */ }
+      }
+    });
   }, []);
 
   const isRTL = language === "ar";
@@ -239,6 +245,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAuthToken(null);
     setAuthUser(null);
   }, []);
+
+  // Persist tickets whenever they change
+  React.useEffect(() => {
+    AsyncStorage.setItem(TICKETS_KEY, JSON.stringify(tickets));
+  }, [tickets]);
 
   const addTicket = (ticket: PurchasedTicket) => {
     setTickets((prev) => [ticket, ...prev]);
