@@ -314,27 +314,30 @@ router.post("/mpesa/stk-push", requireAuth, async (req: Request, res: Response) 
     return;
   }
 
-  // Persist what this reference is actually for, server-side, before contacting
-  // the gateway. /mpesa/verify reads quantity/price back from here — the M-Pesa
-  // STK query response carries no amount, so without this a client could pay for
-  // one ticket and verify with a larger quantity to receive tickets it never paid for.
-  await db.insert(pendingPaymentsTable).values({
-    reference,
-    userId: authed.userId,
-    eventId,
-    ticketTypeId,
-    quantity,
-    unitPrice: String(Number(ticketType.price)),
-    currency: ticketType.currency,
-    provider: "mpesa",
-  });
-
   try {
     const stkResult = await initiateStkPush({
       phone: normalised,
       amountKES: totalAmount,
       reference,
       description: `${event.title} ticket`,
+    });
+
+    // Persist what this reference is actually for, server-side, before ever
+    // responding to the client. /mpesa/verify (and the reconciliation worker,
+    // which never talks to the client at all) read quantity/price/providerHandle
+    // back from here — the M-Pesa STK query response carries no amount, so
+    // without this a client could pay for one ticket and verify with a larger
+    // quantity to receive tickets it never paid for.
+    await db.insert(pendingPaymentsTable).values({
+      reference,
+      userId: authed.userId,
+      eventId,
+      ticketTypeId,
+      quantity,
+      unitPrice: String(Number(ticketType.price)),
+      currency: ticketType.currency,
+      provider: "mpesa",
+      providerHandle: stkResult ? stkResult.checkoutRequestId : `sim_${reference}`,
     });
 
     if (!stkResult) {
@@ -372,19 +375,17 @@ router.post("/mpesa/stk-push", requireAuth, async (req: Request, res: Response) 
  */
 router.post("/mpesa/verify", requireAuth, async (req: Request, res: Response) => {
   const authed = req as AuthedRequest;
-  const { checkoutRequestId, reference } = req.body as {
-    checkoutRequestId?: string;
-    reference: string;
-  };
+  const { reference } = req.body as { reference: string };
 
   if (!reference) {
     res.status(400).json({ message: "reference is required" });
     return;
   }
 
-  // Quantity, price and currency are never re-read from the client here — they
-  // come from the pending-payment record written at stk-push time, closing the
-  // amount/quantity-tampering gap M-Pesa's STK query response can't cover.
+  // Quantity, price, currency and the M-Pesa checkoutRequestId are never
+  // re-read from the client here — they come from the pending-payment record
+  // written at stk-push time, closing the amount/quantity-tampering gap
+  // M-Pesa's STK query response can't cover.
   const [pending] = await db.select().from(pendingPaymentsTable)
     .where(eq(pendingPaymentsTable.reference, reference)).limit(1);
 
@@ -405,8 +406,8 @@ router.post("/mpesa/verify", requireAuth, async (req: Request, res: Response) =>
   const allowSimulation = simulationAllowed(isMpesaConfigured());
   let paid = allowSimulation;
 
-  if (!paid && checkoutRequestId) {
-    const status = await queryStkPush(checkoutRequestId);
+  if (!paid && pending.providerHandle) {
+    const status = await queryStkPush(pending.providerHandle);
     paid = status?.resultCode === "0";
   }
 
@@ -529,20 +530,6 @@ router.post("/momo/request", requireAuth, async (req: Request, res: Response) =>
     return;
   }
 
-  // Persist what this reference is actually for, server-side, before contacting
-  // the gateway — /momo/verify reads quantity/price back from here rather than
-  // trusting the client again, closing the same tampering gap as M-Pesa above.
-  await db.insert(pendingPaymentsTable).values({
-    reference,
-    userId: authed.userId,
-    eventId,
-    ticketTypeId,
-    quantity,
-    unitPrice: String(Number(ticketType.price)),
-    currency: ticketType.currency,
-    provider: "mtn_momo",
-  });
-
   try {
     const momoResult = await initiateMoMoRequest({
       phone: normalised,
@@ -551,6 +538,22 @@ router.post("/momo/request", requireAuth, async (req: Request, res: Response) =>
       externalId: reference,
       payerMessage: `${event.title} ticket`,
       payeeNote: "Kultr",
+    });
+
+    // Persist what this reference is actually for, server-side, before ever
+    // responding to the client — /momo/verify (and the reconciliation worker)
+    // read quantity/price/providerHandle back from here rather than trusting
+    // the client again, closing the same tampering gap as M-Pesa above.
+    await db.insert(pendingPaymentsTable).values({
+      reference,
+      userId: authed.userId,
+      eventId,
+      ticketTypeId,
+      quantity,
+      unitPrice: String(Number(ticketType.price)),
+      currency: ticketType.currency,
+      provider: "mtn_momo",
+      providerHandle: momoResult ? momoResult.referenceId : `sim_${reference}`,
     });
 
     if (!momoResult) {
@@ -585,22 +588,20 @@ router.post("/momo/request", requireAuth, async (req: Request, res: Response) =>
  */
 router.post("/momo/verify", requireAuth, async (req: Request, res: Response) => {
   const authed = req as AuthedRequest;
-  const { referenceId, reference } = req.body as {
-    referenceId: string;
-    reference: string;
-  };
+  const { reference } = req.body as { reference: string };
 
-  if (!referenceId || !reference) {
-    res.status(400).json({ message: "referenceId and reference are required" });
+  if (!reference) {
+    res.status(400).json({ message: "reference is required" });
     return;
   }
 
-  // Quantity, price and currency are never re-read from the client here — they
-  // come from the pending-payment record written at request time.
+  // Quantity, price, currency and the MoMo referenceId are never re-read from
+  // the client here — they come from the pending-payment record written at
+  // request time.
   const [pending] = await db.select().from(pendingPaymentsTable)
     .where(eq(pendingPaymentsTable.reference, reference)).limit(1);
 
-  if (!pending || pending.provider !== "mtn_momo") {
+  if (!pending || pending.provider !== "mtn_momo" || !pending.providerHandle) {
     res.status(400).json({ message: "Unknown or expired payment reference" });
     return;
   }
@@ -618,7 +619,7 @@ router.post("/momo/verify", requireAuth, async (req: Request, res: Response) => 
   let paid = allowSimulation;
 
   if (!paid) {
-    const status = await getMoMoPaymentStatus(referenceId);
+    const status = await getMoMoPaymentStatus(pending.providerHandle);
     paid = status?.status === "SUCCESSFUL";
     if (status?.status === "FAILED") {
       res.status(402).json({ message: "MoMo payment was declined or failed." });

@@ -1,0 +1,1 @@
+ALTER TABLE "pending_payments" ADD COLUMN "provider_handle" text;

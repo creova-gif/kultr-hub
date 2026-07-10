@@ -29,6 +29,11 @@ export const pendingPaymentsTable = pgTable("pending_payments", {
   unitPrice: numeric("unit_price", { precision: 12, scale: 2 }).notNull(),
   currency: text("currency").notNull(),
   provider: text("provider").notNull(),
+  // The provider's own handle for polling this payment's status —
+  // M-Pesa's checkoutRequestId or MoMo's referenceId. Stored so the
+  // reconciliation worker can re-check status without depending on the
+  // client (which may never come back) supplying it again.
+  providerHandle: text("provider_handle"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

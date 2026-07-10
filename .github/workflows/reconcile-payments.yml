@@ -1,0 +1,52 @@
+name: Reconcile pending payments
+
+# Catches M-Pesa/MTN MoMo payments that succeeded at the provider but never
+# got a ticket issued — e.g. the app closed between the user approving the
+# STK/MoMo prompt and the client's own /verify poll completing. Paystack
+# doesn't need this: its reference stays queryable indefinitely, so any later
+# /verify call still completes the purchase.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10"
+
+jobs:
+  reconcile:
+    name: Reconcile
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build API server
+        run: pnpm --filter @workspace/api-server run build
+
+      - name: Run reconciliation sweep
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MPESA_CONSUMER_KEY: ${{ secrets.MPESA_CONSUMER_KEY }}
+          MPESA_CONSUMER_SECRET: ${{ secrets.MPESA_CONSUMER_SECRET }}
+          MPESA_SHORTCODE: ${{ secrets.MPESA_SHORTCODE }}
+          MPESA_PASSKEY: ${{ secrets.MPESA_PASSKEY }}
+          MPESA_ENVIRONMENT: ${{ vars.MPESA_ENVIRONMENT }}
+          MTN_MOMO_SUBSCRIPTION_KEY: ${{ secrets.MTN_MOMO_SUBSCRIPTION_KEY }}
+          MTN_MOMO_API_USER: ${{ secrets.MTN_MOMO_API_USER }}
+          MTN_MOMO_API_KEY: ${{ secrets.MTN_MOMO_API_KEY }}
+          MTN_MOMO_ENVIRONMENT: ${{ vars.MTN_MOMO_ENVIRONMENT }}
+        run: pnpm --filter @workspace/api-server run reconcile-payments
