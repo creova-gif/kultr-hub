@@ -663,6 +663,120 @@ paths:
               schema:
                 $ref: "#/components/schemas/PassActivateResponse"
 
+  # ── PAYOUTS ──────────────────────────────────────────────────────────────
+  # A request queue, not a payment rail — see lib/db/src/schema/payouts.ts.
+  # No automated Paystack Transfers / M-Pesa B2C / MoMo Disbursements
+  # integration exists yet; an admin resolves requests after moving money
+  # through an out-of-band channel. The balance calculation is real.
+  /payouts/balance:
+    get:
+      operationId: getPayoutBalance
+      tags: [payouts]
+      summary: Real available balance per currency (confirmed ticket revenue minus already-requested payouts)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Balances by currency
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayoutBalanceResponse"
+
+  /payouts:
+    get:
+      operationId: listMyPayouts
+      tags: [payouts]
+      summary: List the current user's own payout requests, newest first
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Payout requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayoutListResponse"
+    post:
+      operationId: requestPayout
+      tags: [payouts]
+      summary: Request a payout — amount is validated against the real available balance server-side
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePayoutRequest"
+      responses:
+        "201":
+          description: Payout requested
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayoutView"
+        "400":
+          description: Invalid amount, or amount exceeds available balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /payouts/admin/pending:
+    get:
+      operationId: listPendingPayoutsAdmin
+      tags: [payouts]
+      summary: Every pending payout request across all creators (admin only)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Pending payouts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayoutListResponse"
+        "403":
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /payouts/{id}:
+    patch:
+      operationId: resolvePayout
+      tags: [payouts]
+      summary: Record that a pending payout was paid, failed, or cancelled (admin only) — does not move money itself
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolvePayoutRequest"
+      responses:
+        "200":
+          description: Payout resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayoutView"
+        "409":
+          description: This payout was already resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1528,4 +1642,89 @@ components:
         multiplier:
           type: number
         tier:
+          type: string
+
+    # ── PAYOUTS ──────────────────────────────────────────────────────────────
+    PayoutCurrencyBalance:
+      type: object
+      required: [currency, revenue, requested, available]
+      properties:
+        currency:
+          type: string
+        revenue:
+          type: number
+        requested:
+          type: number
+        available:
+          type: number
+
+    PayoutBalanceResponse:
+      type: object
+      required: [balances]
+      properties:
+        balances:
+          type: array
+          items:
+            $ref: "#/components/schemas/PayoutCurrencyBalance"
+
+    PayoutStatus:
+      type: string
+      enum: [pending, paid, failed, cancelled]
+
+    PayoutView:
+      type: object
+      required: [id, amount, currency, status, destination, requestedAt, resolvedAt]
+      properties:
+        id:
+          type: string
+        creatorId:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        status:
+          $ref: "#/components/schemas/PayoutStatus"
+        destination:
+          type: string
+        resolutionNote:
+          type: string
+          nullable: true
+        requestedAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    PayoutListResponse:
+      type: object
+      required: [payouts]
+      properties:
+        payouts:
+          type: array
+          items:
+            $ref: "#/components/schemas/PayoutView"
+
+    CreatePayoutRequest:
+      type: object
+      required: [amount, currency, destination]
+      properties:
+        amount:
+          type: number
+        currency:
+          type: string
+        destination:
+          type: string
+          description: Phone number or bank reference to send the payout to — not validated or stored as structured payment credentials.
+
+    ResolvePayoutRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [paid, failed, cancelled]
+        resolutionNote:
           type: string

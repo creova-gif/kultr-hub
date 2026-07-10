@@ -432,6 +432,63 @@ export interface PassActivateResponse {
   tier: string;
 }
 
+export interface PayoutCurrencyBalance {
+  currency: string;
+  revenue: number;
+  requested: number;
+  available: number;
+}
+
+export interface PayoutBalanceResponse {
+  balances: PayoutCurrencyBalance[];
+}
+
+export type PayoutStatus = (typeof PayoutStatus)[keyof typeof PayoutStatus];
+
+export const PayoutStatus = {
+  pending: "pending",
+  paid: "paid",
+  failed: "failed",
+  cancelled: "cancelled",
+} as const;
+
+export interface PayoutView {
+  id: string;
+  creatorId?: string;
+  amount: number;
+  currency: string;
+  status: PayoutStatus;
+  destination: string;
+  resolutionNote?: string | null;
+  requestedAt: string;
+  resolvedAt: string | null;
+}
+
+export interface PayoutListResponse {
+  payouts: PayoutView[];
+}
+
+export interface CreatePayoutRequest {
+  amount: number;
+  currency: string;
+  /** Phone number or bank reference to send the payout to — not validated or stored as structured payment credentials. */
+  destination: string;
+}
+
+export type ResolvePayoutRequestStatus =
+  (typeof ResolvePayoutRequestStatus)[keyof typeof ResolvePayoutRequestStatus];
+
+export const ResolvePayoutRequestStatus = {
+  paid: "paid",
+  failed: "failed",
+  cancelled: "cancelled",
+} as const;
+
+export interface ResolvePayoutRequest {
+  status: ResolvePayoutRequestStatus;
+  resolutionNote?: string;
+}
+
 export type ListEventsParams = {
   category?: string;
   city?: string;

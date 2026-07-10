@@ -22,6 +22,13 @@
       "when": 1783719541040,
       "tag": "0002_new_stardust",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1783719959216,
+      "tag": "0003_petite_nuke",
+      "breakpoints": true
     }
   ]
 }

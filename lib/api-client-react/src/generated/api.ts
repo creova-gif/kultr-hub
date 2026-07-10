@@ -21,6 +21,7 @@ import type {
   CheckinRequest,
   CheckinResult,
   CreateEventRequest,
+  CreatePayoutRequest,
   CreatorAnalytics,
   ErrorResponse,
   EventDetail,
@@ -39,9 +40,13 @@ import type {
   OtpVerifyRequest,
   PassActivateRequest,
   PassActivateResponse,
+  PayoutBalanceResponse,
+  PayoutListResponse,
+  PayoutView,
   PerkListResponse,
   PurchaseTicketRequest,
   QuestProgress,
+  ResolvePayoutRequest,
   SignupRequest,
   TicketDetail,
   TicketListResponse,
@@ -2265,4 +2270,403 @@ export const useActivatePass = <
   TContext
 > => {
   return useMutation(getActivatePassMutationOptions(options));
+};
+
+/**
+ * @summary Real available balance per currency (confirmed ticket revenue minus already-requested payouts)
+ */
+export const getGetPayoutBalanceUrl = () => {
+  return `/api/payouts/balance`;
+};
+
+export const getPayoutBalance = async (
+  options?: RequestInit,
+): Promise<PayoutBalanceResponse> => {
+  return customFetch<PayoutBalanceResponse>(getGetPayoutBalanceUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPayoutBalanceQueryKey = () => {
+  return [`/api/payouts/balance`] as const;
+};
+
+export const getGetPayoutBalanceQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPayoutBalance>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPayoutBalance>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPayoutBalanceQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPayoutBalance>>
+  > = ({ signal }) => getPayoutBalance({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPayoutBalance>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPayoutBalanceQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPayoutBalance>>
+>;
+export type GetPayoutBalanceQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Real available balance per currency (confirmed ticket revenue minus already-requested payouts)
+ */
+
+export function useGetPayoutBalance<
+  TData = Awaited<ReturnType<typeof getPayoutBalance>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPayoutBalance>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPayoutBalanceQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List the current user's own payout requests, newest first
+ */
+export const getListMyPayoutsUrl = () => {
+  return `/api/payouts`;
+};
+
+export const listMyPayouts = async (
+  options?: RequestInit,
+): Promise<PayoutListResponse> => {
+  return customFetch<PayoutListResponse>(getListMyPayoutsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListMyPayoutsQueryKey = () => {
+  return [`/api/payouts`] as const;
+};
+
+export const getListMyPayoutsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMyPayouts>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listMyPayouts>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListMyPayoutsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyPayouts>>> = ({
+    signal,
+  }) => listMyPayouts({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMyPayouts>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMyPayoutsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMyPayouts>>
+>;
+export type ListMyPayoutsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List the current user's own payout requests, newest first
+ */
+
+export function useListMyPayouts<
+  TData = Awaited<ReturnType<typeof listMyPayouts>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listMyPayouts>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMyPayoutsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Request a payout — amount is validated against the real available balance server-side
+ */
+export const getRequestPayoutUrl = () => {
+  return `/api/payouts`;
+};
+
+export const requestPayout = async (
+  createPayoutRequest: CreatePayoutRequest,
+  options?: RequestInit,
+): Promise<PayoutView> => {
+  return customFetch<PayoutView>(getRequestPayoutUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createPayoutRequest),
+  });
+};
+
+export const getRequestPayoutMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestPayout>>,
+    TError,
+    { data: BodyType<CreatePayoutRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof requestPayout>>,
+  TError,
+  { data: BodyType<CreatePayoutRequest> },
+  TContext
+> => {
+  const mutationKey = ["requestPayout"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof requestPayout>>,
+    { data: BodyType<CreatePayoutRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return requestPayout(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RequestPayoutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof requestPayout>>
+>;
+export type RequestPayoutMutationBody = BodyType<CreatePayoutRequest>;
+export type RequestPayoutMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Request a payout — amount is validated against the real available balance server-side
+ */
+export const useRequestPayout = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestPayout>>,
+    TError,
+    { data: BodyType<CreatePayoutRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof requestPayout>>,
+  TError,
+  { data: BodyType<CreatePayoutRequest> },
+  TContext
+> => {
+  return useMutation(getRequestPayoutMutationOptions(options));
+};
+
+/**
+ * @summary Every pending payout request across all creators (admin only)
+ */
+export const getListPendingPayoutsAdminUrl = () => {
+  return `/api/payouts/admin/pending`;
+};
+
+export const listPendingPayoutsAdmin = async (
+  options?: RequestInit,
+): Promise<PayoutListResponse> => {
+  return customFetch<PayoutListResponse>(getListPendingPayoutsAdminUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListPendingPayoutsAdminQueryKey = () => {
+  return [`/api/payouts/admin/pending`] as const;
+};
+
+export const getListPendingPayoutsAdminQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPendingPayoutsAdmin>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listPendingPayoutsAdmin>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListPendingPayoutsAdminQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPendingPayoutsAdmin>>
+  > = ({ signal }) => listPendingPayoutsAdmin({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPendingPayoutsAdmin>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPendingPayoutsAdminQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPendingPayoutsAdmin>>
+>;
+export type ListPendingPayoutsAdminQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Every pending payout request across all creators (admin only)
+ */
+
+export function useListPendingPayoutsAdmin<
+  TData = Awaited<ReturnType<typeof listPendingPayoutsAdmin>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listPendingPayoutsAdmin>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPendingPayoutsAdminQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Record that a pending payout was paid, failed, or cancelled (admin only) — does not move money itself
+ */
+export const getResolvePayoutUrl = (id: string) => {
+  return `/api/payouts/${id}`;
+};
+
+export const resolvePayout = async (
+  id: string,
+  resolvePayoutRequest: ResolvePayoutRequest,
+  options?: RequestInit,
+): Promise<PayoutView> => {
+  return customFetch<PayoutView>(getResolvePayoutUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(resolvePayoutRequest),
+  });
+};
+
+export const getResolvePayoutMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resolvePayout>>,
+    TError,
+    { id: string; data: BodyType<ResolvePayoutRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resolvePayout>>,
+  TError,
+  { id: string; data: BodyType<ResolvePayoutRequest> },
+  TContext
+> => {
+  const mutationKey = ["resolvePayout"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resolvePayout>>,
+    { id: string; data: BodyType<ResolvePayoutRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return resolvePayout(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResolvePayoutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resolvePayout>>
+>;
+export type ResolvePayoutMutationBody = BodyType<ResolvePayoutRequest>;
+export type ResolvePayoutMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Record that a pending payout was paid, failed, or cancelled (admin only) — does not move money itself
+ */
+export const useResolvePayout = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resolvePayout>>,
+    TError,
+    { id: string; data: BodyType<ResolvePayoutRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof resolvePayout>>,
+  TError,
+  { id: string; data: BodyType<ResolvePayoutRequest> },
+  TContext
+> => {
+  return useMutation(getResolvePayoutMutationOptions(options));
 };

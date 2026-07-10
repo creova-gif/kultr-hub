@@ -630,3 +630,92 @@ export const GetWalletLedgerResponse = zod.object({
 export const ActivatePassBody = zod.object({
   multiplier: zod.string().optional(),
 });
+
+/**
+ * @summary Real available balance per currency (confirmed ticket revenue minus already-requested payouts)
+ */
+export const GetPayoutBalanceResponse = zod.object({
+  balances: zod.array(
+    zod.object({
+      currency: zod.string(),
+      revenue: zod.number(),
+      requested: zod.number(),
+      available: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary List the current user's own payout requests, newest first
+ */
+export const ListMyPayoutsResponse = zod.object({
+  payouts: zod.array(
+    zod.object({
+      id: zod.string(),
+      creatorId: zod.string().optional(),
+      amount: zod.number(),
+      currency: zod.string(),
+      status: zod.enum(["pending", "paid", "failed", "cancelled"]),
+      destination: zod.string(),
+      resolutionNote: zod.string().nullish(),
+      requestedAt: zod.coerce.date(),
+      resolvedAt: zod.coerce.date().nullable(),
+    }),
+  ),
+});
+
+/**
+ * @summary Request a payout — amount is validated against the real available balance server-side
+ */
+export const RequestPayoutBody = zod.object({
+  amount: zod.number(),
+  currency: zod.string(),
+  destination: zod
+    .string()
+    .describe(
+      "Phone number or bank reference to send the payout to — not validated or stored as structured payment credentials.",
+    ),
+});
+
+/**
+ * @summary Every pending payout request across all creators (admin only)
+ */
+export const ListPendingPayoutsAdminResponse = zod.object({
+  payouts: zod.array(
+    zod.object({
+      id: zod.string(),
+      creatorId: zod.string().optional(),
+      amount: zod.number(),
+      currency: zod.string(),
+      status: zod.enum(["pending", "paid", "failed", "cancelled"]),
+      destination: zod.string(),
+      resolutionNote: zod.string().nullish(),
+      requestedAt: zod.coerce.date(),
+      resolvedAt: zod.coerce.date().nullable(),
+    }),
+  ),
+});
+
+/**
+ * @summary Record that a pending payout was paid, failed, or cancelled (admin only) — does not move money itself
+ */
+export const ResolvePayoutParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const ResolvePayoutBody = zod.object({
+  status: zod.enum(["paid", "failed", "cancelled"]),
+  resolutionNote: zod.string().optional(),
+});
+
+export const ResolvePayoutResponse = zod.object({
+  id: zod.string(),
+  creatorId: zod.string().optional(),
+  amount: zod.number(),
+  currency: zod.string(),
+  status: zod.enum(["pending", "paid", "failed", "cancelled"]),
+  destination: zod.string(),
+  resolutionNote: zod.string().nullish(),
+  requestedAt: zod.coerce.date(),
+  resolvedAt: zod.coerce.date().nullable(),
+});
