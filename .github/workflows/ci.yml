@@ -38,10 +38,58 @@ jobs:
           pnpm --filter @workspace/api-server run typecheck
           pnpm --filter @workspace/kultr-mobile run typecheck
 
+  api-test:
+    name: API integration tests
+    runs-on: ubuntu-latest
+    needs: typecheck
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: kultr_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/kultr_test
+      PGSSLMODE: disable
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply migrations to test database
+        run: pnpm --filter @workspace/db run migrate
+
+      # Exercises the exact bypass/tamper/replay/oversell scenarios this audit
+      # found and fixed — including two tests that only prove anything against
+      # a real Postgres (idempotency via the UNIQUE constraint, the oversell
+      # guard via a real concurrent race), which is why this job provisions one
+      # instead of mocking the DB layer.
+      - name: Run API test suite
+        run: pnpm --filter @workspace/api-server run test
+
   api-build:
     name: Build API server
     runs-on: ubuntu-latest
-    needs: typecheck
+    needs: [typecheck, api-test]
     steps:
       - uses: actions/checkout@v4
 
