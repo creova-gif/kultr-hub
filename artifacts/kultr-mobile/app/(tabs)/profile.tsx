@@ -114,9 +114,7 @@ export default function ProfileScreen() {
             <View style={[styles.avatar, { backgroundColor: "#FF6B00" }]}>
               <Text style={styles.avatarText}>{initials}</Text>
             </View>
-            <View style={[styles.verifiedBadge, { backgroundColor: "#00C853" }]}>
-              <Feather name="check" size={8} color="#fff" />
-            </View>
+            {/* No verification system exists yet (see audit) — do not show a fake trust badge. */}
           </View>
           <View style={styles.userInfo}>
             <Text style={[styles.userName, { color: colors.foreground }]}>{displayName}</Text>

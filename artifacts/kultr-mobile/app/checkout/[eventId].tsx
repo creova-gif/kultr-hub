@@ -34,7 +34,7 @@ export default function CheckoutScreen() {
   }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { addTicket, userCountry, setUserCountry, authToken } = useApp();
+  const { userCountry, setUserCountry, authToken } = useApp();
   const { event } = useEventDetail(eventId);
   const typeIdx = Number(ticketTypeIndex ?? "0");
   const ticketType = event?.ticketTypes[typeIdx] ?? event?.ticketTypes[0];
@@ -46,12 +46,10 @@ export default function CheckoutScreen() {
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string>("");
   const isMounted = useRef(true);
-  const demoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
       isMounted.current = false;
-      if (demoTimer.current) clearTimeout(demoTimer.current);
     };
   }, []);
 
@@ -106,6 +104,16 @@ export default function CheckoutScreen() {
   const needsPhone =
     activeMethod?.type === "mobile_money" || activeMethod?.type === "ussd";
 
+  /** Extract a server-provided error message, falling back to a generic one. */
+  async function readError(res: Response, fallback: string): Promise<string> {
+    try {
+      const body = await res.json() as { message?: string };
+      return typeof body.message === "string" && body.message ? body.message : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
   const handleConfirm = async () => {
     if (needsPhone) {
       const cleaned = phone.trim().replace(/[\s\-()]/g, "");
@@ -127,138 +135,135 @@ export default function CheckoutScreen() {
     const apiBase = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
     const authHeader = { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` };
 
+    // A ticket is only ever shown as purchased when the backend confirms it. Any
+    // rejection or error surfaces here and stops the flow — it must never fall
+    // through to a fabricated "success," which would show a ticket that doesn't
+    // exist server-side and will fail to scan at the door.
     try {
-      // M-Pesa STK Push path for mobile_money payments
       if (activeMethod?.type === "mobile_money") {
-          const stkRes = await fetch(`${apiBase}/api/payments/mpesa/stk-push`, {
-            method: "POST",
-            headers: authHeader,
-            body: JSON.stringify({ eventId: event.id, ticketTypeId: ticketType.id, quantity, phone }),
-          });
+        const stkRes = await fetch(`${apiBase}/api/payments/mpesa/stk-push`, {
+          method: "POST",
+          headers: authHeader,
+          body: JSON.stringify({ eventId: event.id, ticketTypeId: ticketType.id, quantity, phone }),
+        });
 
-          if (stkRes.ok) {
-            const stkData = await stkRes.json() as {
-              checkoutRequestId: string;
-              reference: string;
-              simulated: boolean;
-            };
-
-            // Wait for user to enter PIN (or instant for simulated)
-            if (!stkData.simulated) {
-              await new Promise((r) => setTimeout(r, 5000));
-            }
-
-            const verifyRes = await fetch(`${apiBase}/api/payments/mpesa/verify`, {
-              method: "POST",
-              headers: authHeader,
-              body: JSON.stringify({
-                checkoutRequestId: stkData.checkoutRequestId,
-                reference: stkData.reference,
-                simulated: stkData.simulated,
-                eventId: event.id,
-                ticketTypeId: ticketType.id,
-                quantity,
-              }),
-            });
-
-            if (verifyRes.ok) {
-              const verifyData = await verifyRes.json() as { ticketId: string; ticketNumber: string };
-              if (typeof verifyData.ticketId !== "string") throw new Error("Invalid verify response");
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              setLoading(false);
-              router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}`);
-              return;
-            }
-          }
-        } else {
-          // Paystack path for card / bank / ussd
-          const initRes = await fetch(`${apiBase}/api/payments/init`, {
-            method: "POST",
-            headers: authHeader,
-            body: JSON.stringify({ eventId: event.id, ticketTypeId: ticketType.id, quantity }),
-          });
-
-          if (initRes.ok) {
-            const initData = await initRes.json() as {
-              reference: string;
-              authorizationUrl: string | null;
-              simulated: boolean;
-              totalAmount: number;
-              currency: string;
-            };
-
-            if (initData.authorizationUrl) {
-              const browserResult = await WebBrowser.openBrowserAsync(initData.authorizationUrl);
-              if (browserResult.type !== "opened") {
-                const verifyRes = await fetch(`${apiBase}/api/payments/verify`, {
-                  method: "POST",
-                  headers: authHeader,
-                  body: JSON.stringify({
-                    reference: initData.reference,
-                    eventId: event.id,
-                    ticketTypeId: ticketType.id,
-                    quantity,
-                  }),
-                });
-
-                if (verifyRes.ok) {
-                  const verifyData = await verifyRes.json() as { ticketId: string; ticketNumber: string };
-                  if (typeof verifyData.ticketId !== "string") throw new Error("Invalid verify response");
-                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                  setLoading(false);
-                  router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}`);
-                  return;
-                }
-              }
-            } else if (initData.simulated) {
-              const verifyRes = await fetch(`${apiBase}/api/payments/verify`, {
-                method: "POST",
-                headers: authHeader,
-                body: JSON.stringify({
-                  reference: initData.reference,
-                  simulated: true,
-                  eventId: event.id,
-                  ticketTypeId: ticketType.id,
-                  quantity,
-                }),
-              });
-
-              if (verifyRes.ok) {
-                const verifyData = await verifyRes.json() as { ticketId: string; ticketNumber: string };
-                if (typeof verifyData.ticketId !== "string") throw new Error("Invalid verify response");
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                setLoading(false);
-                router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}`);
-                return;
-              }
-            }
-          }
+        if (!stkRes.ok) {
+          setCheckoutError(await readError(stkRes, "Could not start M-Pesa payment. Please try again."));
+          setLoading(false);
+          return;
         }
-    } catch {
-      if (isMounted.current) setCheckoutError("Payment unavailable — completing in demo mode.");
-    }
 
-    // Demo fallback: create ticket locally (used when API is unavailable or user is not authenticated)
-    await new Promise<void>((r) => { demoTimer.current = setTimeout(r, 1200); });
-    if (!isMounted.current) return;
-    const newTicket = {
-      id: `ticket-${Date.now()}`,
-      eventId: event.id,
-      ticketTypeId: ticketType.id,
-      ticketTypeName: ticketType.name,
-      ticketNumber: `KTR-${Math.floor(10000 + Math.random() * 90000)}`,
-      purchaseDate: new Date().toISOString().split("T")[0],
-      quantity,
-      totalPaid: grandTotal,
-      currency: userCountry.currencyCode,
-      currencySymbol: userCountry.currencySymbol,
-    };
-    addTicket(newTicket);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setLoading(false);
-    router.replace(
-      `/ticket/${newTicket.id}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${newTicket.ticketNumber}`
-    );
+        const stkData = await stkRes.json() as {
+          checkoutRequestId: string;
+          reference: string;
+          simulated: boolean;
+        };
+
+        // Wait for user to enter PIN (or instant for simulated)
+        if (!stkData.simulated) {
+          await new Promise((r) => setTimeout(r, 5000));
+        }
+
+        const verifyRes = await fetch(`${apiBase}/api/payments/mpesa/verify`, {
+          method: "POST",
+          headers: authHeader,
+          body: JSON.stringify({
+            checkoutRequestId: stkData.checkoutRequestId,
+            reference: stkData.reference,
+          }),
+        });
+
+        if (!verifyRes.ok) {
+          setCheckoutError(await readError(verifyRes, "M-Pesa payment could not be confirmed. Please try again."));
+          setLoading(false);
+          return;
+        }
+
+        const verifyData = await verifyRes.json() as { ticketId: string; ticketNumber: string };
+        if (typeof verifyData.ticketId !== "string") throw new Error("Invalid verify response");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setLoading(false);
+        router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}`);
+        return;
+      }
+
+      // Paystack path for card / bank / ussd
+      const initRes = await fetch(`${apiBase}/api/payments/init`, {
+        method: "POST",
+        headers: authHeader,
+        body: JSON.stringify({ eventId: event.id, ticketTypeId: ticketType.id, quantity }),
+      });
+
+      if (!initRes.ok) {
+        setCheckoutError(await readError(initRes, "Could not start payment. Please try again."));
+        setLoading(false);
+        return;
+      }
+
+      const initData = await initRes.json() as {
+        reference: string;
+        authorizationUrl: string | null;
+        simulated: boolean;
+        totalAmount: number;
+        currency: string;
+      };
+
+      if (initData.authorizationUrl) {
+        const browserResult = await WebBrowser.openBrowserAsync(initData.authorizationUrl);
+        if (browserResult.type !== "opened") {
+          const verifyRes = await fetch(`${apiBase}/api/payments/verify`, {
+            method: "POST",
+            headers: authHeader,
+            body: JSON.stringify({ reference: initData.reference, eventId: event.id, ticketTypeId: ticketType.id, quantity }),
+          });
+
+          if (!verifyRes.ok) {
+            setCheckoutError(await readError(verifyRes, "Payment could not be confirmed. Please try again."));
+            setLoading(false);
+            return;
+          }
+
+          const verifyData = await verifyRes.json() as { ticketId: string; ticketNumber: string };
+          if (typeof verifyData.ticketId !== "string") throw new Error("Invalid verify response");
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          setLoading(false);
+          router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}`);
+          return;
+        }
+        // Browser closed without completing checkout — not an error, just stop.
+        setLoading(false);
+        return;
+      }
+
+      if (initData.simulated) {
+        const verifyRes = await fetch(`${apiBase}/api/payments/verify`, {
+          method: "POST",
+          headers: authHeader,
+          body: JSON.stringify({ reference: initData.reference, eventId: event.id, ticketTypeId: ticketType.id, quantity }),
+        });
+
+        if (!verifyRes.ok) {
+          setCheckoutError(await readError(verifyRes, "Payment could not be confirmed. Please try again."));
+          setLoading(false);
+          return;
+        }
+
+        const verifyData = await verifyRes.json() as { ticketId: string; ticketNumber: string };
+        if (typeof verifyData.ticketId !== "string") throw new Error("Invalid verify response");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setLoading(false);
+        router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}`);
+        return;
+      }
+
+      setCheckoutError("Payment could not be started. Please try again.");
+      setLoading(false);
+    } catch {
+      if (isMounted.current) {
+        setCheckoutError("Something went wrong completing your payment. Please try again.");
+        setLoading(false);
+      }
+    }
   };
 
   return (
