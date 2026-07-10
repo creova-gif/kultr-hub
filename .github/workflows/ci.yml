@@ -76,6 +76,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Applies lib/db/migrations/* to the production database before the new
+      # code starts serving traffic. Requires a DATABASE_URL secret pointing at
+      # the same production database Railway injects into the API service —
+      # add it under Settings → Secrets → Actions if this step fails with
+      # "DATABASE_URL must be set".
+      - name: Run database migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm --filter @workspace/db run migrate
+
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
@@ -85,6 +107,28 @@ jobs:
         run: |
           cd artifacts/api-server
           railway up --service kultr-api
+
+      # Fails the workflow (but does not auto-rollback) if the new deploy isn't
+      # actually serving. Rollback: `railway rollback --service kultr-api` re-points
+      # traffic at the previous deployment, or redeploy the prior commit's SHA from
+      # the Railway dashboard's Deployments tab.
+      - name: Smoke test
+        run: |
+          API_URL="${{ vars.EXPO_PUBLIC_API_URL }}"
+          if [ -z "$API_URL" ]; then
+            echo "::warning::vars.EXPO_PUBLIC_API_URL is not set — skipping smoke test. Set it to the production API URL to enable this check."
+            exit 0
+          fi
+          echo "Waiting for $API_URL/api/healthz to come up..."
+          for i in $(seq 1 10); do
+            if curl -fsS --max-time 5 "$API_URL/api/healthz" > /dev/null; then
+              echo "Smoke test passed."
+              exit 0
+            fi
+            sleep 6
+          done
+          echo "::error::$API_URL/api/healthz did not return 200 after deploy. Roll back with: railway rollback --service kultr-api"
+          exit 1
 
   mobile-build:
     name: Build Expo Web

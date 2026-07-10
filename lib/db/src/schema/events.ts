@@ -84,7 +84,6 @@ export const insertEventSchema = createInsertSchema(eventsTable).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  soldQuantity: true,
 });
 
 export const insertTicketTypeSchema = createInsertSchema(ticketTypesTable).omit({
