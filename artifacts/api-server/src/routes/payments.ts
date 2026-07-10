@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { db, ticketTypesTable, eventsTable, usersTable } from "@workspace/db";
+import { db, ticketTypesTable, eventsTable, usersTable, pendingPaymentsTable } from "@workspace/db";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { initializePayment, verifyPayment, isPaystackConfigured } from "../lib/paystack.js";
 import { initiateStkPush, queryStkPush, isMpesaConfigured } from "../lib/mpesa.js";
@@ -266,10 +266,9 @@ router.get("/callback", async (req: Request, res: Response) => {
  */
 router.post("/mpesa/stk-push", requireAuth, async (req: Request, res: Response) => {
   const authed = req as AuthedRequest;
-  const { eventId, ticketTypeId, quantity = 1, phone, countryCode } = req.body as {
+  const { eventId, ticketTypeId, phone, countryCode } = req.body as {
     eventId: string;
     ticketTypeId: string;
-    quantity?: number;
     phone: string;
     countryCode?: string;
   };
@@ -277,6 +276,14 @@ router.post("/mpesa/stk-push", requireAuth, async (req: Request, res: Response) 
   if (!eventId || !ticketTypeId || !phone) {
     res.status(400).json({ message: "eventId, ticketTypeId, and phone are required" });
     return;
+  }
+
+  let quantity: number;
+  try {
+    quantity = validateQuantity((req.body as { quantity?: unknown }).quantity ?? 1);
+  } catch (err) {
+    if (handleIssueError(err, res)) return;
+    throw err;
   }
 
   const [[event], [ticketType], [user]] = await Promise.all([
@@ -306,6 +313,21 @@ router.post("/mpesa/stk-push", requireAuth, async (req: Request, res: Response) 
     res.status(400).json({ message: err instanceof Error ? err.message : "Invalid phone number" });
     return;
   }
+
+  // Persist what this reference is actually for, server-side, before contacting
+  // the gateway. /mpesa/verify reads quantity/price back from here — the M-Pesa
+  // STK query response carries no amount, so without this a client could pay for
+  // one ticket and verify with a larger quantity to receive tickets it never paid for.
+  await db.insert(pendingPaymentsTable).values({
+    reference,
+    userId: authed.userId,
+    eventId,
+    ticketTypeId,
+    quantity,
+    unitPrice: String(Number(ticketType.price)),
+    currency: ticketType.currency,
+    provider: "mpesa",
+  });
 
   try {
     const stkResult = await initiateStkPush({
@@ -350,28 +372,33 @@ router.post("/mpesa/stk-push", requireAuth, async (req: Request, res: Response) 
  */
 router.post("/mpesa/verify", requireAuth, async (req: Request, res: Response) => {
   const authed = req as AuthedRequest;
-  const { checkoutRequestId, reference, eventId, ticketTypeId } = req.body as {
-    checkoutRequestId: string;
+  const { checkoutRequestId, reference } = req.body as {
+    checkoutRequestId?: string;
     reference: string;
-    eventId: string;
-    ticketTypeId: string;
   };
 
-  if (!reference || !eventId || !ticketTypeId) {
-    res.status(400).json({ message: "reference, eventId and ticketTypeId are required" });
+  if (!reference) {
+    res.status(400).json({ message: "reference is required" });
     return;
   }
 
-  let quantity: number;
-  try {
-    quantity = validateQuantity((req.body as { quantity?: unknown }).quantity ?? 1);
-  } catch (err) {
-    if (handleIssueError(err, res)) return;
-    throw err;
+  // Quantity, price and currency are never re-read from the client here — they
+  // come from the pending-payment record written at stk-push time, closing the
+  // amount/quantity-tampering gap M-Pesa's STK query response can't cover.
+  const [pending] = await db.select().from(pendingPaymentsTable)
+    .where(eq(pendingPaymentsTable.reference, reference)).limit(1);
+
+  if (!pending || pending.provider !== "mpesa") {
+    res.status(400).json({ message: "Unknown or expired payment reference" });
+    return;
+  }
+  if (pending.userId !== authed.userId) {
+    res.status(403).json({ message: "This payment belongs to a different account." });
+    return;
   }
 
   const [ticketType] = await db.select().from(ticketTypesTable)
-    .where(eq(ticketTypesTable.id, ticketTypeId)).limit(1);
+    .where(eq(ticketTypesTable.id, pending.ticketTypeId)).limit(1);
 
   if (!ticketType) { res.status(404).json({ message: "Ticket type not found" }); return; }
 
@@ -388,17 +415,17 @@ router.post("/mpesa/verify", requireAuth, async (req: Request, res: Response) =>
     return;
   }
 
-  const unitPrice = Number(ticketType.price);
-  const totalAmount = unitPrice * quantity;
+  const unitPrice = Number(pending.unitPrice);
+  const totalAmount = unitPrice * pending.quantity;
 
   try {
     const { ticket } = await issueTicket({
       userId: authed.userId,
-      eventId,
-      ticketTypeId,
-      quantity,
+      eventId: pending.eventId,
+      ticketTypeId: pending.ticketTypeId,
+      quantity: pending.quantity,
       unitPrice,
-      currency: ticketType.currency,
+      currency: pending.currency,
       paymentReference: reference,
       paymentProvider: allowSimulation ? "mpesa_simulated" : "mpesa",
     });
@@ -456,10 +483,9 @@ router.post("/mpesa/callback", async (req: Request, res: Response) => {
  */
 router.post("/momo/request", requireAuth, async (req: Request, res: Response) => {
   const authed = req as AuthedRequest;
-  const { eventId, ticketTypeId, quantity = 1, phone, countryCode } = req.body as {
+  const { eventId, ticketTypeId, phone, countryCode } = req.body as {
     eventId: string;
     ticketTypeId: string;
-    quantity?: number;
     phone: string;
     countryCode?: string;
   };
@@ -467,6 +493,14 @@ router.post("/momo/request", requireAuth, async (req: Request, res: Response) =>
   if (!eventId || !ticketTypeId || !phone) {
     res.status(400).json({ message: "eventId, ticketTypeId, and phone are required" });
     return;
+  }
+
+  let quantity: number;
+  try {
+    quantity = validateQuantity((req.body as { quantity?: unknown }).quantity ?? 1);
+  } catch (err) {
+    if (handleIssueError(err, res)) return;
+    throw err;
   }
 
   const [[event], [ticketType], [user]] = await Promise.all([
@@ -494,6 +528,20 @@ router.post("/momo/request", requireAuth, async (req: Request, res: Response) =>
     res.status(400).json({ message: err instanceof Error ? err.message : "Invalid phone number" });
     return;
   }
+
+  // Persist what this reference is actually for, server-side, before contacting
+  // the gateway — /momo/verify reads quantity/price back from here rather than
+  // trusting the client again, closing the same tampering gap as M-Pesa above.
+  await db.insert(pendingPaymentsTable).values({
+    reference,
+    userId: authed.userId,
+    eventId,
+    ticketTypeId,
+    quantity,
+    unitPrice: String(Number(ticketType.price)),
+    currency: ticketType.currency,
+    provider: "mtn_momo",
+  });
 
   try {
     const momoResult = await initiateMoMoRequest({
@@ -537,28 +585,32 @@ router.post("/momo/request", requireAuth, async (req: Request, res: Response) =>
  */
 router.post("/momo/verify", requireAuth, async (req: Request, res: Response) => {
   const authed = req as AuthedRequest;
-  const { referenceId, reference, eventId, ticketTypeId } = req.body as {
+  const { referenceId, reference } = req.body as {
     referenceId: string;
     reference: string;
-    eventId: string;
-    ticketTypeId: string;
   };
 
-  if (!referenceId || !reference || !eventId || !ticketTypeId) {
-    res.status(400).json({ message: "referenceId, reference, eventId and ticketTypeId are required" });
+  if (!referenceId || !reference) {
+    res.status(400).json({ message: "referenceId and reference are required" });
     return;
   }
 
-  let quantity: number;
-  try {
-    quantity = validateQuantity((req.body as { quantity?: unknown }).quantity ?? 1);
-  } catch (err) {
-    if (handleIssueError(err, res)) return;
-    throw err;
+  // Quantity, price and currency are never re-read from the client here — they
+  // come from the pending-payment record written at request time.
+  const [pending] = await db.select().from(pendingPaymentsTable)
+    .where(eq(pendingPaymentsTable.reference, reference)).limit(1);
+
+  if (!pending || pending.provider !== "mtn_momo") {
+    res.status(400).json({ message: "Unknown or expired payment reference" });
+    return;
+  }
+  if (pending.userId !== authed.userId) {
+    res.status(403).json({ message: "This payment belongs to a different account." });
+    return;
   }
 
   const [ticketType] = await db.select().from(ticketTypesTable)
-    .where(eq(ticketTypesTable.id, ticketTypeId)).limit(1);
+    .where(eq(ticketTypesTable.id, pending.ticketTypeId)).limit(1);
 
   if (!ticketType) { res.status(404).json({ message: "Ticket type not found" }); return; }
 
@@ -579,17 +631,17 @@ router.post("/momo/verify", requireAuth, async (req: Request, res: Response) => 
     return;
   }
 
-  const unitPrice = Number(ticketType.price);
-  const totalAmount = unitPrice * quantity;
+  const unitPrice = Number(pending.unitPrice);
+  const totalAmount = unitPrice * pending.quantity;
 
   try {
     const { ticket } = await issueTicket({
       userId: authed.userId,
-      eventId,
-      ticketTypeId,
-      quantity,
+      eventId: pending.eventId,
+      ticketTypeId: pending.ticketTypeId,
+      quantity: pending.quantity,
       unitPrice,
-      currency: ticketType.currency,
+      currency: pending.currency,
       paymentReference: reference,
       paymentProvider: allowSimulation ? "momo_simulated" : "mtn_momo",
     });
