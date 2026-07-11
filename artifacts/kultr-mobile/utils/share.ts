@@ -12,8 +12,20 @@ export interface ShareableEvent {
   venue: string;
 }
 
+// Must match the path segment app/_layout.tsx's deep-link handler checks
+// (parsed.path?.startsWith("event/")) and the real route file
+// app/event/[id].tsx — a shared link that doesn't match either can never
+// open the app to the right screen.
+//
+// This alone makes the kultr:// custom-scheme path work end-to-end (already
+// registered via app.json's "scheme"). It does NOT by itself make the
+// https:// link open the app directly on a fresh install — that additionally
+// requires hosting an apple-app-site-association file (iOS) and a
+// assetlinks.json file (Android) at the real APP_BASE_URL domain, verifying
+// ownership of it. That's infrastructure only the team can set up; until
+// it's done, the https:// link opens in a browser instead of the app.
 function buildEventUrl(eventId: string): string {
-  return `${APP_BASE_URL}/e/${eventId}`;
+  return `${APP_BASE_URL}/event/${eventId}`;
 }
 
 function buildWhatsAppText(event: ShareableEvent): string {
