@@ -277,6 +277,8 @@ export default function CheckoutScreen() {
           <Pressable
             onPress={() => router.back()}
             style={[styles.backBtn, { backgroundColor: colors.muted }]}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
           >
             <Feather name="arrow-left" size={20} color={colors.foreground} />
           </Pressable>
@@ -354,6 +356,9 @@ export default function CheckoutScreen() {
                   if (quantity > 1) { Haptics.selectionAsync(); setQuantity((q) => q - 1); }
                 }}
                 style={[styles.qtyBtn, { backgroundColor: colors.muted, opacity: quantity <= 1 ? 0.4 : 1 }]}
+                accessibilityLabel="Decrease quantity"
+                accessibilityRole="button"
+                accessibilityState={{ disabled: quantity <= 1 }}
               >
                 <Feather name="minus" size={14} color={colors.foreground} />
               </Pressable>
@@ -368,6 +373,9 @@ export default function CheckoutScreen() {
                   styles.qtyBtn,
                   { backgroundColor: colors.muted, opacity: quantity >= Math.min(6, ticketType.available) ? 0.4 : 1 },
                 ]}
+                accessibilityLabel="Increase quantity"
+                accessibilityRole="button"
+                accessibilityState={{ disabled: quantity >= Math.min(6, ticketType.available) }}
               >
                 <Feather name="plus" size={14} color={colors.foreground} />
               </Pressable>
@@ -473,7 +481,11 @@ export default function CheckoutScreen() {
                 maxLength={13}
               />
               {phone.length > 0 && (
-                <Pressable onPress={() => setPhone("")}>
+                <Pressable
+                  onPress={() => setPhone("")}
+                  accessibilityLabel="Clear phone number"
+                  accessibilityRole="button"
+                >
                   <Feather name="x" size={16} color={colors.mutedForeground} />
                 </Pressable>
               )}

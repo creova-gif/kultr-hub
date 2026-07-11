@@ -860,7 +860,11 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 8,
   },
-  primaryBtnText: { color: "#fff", fontSize: 17, fontWeight: "800" },
+  // White-on-#FF6B00 measures 2.86:1, failing WCAG AA even for large/bold
+  // text (needs 3:1). Near-black — same fix as constants/colors.ts's
+  // primaryForeground — measures 6.61:1. This is the first screen every
+  // user sees; every "primaryBtn" CTA on it shares this one style.
+  primaryBtnText: { color: "#111111", fontSize: 17, fontWeight: "800" },
 
   legalNote: { fontSize: 11, color: "#999", textAlign: "center", lineHeight: 17 },
   legalLink: { color: "#FF6B00", fontWeight: "700" },

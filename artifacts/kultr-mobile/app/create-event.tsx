@@ -208,6 +208,8 @@ export default function CreateEventScreen() {
         <Pressable
           onPress={() => router.back()}
           style={[styles.backBtn, { backgroundColor: colors.muted }]}
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
         >
           <Feather name="arrow-left" size={18} color={colors.foreground} />
         </Pressable>

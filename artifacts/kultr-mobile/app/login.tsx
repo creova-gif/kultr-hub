@@ -144,6 +144,8 @@ export default function LoginScreen() {
             }
           }}
           style={styles.backBtn}
+          accessibilityLabel={step === "otp" ? "Back to phone number entry" : "Go back"}
+          accessibilityRole="button"
         >
           <Feather name="arrow-left" size={22} color={colors.foreground} />
         </Pressable>
