@@ -6,6 +6,7 @@ import pinoHttp from "pino-http";
 import * as Sentry from "@sentry/node";
 import router from "./routes/index.js";
 import { logger } from "./lib/logger.js";
+import { createRateLimitStore } from "./lib/redis.js";
 
 const app: Express = express();
 
@@ -29,13 +30,16 @@ app.use(
   }),
 );
 
-// Global rate limit — 300 req/min per IP
+// Global rate limit — 300 req/min per IP. Backed by Redis when REDIS_URL is
+// set, so limits are shared across instances and survive restarts; falls
+// back to express-rate-limit's in-memory store otherwise.
 app.use(
   rateLimit({
     windowMs: 60_000,
     max: 300,
     standardHeaders: true,
     legacyHeaders: false,
+    store: createRateLimitStore("rl:global:"),
   }),
 );
 
@@ -46,6 +50,7 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: "Too many requests, please try again later." },
+  store: createRateLimitStore("rl:auth:"),
 });
 
 app.use(

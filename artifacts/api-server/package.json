@@ -27,7 +27,9 @@
     "nanoid": "^5.0.9",
     "node-fetch": "^3.3.2",
     "pino": "^9",
-    "pino-http": "^10"
+    "pino-http": "^10",
+    "rate-limit-redis": "^5.0.0",
+    "redis": "^6.1.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
