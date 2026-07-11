@@ -7,7 +7,9 @@ import {
   numeric,
   pgEnum,
   index,
+  check,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
@@ -50,6 +52,9 @@ export const ticketsTable = pgTable(
     index("tickets_user_id_purchased_at_idx").on(table.userId, table.purchasedAt),
     index("tickets_event_id_idx").on(table.eventId),
     index("tickets_ticket_type_id_idx").on(table.ticketTypeId),
+    check("tickets_quantity_positive", sql`${table.quantity} > 0`),
+    check("tickets_unit_price_non_negative", sql`${table.unitPrice} >= 0`),
+    check("tickets_total_amount_non_negative", sql`${table.totalAmount} >= 0`),
   ],
 );
 

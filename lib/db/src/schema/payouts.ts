@@ -1,4 +1,5 @@
-import { pgTable, text, timestamp, uuid, numeric, pgEnum, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, numeric, pgEnum, index, check } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { usersTable } from "./users";
 
 /**
@@ -37,7 +38,10 @@ export const payoutsTable = pgTable(
     requestedAt: timestamp("requested_at", { withTimezone: true }).notNull().defaultNow(),
     resolvedAt: timestamp("resolved_at", { withTimezone: true }),
   },
-  (table) => [index("payouts_creator_id_idx").on(table.creatorId)],
+  (table) => [
+    index("payouts_creator_id_idx").on(table.creatorId),
+    check("payouts_amount_positive", sql`${table.amount} > 0`),
+  ],
 );
 
 export type Payout = typeof payoutsTable.$inferSelect;
