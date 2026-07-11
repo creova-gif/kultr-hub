@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { I18nManager, Alert } from "react-native";
+import * as SecureStore from "expo-secure-store";
+import { I18nManager, Alert, Platform } from "react-native";
 import { EA_COUNTRIES, getCountryByCurrency, type EACountry } from "@/constants/currencies";
 import type { Language } from "@/constants/translations";
 import { setAuthTokenGetter, useGetCreatorAnalytics, getGetCreatorAnalyticsQueryKey, type CreatedEventStats } from "@workspace/api-client-react";
@@ -101,6 +102,17 @@ const ONBOARDING_KEY = "kultr_onboarding_done";
 const INTERESTS_KEY = "kultr_user_interests";
 const TICKETS_KEY = "kultr_tickets";
 
+// The auth token is the one piece of state worth OS keychain/keystore
+// protection; SecureStore has no web equivalent, so web keeps AsyncStorage.
+const tokenStorage = {
+  getItem: (key: string): Promise<string | null> =>
+    Platform.OS === "web" ? AsyncStorage.getItem(key) : SecureStore.getItemAsync(key),
+  setItem: (key: string, value: string): Promise<void> =>
+    Platform.OS === "web" ? AsyncStorage.setItem(key, value) : SecureStore.setItemAsync(key, value),
+  removeItem: (key: string): Promise<void> =>
+    Platform.OS === "web" ? AsyncStorage.removeItem(key) : SecureStore.deleteItemAsync(key),
+};
+
 function adaptAnalyticsStat(stat: CreatedEventStats): CreatedEvent {
   const date = stat.eventDate.slice(0, 10);
   const time = stat.eventDate.length > 10 ? new Date(stat.eventDate).toISOString().slice(11, 16) : "19:00";
@@ -165,14 +177,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     setAuthTokenGetter(async () => {
       if (authToken) return authToken;
-      return AsyncStorage.getItem(TOKEN_KEY);
+      return tokenStorage.getItem(TOKEN_KEY);
     });
     return () => setAuthTokenGetter(null);
   }, [authToken]);
 
   // Restore persisted token + language + onboarding state on mount
   React.useEffect(() => {
-    AsyncStorage.getItem(TOKEN_KEY).then((stored) => {
+    tokenStorage.getItem(TOKEN_KEY).then((stored) => {
       if (stored) setAuthToken(stored);
     });
     AsyncStorage.getItem(USER_KEY).then((stored) => {
@@ -233,14 +245,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setAuth = useCallback(async (token: string, user: AuthUser) => {
-    await AsyncStorage.setItem(TOKEN_KEY, token);
+    await tokenStorage.setItem(TOKEN_KEY, token);
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
     setAuthToken(token);
     setAuthUser(user);
   }, []);
 
   const clearAuth = useCallback(async () => {
-    await AsyncStorage.removeItem(TOKEN_KEY);
+    await tokenStorage.removeItem(TOKEN_KEY);
     await AsyncStorage.removeItem(USER_KEY);
     setAuthToken(null);
     setAuthUser(null);
