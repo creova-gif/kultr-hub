@@ -6,6 +6,7 @@ import { db, usersTable, otpCodesTable } from "@workspace/db";
 import { signToken } from "../lib/jwt.js";
 import { sendSms, isSmsConfigured } from "../lib/sms.js";
 import { normalizeMsisdn } from "../lib/phone.js";
+import { simulationAllowed } from "../lib/simulation.js";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import type { Request, Response } from "express";
 
@@ -144,13 +145,29 @@ router.post("/otp/request", otpRequestLimiter, async (req: Request, res: Respons
     return;
   }
 
+  // Simulation is a server-side decision only, mirroring every payment
+  // provider's gate (lib/simulation.ts). Unlike payments — where /verify
+  // independently re-checks against the real gateway and would reject a
+  // bypass — OTP has no second gate: whatever this endpoint returns is the
+  // whole trust boundary. Deciding "simulate" from isSmsConfigured() alone
+  // (the old behavior) meant a production deploy that simply forgot to set
+  // AT_API_KEY/AT_USERNAME would hand back a valid login code for any phone
+  // number, in the response body, for anyone to log in as anyone.
+  const smsConfigured = isSmsConfigured();
+  const allowSimulation = simulationAllowed(smsConfigured);
+
+  if (!smsConfigured && !allowSimulation) {
+    res.status(503).json({ message: "SMS delivery is temporarily unavailable. Try again shortly." });
+    return;
+  }
+
   const code = generateOtp();
   const codeHash = await bcrypt.hash(code, 10);
   const expiresAt = new Date(Date.now() + OTP_TTL_SECONDS * 1000);
 
   await db.insert(otpCodesTable).values({ phone: msisdn, codeHash, purpose: "login", expiresAt });
 
-  const simulated = !isSmsConfigured();
+  const simulated = !smsConfigured;
   try {
     await sendSms({
       to: `+${msisdn}`,
@@ -164,7 +181,8 @@ router.post("/otp/request", otpRequestLimiter, async (req: Request, res: Respons
   res.json({
     simulated,
     expiresInSeconds: OTP_TTL_SECONDS,
-    // Only surfaced when no live gateway is configured (dev/demo).
+    // Only ever reachable in simulated mode, which the gate above now
+    // guarantees is dev/demo only — never in production.
     ...(simulated ? { devCode: code } : {}),
   });
 });

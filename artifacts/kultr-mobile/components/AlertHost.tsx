@@ -28,10 +28,20 @@ function WebAlertHost() {
   };
 
   return (
-    <Modal transparent animationType="fade" visible onRequestClose={() => alertStore.dismiss()}>
+    <Modal
+      transparent
+      animationType="fade"
+      visible
+      onRequestClose={() => alertStore.dismiss()}
+      accessibilityViewIsModal
+    >
       <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={() => alertStore.dismiss()} />
-        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={() => alertStore.dismiss()} accessibilityLabel="Dismiss" />
+        <View
+          style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+          accessibilityRole="alert"
+          accessibilityLabel={state.message ? `${state.title}. ${state.message}` : state.title}
+        >
           <Text style={[styles.title, { color: colors.cardForeground }]}>{state.title}</Text>
           {state.message ? (
             <Text style={[styles.message, { color: colors.mutedForeground }]}>{state.message}</Text>

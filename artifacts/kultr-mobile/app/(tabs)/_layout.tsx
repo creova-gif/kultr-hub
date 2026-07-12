@@ -24,9 +24,11 @@ const LEFT_TABS = [
   { name: "discover", label: "Discover", icon: "compass"        },
 ] as const;
 
+// "Messages" (social.tsx) is deliberately not in the tab bar — it currently
+// renders fabricated friends/activity data with no real backend behind it.
+// Pulled from nav rather than shipped as a fake social feed on a primary tab.
 const RIGHT_TABS = [
   { name: "tickets",  label: "Tickets",  icon: "tag"            },
-  { name: "social",   label: "Messages", icon: "message-circle" },
   { name: "profile",  label: "Profile",  icon: "user"           },
 ] as const;
 
@@ -123,7 +125,7 @@ export default function TabLayout() {
       <Tabs.Screen name="index"    options={{ title: "Home"     }} />
       <Tabs.Screen name="foryou"   options={{ href: null        }} />
       <Tabs.Screen name="discover" options={{ title: "Discover" }} />
-      <Tabs.Screen name="social"   options={{ title: "Messages" }} />
+      <Tabs.Screen name="social"   options={{ href: null        }} />
       <Tabs.Screen name="tickets"  options={{ title: "Tickets"  }} />
       <Tabs.Screen name="profile"  options={{ title: "Profile"  }} />
     </Tabs>

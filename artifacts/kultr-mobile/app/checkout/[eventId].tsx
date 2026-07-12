@@ -140,7 +140,11 @@ export default function CheckoutScreen() {
     // through to a fabricated "success," which would show a ticket that doesn't
     // exist server-side and will fail to scan at the door.
     try {
-      if (activeMethod?.type === "mobile_money") {
+      // Route by operator, not just type — every mobile-money method used to
+      // hit the M-Pesa (Safaricom) endpoint regardless of what was selected,
+      // which is silently wrong for MTN, Airtel, Vodacom, Tigo, and any other
+      // non-Safaricom operator the moment real credentials are configured.
+      if (activeMethod?.type === "mobile_money" && activeMethod.operator === "Safaricom") {
         const stkRes = await fetch(`${apiBase}/api/payments/mpesa/stk-push`, {
           method: "POST",
           headers: authHeader,
@@ -184,6 +188,70 @@ export default function CheckoutScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setLoading(false);
         router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}`);
+        return;
+      }
+
+      if (activeMethod?.type === "mobile_money" && activeMethod.operator === "MTN") {
+        const reqRes = await fetch(`${apiBase}/api/payments/momo/request`, {
+          method: "POST",
+          headers: authHeader,
+          body: JSON.stringify({ eventId: event.id, ticketTypeId: ticketType.id, quantity, phone }),
+        });
+
+        if (!reqRes.ok) {
+          setCheckoutError(await readError(reqRes, "Could not start MoMo payment. Please try again."));
+          setLoading(false);
+          return;
+        }
+
+        const reqData = await reqRes.json() as { reference: string; simulated: boolean };
+
+        // MTN's Request-to-Pay is genuinely async (the user approves on their
+        // phone in their own time), so poll /momo/verify instead of the
+        // single wait-then-check M-Pesa does — up to ~30s, matching a
+        // reasonable "check your phone" window.
+        let verifyData: { ticketId: string; ticketNumber: string } | null = null;
+        const maxAttempts = reqData.simulated ? 1 : 10;
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          if (!reqData.simulated) await new Promise((r) => setTimeout(r, 3000));
+
+          const verifyRes = await fetch(`${apiBase}/api/payments/momo/verify`, {
+            method: "POST",
+            headers: authHeader,
+            body: JSON.stringify({ reference: reqData.reference }),
+          });
+
+          if (verifyRes.status === 202) continue; // still pending — keep polling
+
+          if (!verifyRes.ok) {
+            setCheckoutError(await readError(verifyRes, "MoMo payment could not be confirmed. Please try again."));
+            setLoading(false);
+            return;
+          }
+
+          verifyData = await verifyRes.json() as { ticketId: string; ticketNumber: string };
+          break;
+        }
+
+        if (!verifyData || typeof verifyData.ticketId !== "string") {
+          setCheckoutError("MoMo payment wasn't approved in time. Please try again.");
+          setLoading(false);
+          return;
+        }
+
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setLoading(false);
+        router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}`);
+        return;
+      }
+
+      if (activeMethod?.type === "mobile_money") {
+        // No real backend integration exists yet for this operator (Airtel,
+        // Vodacom, Tigo, Ethio Telecom, Dashen Bank, ...). Failing clearly
+        // here is strictly better than the old behavior of silently sending
+        // it to the M-Pesa endpoint regardless of what was selected.
+        setCheckoutError(`${activeMethod.label} isn't available yet. Please choose another payment method.`);
+        setLoading(false);
         return;
       }
 

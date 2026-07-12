@@ -152,7 +152,11 @@ export default function AdminScreen() {
         contentContainerStyle={{ paddingTop: topPad + 12, paddingBottom: bottomPad + 40 }}
       >
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: colors.muted }]}>
+          <Pressable
+            onPress={() => router.back()}
+            accessibilityLabel="Go back"
+            style={[styles.backBtn, { backgroundColor: colors.muted }]}
+          >
             <Feather name="arrow-left" size={20} color={colors.foreground} />
           </Pressable>
           <Text style={[styles.headerTitle, { color: colors.foreground }]}>Admin</Text>
@@ -201,16 +205,18 @@ export default function AdminScreen() {
                         disabled={setStatus.isPending}
                         style={[styles.actionBtn, { backgroundColor: "rgba(211,47,47,0.12)" }]}
                       >
-                        <Feather name="x" size={13} color="#D32F2F" />
-                        <Text style={[styles.actionBtnText, { color: "#D32F2F" }]}>Reject</Text>
+                        {/* #D32F2F on this 12%-opacity tint measured ~3.2-3.8:1, failing WCAG AA.
+                            #FF6B60 is the same red family lightened for contrast on a dark tint. */}
+                        <Feather name="x" size={13} color="#FF6B60" />
+                        <Text style={[styles.actionBtnText, { color: "#FF6B60" }]}>Reject</Text>
                       </Pressable>
                       <Pressable
                         onPress={() => approve(ev)}
                         disabled={setStatus.isPending}
                         style={[styles.actionBtn, { backgroundColor: "#FF6B00" }]}
                       >
-                        <Feather name="check" size={13} color="#fff" />
-                        <Text style={[styles.actionBtnText, { color: "#fff" }]}>Approve</Text>
+                        <Feather name="check" size={13} color={colors.primaryForeground} />
+                        <Text style={[styles.actionBtnText, { color: colors.primaryForeground }]}>Approve</Text>
                       </Pressable>
                     </View>
                   </View>
@@ -239,14 +245,14 @@ export default function AdminScreen() {
                         disabled={resolvePayout.isPending}
                         style={[styles.actionBtn, { backgroundColor: "rgba(211,47,47,0.12)" }]}
                       >
-                        <Text style={[styles.actionBtnText, { color: "#D32F2F" }]}>Mark Failed</Text>
+                        <Text style={[styles.actionBtnText, { color: "#FF6B60" }]}>Mark Failed</Text>
                       </Pressable>
                       <Pressable
                         onPress={() => resolveAsPayout(p, "paid")}
                         disabled={resolvePayout.isPending}
                         style={[styles.actionBtn, { backgroundColor: "#00C853" }]}
                       >
-                        <Text style={[styles.actionBtnText, { color: "#fff" }]}>Mark Paid</Text>
+                        <Text style={[styles.actionBtnText, { color: colors.secondaryForeground }]}>Mark Paid</Text>
                       </Pressable>
                     </View>
                   </View>
@@ -307,7 +313,7 @@ export default function AdminScreen() {
                           disabled={resolveReport.isPending}
                           style={[styles.actionBtn, { backgroundColor: "#FF6B00" }]}
                         >
-                          <Text style={[styles.actionBtnText, { color: "#fff" }]}>Mark Reviewed</Text>
+                          <Text style={[styles.actionBtnText, { color: colors.primaryForeground }]}>Mark Reviewed</Text>
                         </Pressable>
                       </View>
                     )}

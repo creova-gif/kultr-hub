@@ -18,9 +18,11 @@ import { Alert } from "@/lib/alert";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 
+// Vibe Tribes is deliberately not linked here — it currently renders
+// invented member counts and locally-only join state with no real backend
+// (see app/vibe-tribes.tsx), which reads as real social proof but isn't.
 const MENU_ITEMS = [
   { icon: "compass", label: "Cultural Quests", route: "/quests" },
-  { icon: "users", label: "Vibe Tribes", route: "/vibe-tribes" },
   { icon: "activity", label: "Streaks & Badges", route: "/gamification" },
   { icon: "flag", label: "Tribe Leaders Program", route: "/tribe-leaders" },
   { icon: "gift", label: "Rewards", route: "/rewards" },
