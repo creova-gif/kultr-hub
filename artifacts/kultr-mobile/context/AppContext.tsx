@@ -4,7 +4,7 @@ import * as SecureStore from "expo-secure-store";
 import { I18nManager, Alert, Platform } from "react-native";
 import { EA_COUNTRIES, getCountryByCurrency, type EACountry } from "@/constants/currencies";
 import type { Language } from "@/constants/translations";
-import { setAuthTokenGetter, useGetCreatorAnalytics, getGetCreatorAnalyticsQueryKey, type CreatedEventStats } from "@workspace/api-client-react";
+import { setAuthTokenGetter, useGetCreatorAnalytics, getGetCreatorAnalyticsQueryKey, useAuthLogout, type CreatedEventStats } from "@workspace/api-client-react";
 
 export interface PurchasedTicket {
   id: string;
@@ -51,6 +51,7 @@ interface AppContextType {
   savedEvents: string[];
   userCountry: EACountry;
   onboardingDone: boolean;
+  isHydrated: boolean;
   userInterests: string[];
   createdEvents: CreatedEvent[];
   authToken: string | null;
@@ -74,26 +75,6 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const DEFAULT_COUNTRY = EA_COUNTRIES.find((c) => c.code === "KE")!;
-
-const DEMO_CREATED_EVENTS: CreatedEvent[] = [
-  {
-    id: "ce-001",
-    title: "Nairobi Jazz Collective",
-    category: "Music",
-    date: "2026-07-20",
-    time: "19:00",
-    venue: "Sankara Nairobi",
-    city: "Nairobi",
-    price: 2500,
-    currency: "KES",
-    currencySymbol: "KSh",
-    description: "An intimate evening of East African jazz.",
-    ticketsSold: 142,
-    revenue: 355000,
-    status: "live",
-    createdAt: "2026-05-01",
-  },
-];
 
 const TOKEN_KEY = "kultr_auth_token";
 const USER_KEY = "kultr_auth_user";
@@ -137,29 +118,26 @@ function adaptAnalyticsStat(stat: CreatedEventStats): CreatedEvent {
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [tickets, setTickets] = useState<PurchasedTicket[]>([
-    {
-      id: "ticket-demo-001",
-      eventId: "evt-004",
-      ticketTypeId: "t1",
-      ticketTypeName: "General Admission",
-      ticketNumber: "KTR-98321",
-      purchaseDate: "2026-05-10",
-      quantity: 1,
-      totalPaid: 2000,
-      currency: "KES",
-      currencySymbol: "KSh",
-    },
-  ]);
-  const [savedEvents, setSavedEvents] = useState<string[]>(["evt-002"]);
+  // Real accounts start with no tickets, no saved events, and no created
+  // events — these used to default to hardcoded demo records, which meant
+  // every brand-new user saw a ticket they never bought and a creator
+  // dashboard reporting someone else's revenue as their own.
+  const [tickets, setTickets] = useState<PurchasedTicket[]>([]);
+  const [savedEvents, setSavedEvents] = useState<string[]>([]);
   const [userCountry, setUserCountry] = useState<EACountry>(DEFAULT_COUNTRY);
   const [onboardingDone, setOnboardingDone] = useState(false);
   const [userInterests, setUserInterests] = useState<string[]>([]);
-  const [createdEvents, setCreatedEvents] = useState<CreatedEvent[]>(DEMO_CREATED_EVENTS);
+  const [createdEvents, setCreatedEvents] = useState<CreatedEvent[]>([]);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [language, setLanguageState] = useState<Language>("en");
   const [lowBandwidth, setLowBandwidth] = useState(false);
+  // False until every persisted key below has been read at least once.
+  // Screens (and the root redirect guard) must not make decisions off
+  // onboardingDone/authToken/etc. before this flips true, or a brand-new
+  // reload/deep-link race can bounce an already-onboarded, already-signed-in
+  // user back through onboarding.
+  const [isHydrated, setIsHydrated] = useState(false);
 
   // Fetch creator analytics when authenticated
   const { data: analyticsData } = useGetCreatorAnalytics({
@@ -167,11 +145,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   });
 
   React.useEffect(() => {
-    if (analyticsData?.events?.length) {
-      const adapted = analyticsData.events.map(adaptAnalyticsStat);
-      setCreatedEvents(adapted);
+    if (analyticsData?.events) {
+      setCreatedEvents(analyticsData.events.map(adaptAnalyticsStat));
     }
   }, [analyticsData]);
+
+  const authLogoutMutation = useAuthLogout();
 
   // Register token getter with the API client so every request is authenticated
   React.useEffect(() => {
@@ -184,35 +163,41 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Restore persisted token + language + onboarding state on mount
   React.useEffect(() => {
-    tokenStorage.getItem(TOKEN_KEY).then((stored) => {
-      if (stored) setAuthToken(stored);
+    let cancelled = false;
+    Promise.all([
+      tokenStorage.getItem(TOKEN_KEY).then((stored) => {
+        if (stored) setAuthToken(stored);
+      }),
+      AsyncStorage.getItem(USER_KEY).then((stored) => {
+        if (stored) {
+          try { setAuthUser(JSON.parse(stored) as AuthUser); } catch { /* ignore corrupt data */ }
+        }
+      }),
+      AsyncStorage.getItem(LANG_KEY).then((stored) => {
+        if (stored && ["en", "fr", "sw", "ar"].includes(stored)) {
+          const lang = stored as Language;
+          setLanguageState(lang);
+          I18nManager.allowRTL(true);
+          I18nManager.forceRTL(lang === "ar");
+        }
+      }),
+      AsyncStorage.getItem(ONBOARDING_KEY).then((stored) => {
+        if (stored === "true") setOnboardingDone(true);
+      }),
+      AsyncStorage.getItem(INTERESTS_KEY).then((stored) => {
+        if (stored) {
+          try { setUserInterests(JSON.parse(stored)); } catch { /* ignore corrupt data */ }
+        }
+      }),
+      AsyncStorage.getItem(TICKETS_KEY).then((stored) => {
+        if (stored) {
+          try { setTickets(JSON.parse(stored) as PurchasedTicket[]); } catch { /* ignore corrupt data */ }
+        }
+      }),
+    ]).finally(() => {
+      if (!cancelled) setIsHydrated(true);
     });
-    AsyncStorage.getItem(USER_KEY).then((stored) => {
-      if (stored) {
-        try { setAuthUser(JSON.parse(stored) as AuthUser); } catch { /* ignore corrupt data */ }
-      }
-    });
-    AsyncStorage.getItem(LANG_KEY).then((stored) => {
-      if (stored && ["en", "fr", "sw", "ar"].includes(stored)) {
-        const lang = stored as Language;
-        setLanguageState(lang);
-        I18nManager.allowRTL(true);
-        I18nManager.forceRTL(lang === "ar");
-      }
-    });
-    AsyncStorage.getItem(ONBOARDING_KEY).then((stored) => {
-      if (stored === "true") setOnboardingDone(true);
-    });
-    AsyncStorage.getItem(INTERESTS_KEY).then((stored) => {
-      if (stored) {
-        try { setUserInterests(JSON.parse(stored)); } catch { /* ignore corrupt data */ }
-      }
-    });
-    AsyncStorage.getItem(TICKETS_KEY).then((stored) => {
-      if (stored) {
-        try { setTickets(JSON.parse(stored) as PurchasedTicket[]); } catch { /* ignore corrupt data */ }
-      }
-    });
+    return () => { cancelled = true; };
   }, []);
 
   const isRTL = language === "ar";
@@ -252,11 +237,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const clearAuth = useCallback(async () => {
+    // Best-effort: revoke the token server-side (bumps tokenVersion, so it
+    // can't be replayed) before wiping local state. A logged-out device
+    // with no network shouldn't be stuck signed in, so failures here don't
+    // block the local sign-out.
+    try {
+      await authLogoutMutation.mutateAsync();
+    } catch {
+      /* offline or already revoked — proceed with local sign-out regardless */
+    }
     await tokenStorage.removeItem(TOKEN_KEY);
     await AsyncStorage.removeItem(USER_KEY);
     setAuthToken(null);
     setAuthUser(null);
-  }, []);
+    // Clear account-scoped local state so a different account signing in
+    // on the same device never sees the previous user's data merged in.
+    setTickets([]);
+    setSavedEvents([]);
+    setCreatedEvents([]);
+  }, [authLogoutMutation]);
 
   // Persist tickets whenever they change
   React.useEffect(() => {
@@ -286,6 +285,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         savedEvents,
         userCountry,
         onboardingDone,
+        isHydrated,
         userInterests,
         createdEvents,
         authToken,

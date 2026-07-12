@@ -1800,7 +1800,7 @@ export function useGetQuestProgress<
  * @summary Level, XP, streaks and badge summary for the signed-in user
  */
 export const getGetGamificationProfileUrl = () => {
-  return `/api/gamification/profile`;
+  return `/api/profile`;
 };
 
 export const getGamificationProfile = async (
@@ -1813,7 +1813,7 @@ export const getGamificationProfile = async (
 };
 
 export const getGetGamificationProfileQueryKey = () => {
-  return [`/api/gamification/profile`] as const;
+  return [`/api/profile`] as const;
 };
 
 export const getGetGamificationProfileQueryOptions = <

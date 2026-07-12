@@ -11,6 +11,10 @@ export const usersTable = pgTable("users", {
   avatarUrl: text("avatar_url"),
   countryCode: text("country_code").notNull().default("KE"),
   isCreator: boolean("is_creator").notNull().default(false),
+  // Admin-granted only (see PATCH /users/:id/verify) — shown to buyers as a
+  // "Verified Organizer" badge on that creator's events. Not a KYC pipeline;
+  // a manual trust signal an admin can grant after reviewing an organizer.
+  isVerifiedOrganizer: boolean("is_verified_organizer").notNull().default(false),
   // No self-serve path to grant this — set directly in the database.
   // Gates the moderation kill-switch (force any event to cancelled/ended)
   // until a real admin console exists.

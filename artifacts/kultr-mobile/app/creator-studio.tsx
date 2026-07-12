@@ -438,6 +438,25 @@ export default function CreatorStudioScreen() {
           </View>
         </View>
 
+        {createdEvents.length === 0 ? (
+          <View style={styles.creatorEmpty}>
+            <View style={[styles.creatorEmptyIcon, { backgroundColor: colors.muted }]}>
+              <Feather name="calendar" size={32} color={colors.mutedForeground} />
+            </View>
+            <Text style={[styles.creatorEmptyTitle, { color: colors.foreground }]}>No events yet</Text>
+            <Text style={[styles.creatorEmptyText, { color: colors.mutedForeground }]}>
+              Create your first event to see it and its sales here.
+            </Text>
+            <Pressable
+              style={styles.creatorEmptyBtn}
+              onPress={() => router.push("/create-event" as any)}
+              accessibilityLabel="Create an event"
+              accessibilityRole="button"
+            >
+              <Text style={styles.creatorEmptyBtnText}>Create Event</Text>
+            </Pressable>
+          </View>
+        ) : (
         <View style={styles.eventList}>
           {createdEvents.map((ev) => {
             const image = EVENT_IMAGES[ev.category?.toLowerCase?.() === "art" ? "art" : ev.category?.toLowerCase?.() === "food" ? "food" : ev.category?.toLowerCase?.() === "culture" ? "culture" : "concert"];
@@ -491,6 +510,7 @@ export default function CreatorStudioScreen() {
             );
           })}
         </View>
+        )}
       </View>
     </ScrollView>
   );
@@ -622,6 +642,12 @@ const styles = StyleSheet.create({
   legendLabel: { flex: 1, fontSize: 9 },
   legendPct: { fontSize: 9, fontWeight: "700" },
 
+  creatorEmpty: { alignItems: "center", paddingVertical: 40, paddingHorizontal: 24, gap: 10 },
+  creatorEmptyIcon: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", marginBottom: 4 },
+  creatorEmptyTitle: { fontSize: 18, fontWeight: "700" },
+  creatorEmptyText: { fontSize: 13.5, textAlign: "center", lineHeight: 19 },
+  creatorEmptyBtn: { backgroundColor: "#FF6B00", borderRadius: 22, paddingHorizontal: 24, paddingVertical: 11, marginTop: 6 },
+  creatorEmptyBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
   eventList: { gap: 10 },
   eventRow: {
     flexDirection: "row",

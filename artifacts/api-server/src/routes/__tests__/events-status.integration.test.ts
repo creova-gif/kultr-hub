@@ -108,7 +108,7 @@ test("a creator can submit their draft for review, but not skip straight to live
     body: JSON.stringify({ status: "pending_review" }),
   });
   assert.equal(submit.status, 200);
-  assert.equal((await submit.json()).status, "pending_review");
+  assert.equal((await submit.json() as { status: string }).status, "pending_review");
 
   const skipToLive = await fetch(`${baseUrl}/api/events/${eventId}/status`, {
     method: "PATCH",
@@ -129,11 +129,11 @@ test("only an admin can approve a pending_review event to live, and it becomes p
   });
 
   const notYetPublic = await fetch(`${baseUrl}/api/events/${eventId}`);
-  const notYetPublicBody = await notYetPublic.json();
+  const notYetPublicBody = await notYetPublic.json() as { status: string };
   assert.equal(notYetPublicBody.status, "pending_review");
 
   const inPublicList = await fetch(`${baseUrl}/api/events`);
-  const listedIds = (await inPublicList.json()).events.map((e: { id: string }) => e.id);
+  const listedIds = (await inPublicList.json() as { events: { id: string }[] }).events.map((e) => e.id);
   assert.ok(!listedIds.includes(eventId), "a pending_review event must not appear in the public listing");
 
   const approve = await fetch(`${baseUrl}/api/events/${eventId}/status`, {
@@ -142,10 +142,10 @@ test("only an admin can approve a pending_review event to live, and it becomes p
     body: JSON.stringify({ status: "live" }),
   });
   assert.equal(approve.status, 200);
-  assert.equal((await approve.json()).status, "live");
+  assert.equal((await approve.json() as { status: string }).status, "live");
 
   const nowPublicList = await fetch(`${baseUrl}/api/events`);
-  const nowListedIds = (await nowPublicList.json()).events.map((e: { id: string }) => e.id);
+  const nowListedIds = (await nowPublicList.json() as { events: { id: string }[] }).events.map((e) => e.id);
   assert.ok(nowListedIds.includes(eventId), "an approved event must appear in the public listing");
 });
 
@@ -159,5 +159,5 @@ test("an admin can force-cancel any event regardless of status (moderation kill-
     body: JSON.stringify({ status: "cancelled" }),
   });
   assert.equal(res.status, 200);
-  assert.equal((await res.json()).status, "cancelled");
+  assert.equal((await res.json() as { status: string }).status, "cancelled");
 });

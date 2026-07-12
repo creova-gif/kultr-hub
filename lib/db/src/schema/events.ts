@@ -112,3 +112,34 @@ export type InsertEvent = z.infer<typeof insertEventSchema>;
 export type Event = typeof eventsTable.$inferSelect;
 export type InsertTicketType = z.infer<typeof insertTicketTypeSchema>;
 export type TicketType = typeof ticketTypesTable.$inferSelect;
+
+export const eventReportStatusEnum = pgEnum("event_report_status", ["open", "reviewed", "dismissed"]);
+
+/**
+ * Buyer-submitted fraud/abuse reports on an event. Purely a work queue for
+ * an admin (GET /events/admin/reports, PATCH /events/admin/reports/:id) —
+ * filing a report never changes the event's own status automatically.
+ */
+export const eventReportsTable = pgTable(
+  "event_reports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    eventId: uuid("event_id")
+      .notNull()
+      .references(() => eventsTable.id, { onDelete: "cascade" }),
+    reporterId: uuid("reporter_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    reason: text("reason").notNull(),
+    details: text("details"),
+    status: eventReportStatusEnum("status").notNull().default("open"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("event_reports_event_id_idx").on(table.eventId),
+    index("event_reports_status_idx").on(table.status),
+  ],
+);
+
+export type EventReport = typeof eventReportsTable.$inferSelect;

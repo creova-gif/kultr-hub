@@ -9,7 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as Linking from "expo-linking";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
+import React from "react";
 import { I18nManager } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -51,15 +51,23 @@ const queryClient = new QueryClient({
 });
 
 function RootLayoutNav() {
-  const { onboardingDone, isRTL } = useApp();
+  const { onboardingDone, isHydrated, isRTL } = useApp();
 
   I18nManager.allowRTL(true);
 
+  // Keep the native splash screen up until persisted state (auth,
+  // onboarding flag, etc.) has actually been read — hiding it any earlier
+  // is what let a returning, already-onboarded user see a flash of (or get
+  // redirected to) the onboarding screen on every cold start.
   React.useEffect(() => {
-    if (!onboardingDone) {
+    if (isHydrated) SplashScreen.hideAsync();
+  }, [isHydrated]);
+
+  React.useEffect(() => {
+    if (isHydrated && !onboardingDone) {
       router.replace("/onboarding");
     }
-  }, [onboardingDone]);
+  }, [isHydrated, onboardingDone]);
 
   React.useEffect(() => {
     const handleUrl = (event: { url: string }) => {
@@ -76,6 +84,8 @@ function RootLayoutNav() {
     });
     return () => sub.remove();
   }, []);
+
+  if (!isHydrated) return null;
 
   return (
     <Stack screenOptions={{ headerShown: false, animation: "slide_from_right" }}>
@@ -111,12 +121,9 @@ export default function RootLayout() {
     Inter_700Bold,
   });
 
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
-
+  // Splash screen is hidden by RootLayoutNav once isHydrated is true, not
+  // here — hiding it as soon as fonts load (before persisted auth/onboarding
+  // state was read) is what caused the returning-user redirect flash.
   if (!fontsLoaded && !fontError) return null;
 
   return (
