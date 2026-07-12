@@ -2,7 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Platform,
   Pressable,
@@ -14,6 +14,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useListEvents } from "@workspace/api-client-react";
+
 import { CategoryPills } from "@/components/CategoryPill";
 import { CountryPickerModal } from "@/components/CountryPickerModal";
 import { EventCardCompact } from "@/components/EventCardCompact";
@@ -21,7 +23,25 @@ import { useApp } from "@/context/AppContext";
 import { CATEGORIES } from "@/constants/data";
 import { EA_COUNTRIES } from "@/constants/currencies";
 import { useColors } from "@/hooks/useColors";
-import { useEventCatalog } from "@/hooks/useEventCatalog";
+import { adaptEventSummary, useEventCatalog } from "@/hooks/useEventCatalog";
+
+type DatePreset = "any" | "today" | "week" | "month";
+
+const DATE_PRESETS: { id: DatePreset; label: string }[] = [
+  { id: "any", label: "Any date" },
+  { id: "today", label: "Today" },
+  { id: "week", label: "This week" },
+  { id: "month", label: "This month" },
+];
+
+// ISO YYYY-MM-DD in the device's local calendar day, not UTC — a preset of
+// "today" should mean today where the user is, not wherever UTC happens to be.
+function toLocalISODate(d: Date): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 export default function DiscoverScreen() {
   const colors = useColors();
@@ -31,7 +51,67 @@ export default function DiscoverScreen() {
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("For You");
   const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [datePreset, setDatePreset] = useState<DatePreset>("any");
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
   const { events } = useEventCatalog();
+
+  const { dateFrom, dateTo } = useMemo(() => {
+    const now = new Date();
+    if (datePreset === "today") {
+      const today = toLocalISODate(now);
+      return { dateFrom: today, dateTo: today };
+    }
+    if (datePreset === "week") {
+      const end = new Date(now);
+      end.setDate(end.getDate() + 7);
+      return { dateFrom: toLocalISODate(now), dateTo: toLocalISODate(end) };
+    }
+    if (datePreset === "month") {
+      const end = new Date(now);
+      end.setMonth(end.getMonth() + 1);
+      return { dateFrom: toLocalISODate(now), dateTo: toLocalISODate(end) };
+    }
+    return { dateFrom: undefined as string | undefined, dateTo: undefined as string | undefined };
+  }, [datePreset]);
+
+  const priceMinNum = priceMin.trim() !== "" && !Number.isNaN(Number(priceMin)) ? Number(priceMin) : undefined;
+  const priceMaxNum = priceMax.trim() !== "" && !Number.isNaN(Number(priceMax)) ? Number(priceMax) : undefined;
+  const activeFilterCount =
+    (datePreset !== "any" ? 1 : 0) + (priceMinNum !== undefined || priceMaxNum !== undefined ? 1 : 0);
+
+  // Category, date-range and price-range filtering all happen server-side via
+  // the real query params on GET /events — only free-text search stays
+  // client-side below, over whatever this query already returned.
+  const { data: filteredEventsData, isLoading: isFilteredLoading } = useListEvents({
+    category: selectedCategory !== "For You" ? selectedCategory : undefined,
+    dateFrom,
+    dateTo,
+    priceMin: priceMinNum,
+    priceMax: priceMaxNum,
+    limit: 100,
+  });
+
+  const filterSource = useMemo(() => {
+    if (filteredEventsData?.events?.length) {
+      try {
+        return filteredEventsData.events.map(adaptEventSummary);
+      } catch {
+        return events;
+      }
+    }
+    // Query has resolved with genuinely zero matches — respect that instead
+    // of falling back to the unfiltered catalog.
+    if (!isFilteredLoading && filteredEventsData) return [];
+    return events;
+  }, [filteredEventsData, isFilteredLoading, events]);
+
+  const clearFilters = () => {
+    setDatePreset("any");
+    setPriceMin("");
+    setPriceMax("");
+  };
 
   React.useEffect(() => {
     AsyncStorage.getItem("kultr_search_history").then((stored) => {
@@ -51,16 +131,14 @@ export default function DiscoverScreen() {
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
 
-  const filtered = events.filter((e) => {
+  const filtered = filterSource.filter((e) => {
     const matchesSearch =
       search.trim() === "" ||
       e.title.toLowerCase().includes(search.toLowerCase()) ||
       e.city.toLowerCase().includes(search.toLowerCase()) ||
       e.category.toLowerCase().includes(search.toLowerCase()) ||
       e.country.toLowerCase().includes(search.toLowerCase());
-    const matchesCat =
-      selectedCategory === "For You" || e.category === selectedCategory;
-    return matchesSearch && matchesCat;
+    return matchesSearch;
   });
 
   const cities = [...new Set(events.map((e) => e.city))];
@@ -171,6 +249,88 @@ export default function DiscoverScreen() {
             selected={selectedCategory}
             onSelect={setSelectedCategory}
           />
+        </View>
+
+        {/* Date / Price Filters */}
+        <View style={styles.section}>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setShowFilters((v) => !v); }}
+            style={[
+              styles.filterToggle,
+              {
+                backgroundColor: activeFilterCount > 0 ? "rgba(255,107,0,0.1)" : colors.muted,
+                borderColor: activeFilterCount > 0 ? "#FF6B00" : colors.border,
+              },
+            ]}
+            accessibilityLabel="Toggle date and price filters"
+            accessibilityRole="button"
+          >
+            <Feather name="sliders" size={13} color={activeFilterCount > 0 ? "#FF6B00" : colors.mutedForeground} />
+            <Text style={[styles.filterToggleText, { color: activeFilterCount > 0 ? "#FF6B00" : colors.mutedForeground }]}>
+              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+            </Text>
+            <Feather name={showFilters ? "chevron-up" : "chevron-down"} size={13} color={activeFilterCount > 0 ? "#FF6B00" : colors.mutedForeground} />
+          </Pressable>
+
+          {showFilters && (
+            <View style={[styles.filterPanel, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+              <Text style={[styles.filterLabel, { color: colors.mutedForeground }]}>Date</Text>
+              <View style={styles.filterChipRow}>
+                {DATE_PRESETS.map((preset) => {
+                  const active = datePreset === preset.id;
+                  return (
+                    <Pressable
+                      key={preset.id}
+                      onPress={() => { Haptics.selectionAsync(); setDatePreset(preset.id); }}
+                      style={[
+                        styles.filterChip,
+                        {
+                          backgroundColor: active ? "#FF6B00" : colors.card,
+                          borderColor: active ? "#FF6B00" : colors.border,
+                        },
+                      ]}
+                      accessibilityLabel={preset.label}
+                      accessibilityRole="button"
+                    >
+                      <Text style={[styles.filterChipText, { color: active ? "#fff" : colors.mutedForeground }]}>
+                        {preset.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <Text style={[styles.filterLabel, { color: colors.mutedForeground, marginTop: 14 }]}>
+                Price ({userCountry.currencyCode})
+              </Text>
+              <View style={styles.priceRow}>
+                <TextInput
+                  value={priceMin}
+                  onChangeText={setPriceMin}
+                  placeholder="Min"
+                  placeholderTextColor={colors.mutedForeground}
+                  keyboardType="numeric"
+                  style={[styles.priceInput, { backgroundColor: colors.card, borderColor: colors.border, color: colors.foreground }]}
+                />
+                <Text style={{ color: colors.mutedForeground }}>–</Text>
+                <TextInput
+                  value={priceMax}
+                  onChangeText={setPriceMax}
+                  placeholder="Max"
+                  placeholderTextColor={colors.mutedForeground}
+                  keyboardType="numeric"
+                  style={[styles.priceInput, { backgroundColor: colors.card, borderColor: colors.border, color: colors.foreground }]}
+                />
+              </View>
+
+              {activeFilterCount > 0 && (
+                <Pressable onPress={() => { Haptics.selectionAsync(); clearFilters(); }} style={styles.clearFiltersBtn}>
+                  <Feather name="x-circle" size={12} color="#FF6B00" />
+                  <Text style={styles.clearFiltersText}>Clear filters</Text>
+                </Pressable>
+              )}
+            </View>
+          )}
         </View>
 
         {/* Cities quick filter */}
@@ -349,6 +509,49 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontSize: 14 },
   categories: { marginBottom: 24 },
   section: { paddingHorizontal: 16, marginBottom: 24 },
+  filterToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  filterToggleText: { fontSize: 13, fontWeight: "700" },
+  filterPanel: {
+    marginTop: 10,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  filterLabel: { fontSize: 11, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 8 },
+  filterChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  filterChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  filterChipText: { fontSize: 12, fontWeight: "600" },
+  priceRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  priceInput: {
+    flex: 1,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    fontSize: 13,
+  },
+  clearFiltersBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 14,
+    alignSelf: "flex-start",
+  },
+  clearFiltersText: { color: "#FF6B00", fontSize: 12, fontWeight: "700" },
   sectionRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
   sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 12 },
   changeLink: { fontSize: 13, fontWeight: "600" },

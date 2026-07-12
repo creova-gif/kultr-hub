@@ -6,9 +6,8 @@
  * OpenAPI spec version: 0.2.0
  */
 
-export interface PassActivateResponse {
-  active: boolean;
-  multiplier: number;
-  tier: string;
-  expiresAt?: Date | null;
+export interface PublicUserProfile {
+  id: string;
+  displayName: string;
+  isVerifiedOrganizer: boolean;
 }

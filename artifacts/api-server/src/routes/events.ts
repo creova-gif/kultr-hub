@@ -1,10 +1,58 @@
 import { Router } from "express";
-import { eq, desc, and, sql, inArray, ilike, or } from "drizzle-orm";
+import { eq, desc, and, sql, inArray, ilike, or, gte, lte, type SQL } from "drizzle-orm";
 import { db, eventsTable, ticketTypesTable, ticketsTable, usersTable } from "@workspace/db";
 import { requireAuth, requireAdmin, type AuthedRequest } from "../middleware/auth.js";
+import { notify } from "../lib/notify.js";
 import type { Request, Response } from "express";
 
 const router = Router();
+
+/**
+ * Shared date-range / price-range filters for GET /events and GET
+ * /events/search. Date filters apply directly to eventsTable.eventDate.
+ * Price lives on ticketTypesTable, not eventsTable, so a price filter
+ * matches an event if ANY of its ticket types falls within [priceMin,
+ * priceMax] — implemented as an `id IN (subquery)` against ticketTypesTable
+ * rather than a join, so it doesn't fan out/duplicate the outer event rows.
+ */
+function applyDateAndPriceFilters(
+  conditions: (SQL | undefined)[],
+  query: Record<string, string>,
+) {
+  const { dateFrom, dateTo, priceMin, priceMax } = query;
+
+  if (dateFrom) {
+    const parsed = new Date(dateFrom);
+    if (!Number.isNaN(parsed.getTime())) {
+      conditions.push(gte(eventsTable.eventDate, parsed));
+    }
+  }
+  if (dateTo) {
+    const parsed = new Date(dateTo);
+    if (!Number.isNaN(parsed.getTime())) {
+      conditions.push(lte(eventsTable.eventDate, parsed));
+    }
+  }
+
+  const priceConditions: SQL[] = [];
+  if (priceMin !== undefined && priceMin !== "" && !Number.isNaN(Number(priceMin))) {
+    priceConditions.push(gte(ticketTypesTable.price, priceMin));
+  }
+  if (priceMax !== undefined && priceMax !== "" && !Number.isNaN(Number(priceMax))) {
+    priceConditions.push(lte(ticketTypesTable.price, priceMax));
+  }
+  if (priceConditions.length > 0) {
+    conditions.push(
+      inArray(
+        eventsTable.id,
+        db
+          .select({ eventId: ticketTypesTable.eventId })
+          .from(ticketTypesTable)
+          .where(and(...priceConditions)),
+      ),
+    );
+  }
+}
 
 function toEventSummary(event: typeof eventsTable.$inferSelect, ticketTypes: typeof ticketTypesTable.$inferSelect[]) {
   const prices = ticketTypes.map((t) => Number(t.price));
@@ -43,6 +91,7 @@ router.get("/search", async (req: Request, res: Response) => {
       ilike(eventsTable.country, term),
     ),
   ];
+  applyDateAndPriceFilters(conditions, req.query as Record<string, string>);
 
   const [events, [{ count }]] = await Promise.all([
     db.select().from(eventsTable)
@@ -81,6 +130,7 @@ router.get("/", async (req: Request, res: Response) => {
   if (city) conditions.push(eq(eventsTable.city, city));
   if (countryCode) conditions.push(eq(eventsTable.countryCode, countryCode));
   if (featured === "true") conditions.push(eq(eventsTable.featured, true));
+  applyDateAndPriceFilters(conditions, req.query as Record<string, string>);
 
   const [events, [{ count }]] = await Promise.all([
     db.select().from(eventsTable)
@@ -435,6 +485,42 @@ router.patch("/:id/status", requireAuth, async (req: Request, res: Response) => 
     .set({ status: status as StatusTarget, updatedAt: new Date() })
     .where(eq(eventsTable.id, id))
     .returning();
+
+  // Additive-only: notify the event's creator when an admin reviews or
+  // force-changes their event's status. Never fired for a creator's own
+  // self-service transitions (submit-for-review, withdraw, cancel/end their
+  // own live event), and never allowed to fail the status change itself.
+  if (isAdmin && event.creatorId !== authed.userId) {
+    try {
+      if (event.status === "pending_review" && updated.status === "live") {
+        await notify({
+          userId: event.creatorId,
+          type: "event_approved",
+          title: "Event approved",
+          body: `"${event.title}" was approved and is now live.`,
+          data: { eventId: event.id },
+        });
+      } else if (event.status === "pending_review" && updated.status === "draft") {
+        await notify({
+          userId: event.creatorId,
+          type: "event_rejected",
+          title: "Event sent back to draft",
+          body: `"${event.title}" was sent back to draft by a reviewer.`,
+          data: { eventId: event.id },
+        });
+      } else if (updated.status === "cancelled") {
+        await notify({
+          userId: event.creatorId,
+          type: "event_cancelled",
+          title: "Event cancelled",
+          body: `"${event.title}" was cancelled by an admin.`,
+          data: { eventId: event.id },
+        });
+      }
+    } catch (err) {
+      console.error("Failed to write event status notification", err);
+    }
+  }
 
   res.json({ id: updated.id, status: updated.status });
 });

@@ -6,11 +6,8 @@
  * OpenAPI spec version: 0.2.0
  */
 
-export type ListEventsParams = {
-  category?: string;
-  city?: string;
-  countryCode?: string;
-  featured?: boolean;
+export type SearchEventsParams = {
+  q?: string;
   /**
    * Only include events on or after this ISO date/date-time.
    */

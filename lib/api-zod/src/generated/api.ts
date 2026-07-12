@@ -117,6 +117,35 @@ export const ExportMyDataResponse = zod
   .describe("Full machine-readable copy of the data held about a user.");
 
 /**
+ * @summary Lightweight public profile lookup — trust signals (e.g. the Verified Organizer badge)
+ */
+export const GetPublicUserParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetPublicUserResponse = zod.object({
+  id: zod.string(),
+  displayName: zod.string(),
+  isVerifiedOrganizer: zod.boolean(),
+});
+
+/**
+ * @summary Grant or revoke the Verified Organizer badge (admin only)
+ */
+export const SetOrganizerVerifiedParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const SetOrganizerVerifiedBody = zod.object({
+  isVerifiedOrganizer: zod.boolean(),
+});
+
+export const SetOrganizerVerifiedResponse = zod.object({
+  id: zod.string(),
+  isVerifiedOrganizer: zod.boolean(),
+});
+
+/**
  * @summary List events with optional filters
  */
 export const listEventsQueryLimitDefault = 20;
@@ -127,6 +156,26 @@ export const ListEventsQueryParams = zod.object({
   city: zod.coerce.string().optional(),
   countryCode: zod.coerce.string().optional(),
   featured: zod.coerce.boolean().optional(),
+  dateFrom: zod
+    .date()
+    .optional()
+    .describe("Only include events on or after this ISO date\/date-time."),
+  dateTo: zod
+    .date()
+    .optional()
+    .describe("Only include events on or before this ISO date\/date-time."),
+  priceMin: zod.coerce
+    .number()
+    .optional()
+    .describe(
+      "Only include events with at least one ticket type priced at or above this amount.",
+    ),
+  priceMax: zod.coerce
+    .number()
+    .optional()
+    .describe(
+      "Only include events with at least one ticket type priced at or below this amount.",
+    ),
   limit: zod.coerce.number().default(listEventsQueryLimitDefault),
   offset: zod.coerce.number().default(listEventsQueryOffsetDefault),
 });
@@ -190,6 +239,65 @@ export const CreateEventBody = zod.object({
       totalQuantity: zod.number(),
     }),
   ),
+});
+
+/**
+ * @summary Search live events by free-text query, with optional filters
+ */
+export const searchEventsQueryQDefault = ``;
+export const searchEventsQueryLimitDefault = 20;
+export const searchEventsQueryOffsetDefault = 0;
+
+export const SearchEventsQueryParams = zod.object({
+  q: zod.coerce.string().default(searchEventsQueryQDefault),
+  dateFrom: zod
+    .date()
+    .optional()
+    .describe("Only include events on or after this ISO date\/date-time."),
+  dateTo: zod
+    .date()
+    .optional()
+    .describe("Only include events on or before this ISO date\/date-time."),
+  priceMin: zod.coerce
+    .number()
+    .optional()
+    .describe(
+      "Only include events with at least one ticket type priced at or above this amount.",
+    ),
+  priceMax: zod.coerce
+    .number()
+    .optional()
+    .describe(
+      "Only include events with at least one ticket type priced at or below this amount.",
+    ),
+  limit: zod.coerce.number().default(searchEventsQueryLimitDefault),
+  offset: zod.coerce.number().default(searchEventsQueryOffsetDefault),
+});
+
+export const SearchEventsResponse = zod.object({
+  events: zod.array(
+    zod.object({
+      id: zod.string(),
+      title: zod.string(),
+      subtitle: zod.string().nullish(),
+      category: zod.string(),
+      venue: zod.string(),
+      city: zod.string(),
+      country: zod.string(),
+      countryCode: zod.string(),
+      eventDate: zod.coerce.date(),
+      imageUrl: zod.string().nullish(),
+      imageKey: zod.string().nullish(),
+      featured: zod.boolean(),
+      tags: zod.array(zod.string()).nullish(),
+      minPrice: zod.number(),
+      currency: zod.string(),
+      status: zod.string(),
+    }),
+  ),
+  total: zod.number(),
+  limit: zod.number(),
+  offset: zod.number(),
 });
 
 /**
@@ -319,6 +427,63 @@ export const ListAllEventsAdminResponse = zod.object({
   total: zod.number(),
   limit: zod.number(),
   offset: zod.number(),
+});
+
+/**
+ * Purely additive — filing a report never changes the event's own status. Lands in the admin work queue at GET /events/admin/reports.
+ * @summary File a fraud/abuse report on an event — any authenticated user
+ */
+export const ReportEventParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const ReportEventBody = zod.object({
+  reason: zod
+    .string()
+    .describe(
+      "e.g. misleading_listing, suspected_scam, inappropriate_content, duplicate_event, other",
+    ),
+  details: zod.string().optional(),
+});
+
+/**
+ * @summary List every event report, newest first (admin only)
+ */
+export const ListEventReportsAdminResponse = zod.object({
+  reports: zod.array(
+    zod
+      .object({
+        id: zod.string(),
+        eventId: zod.string(),
+        reason: zod.string(),
+        details: zod.string().nullish(),
+        status: zod.enum(["open", "reviewed", "dismissed"]),
+        createdAt: zod.coerce.date(),
+      })
+      .and(
+        zod.object({
+          reporterId: zod.string(),
+          resolvedAt: zod.coerce.date().nullable(),
+        }),
+      ),
+  ),
+});
+
+/**
+ * @summary Mark a report reviewed or dismissed (admin only)
+ */
+export const ResolveEventReportParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const ResolveEventReportBody = zod.object({
+  status: zod.enum(["reviewed", "dismissed"]),
+});
+
+export const ResolveEventReportResponse = zod.object({
+  id: zod.string(),
+  status: zod.enum(["open", "reviewed", "dismissed"]),
+  resolvedAt: zod.coerce.date().nullable(),
 });
 
 /**
@@ -631,10 +796,58 @@ export const GetWalletLedgerResponse = zod.object({
 });
 
 /**
- * @summary Activate or refresh the KULTR PASS entitlement
+ * A one-time charge with manual renewal (not auto-recurring). The caller must supply the `reference` of a payment already initiated via POST /payments/pass/init and verified via POST /payments/pass/verify; that reference is consumed exactly once. Every activation sets a 30-day expiresAt.
+ * @summary Activate or refresh the KULTR PASS entitlement — requires a verified payment
  */
 export const ActivatePassBody = zod.object({
-  multiplier: zod.string().optional(),
+  reference: zod
+    .string()
+    .describe(
+      "Reference of a payment already verified via POST \/payments\/pass\/verify.",
+    ),
+});
+
+/**
+ * @summary List the signed-in user's notifications, newest first
+ */
+export const listNotificationsQueryLimitDefault = 50;
+
+export const ListNotificationsQueryParams = zod.object({
+  limit: zod.coerce.number().default(listNotificationsQueryLimitDefault),
+});
+
+export const ListNotificationsResponse = zod.object({
+  notifications: zod.array(
+    zod.object({
+      id: zod.string(),
+      type: zod.enum([
+        "ticket_confirmed",
+        "event_approved",
+        "event_rejected",
+        "event_cancelled",
+        "payout_resolved",
+        "kultroin_earned",
+      ]),
+      title: zod.string(),
+      body: zod.string(),
+      data: zod.record(zod.string(), zod.unknown()).nullish(),
+      read: zod.boolean(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  unreadCount: zod.number(),
+});
+
+/**
+ * @summary Mark a single notification as read (idempotent)
+ */
+export const MarkNotificationReadParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const MarkNotificationReadResponse = zod.object({
+  id: zod.string(),
+  read: zod.boolean(),
 });
 
 /**

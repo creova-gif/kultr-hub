@@ -17,6 +17,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { getListMyTicketsQueryKey, useListMyTickets } from "@workspace/api-client-react";
+
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
@@ -51,6 +53,13 @@ const INTERESTS = [
 
 const DIASPORA_COUNTRIES = ["Kenya", "Ghana", "Nigeria", "South Africa", "Uganda", "Tanzania"];
 
+// Tiny deterministic tie-breaker only — used to stably order events that are
+// otherwise perfectly tied on real signal (e.g. two categories the user has
+// shown zero affinity for). It intentionally contributes far less than any
+// genuine behavioral signal below, unlike the previous scoreEvent() which
+// was *entirely* `76 + hash(id) % 20` — a function of the event's own id and
+// nothing about the viewer, which is why two different accounts saw
+// byte-identical scores for every event.
 function hashId(id: string): number {
   return id.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
 }
@@ -61,14 +70,72 @@ interface ScoredEvent extends Event {
   vibeColor: string;
 }
 
-function scoreEvent(event: Event, userInterests: string[]): ScoredEvent {
+interface UserAffinity {
+  /** Declared interests, e.g. ["music", "food"] from the Refine Vibe sheet. */
+  userInterests: string[];
+  /** category -> weighted count, built from saved events + real ticket purchases. */
+  categoryAffinity: Record<string, number>;
+  /** city -> weighted count, built the same way. */
+  cityAffinity: Record<string, number>;
+  savedEventIds: string[];
+}
+
+/**
+ * Builds the per-user behavioral signal that scoreEvent() reads. Three real
+ * sources, each with its own weight:
+ *  - declared interests (explicit, but weakest — someone can tap a chip once)
+ *  - saved events (an active bookmark, medium weight)
+ *  - real ticket purchases via useListMyTickets (money actually spent on a
+ *    category/city, the strongest signal available)
+ * This is what makes two accounts diverge: it's built entirely from
+ * account-specific state (AppContext's savedEvents/userInterests plus the
+ * caller's own purchase history), never from the event's own id.
+ */
+function buildUserAffinity(
+  allEvents: Event[],
+  savedEventIds: string[],
+  userInterests: string[],
+  purchasedTickets: { event?: { category?: string; city?: string } }[],
+): UserAffinity {
+  const categoryAffinity: Record<string, number> = {};
+  const cityAffinity: Record<string, number> = {};
+
+  const bump = (map: Record<string, number>, key: string | undefined, weight: number) => {
+    if (!key) return;
+    map[key] = (map[key] ?? 0) + weight;
+  };
+
+  for (const id of savedEventIds) {
+    const saved = allEvents.find((e) => e.id === id);
+    if (!saved) continue;
+    bump(categoryAffinity, saved.category, 2);
+    bump(cityAffinity, saved.city, 1);
+  }
+
+  for (const ticket of purchasedTickets) {
+    bump(categoryAffinity, ticket.event?.category, 3);
+    bump(cityAffinity, ticket.event?.city, 2);
+  }
+
+  return { userInterests, categoryAffinity, cityAffinity, savedEventIds };
+}
+
+function scoreEvent(event: Event, affinity: UserAffinity): ScoredEvent {
   const config = VIBE_CONFIG[event.category] ?? { vibe: "Vibrant", color: "#FF6B00", interest: "" };
-  const hash = hashId(event.id);
-  const base = 76 + (hash % 20);
-  const boost = userInterests.includes(config.interest) ? 5 : 0;
+
+  let score = 55; // neutral baseline for an event with no signal at all
+  if (config.interest && affinity.userInterests.includes(config.interest)) score += 15;
+  score += Math.min(15, (affinity.categoryAffinity[event.category] ?? 0) * 3);
+  score += Math.min(10, (affinity.cityAffinity[event.city] ?? 0) * 2);
+  if (affinity.savedEventIds.includes(event.id)) score += 5;
+  // Stable tie-breaker so two events with identical real signal don't render
+  // in an arbitrary order — bounded to ±4, far below what any real signal
+  // above contributes.
+  score += (hashId(event.id) % 9) - 4;
+
   return {
     ...event,
-    score: Math.min(99, base + boost),
+    score: Math.max(40, Math.min(99, Math.round(score))),
     vibe: config.vibe,
     vibeColor: config.color,
   };
@@ -77,18 +144,30 @@ function scoreEvent(event: Event, userInterests: string[]): ScoredEvent {
 export default function ForYouScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { userInterests, setUserInterests } = useApp();
+  const { userInterests, setUserInterests, savedEvents, authToken } = useApp();
   const { events, isLoading } = useEventCatalog();
   const [showRefine, setShowRefine] = useState(false);
   const [localInterests, setLocalInterests] = useState<string[]>(userInterests);
 
+  // Real purchase history — the strongest signal this screen has access to.
+  // Guarded by `enabled: !!authToken` since /tickets requires auth and a
+  // signed-out visitor should just fall back to interests + saved events.
+  const { data: ticketsData } = useListMyTickets({
+    query: { queryKey: getListMyTicketsQueryKey(), enabled: !!authToken },
+  });
+
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
+
+  const affinity = useMemo(
+    () => buildUserAffinity(events, savedEvents, userInterests, ticketsData?.tickets ?? []),
+    [events, savedEvents, userInterests, ticketsData],
+  );
 
   const scored = useMemo<ScoredEvent[]>(() => {
     return events
-      .map((e) => scoreEvent(e, userInterests))
+      .map((e) => scoreEvent(e, affinity))
       .sort((a, b) => b.score - a.score);
-  }, [events, userInterests]);
+  }, [events, affinity]);
 
   const diasporaEvents = useMemo(() => {
     return scored

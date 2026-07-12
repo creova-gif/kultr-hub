@@ -9,6 +9,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import Svg, {
@@ -26,65 +27,81 @@ import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
 import { EA_COUNTRIES } from "@/constants/currencies";
+import type { Event } from "@/constants/data";
 
 const { width } = Dimensions.get("window");
 const MAP_W = width - 32;
 const MAP_H = 260;
 
-// ── Stylised city map pins ────────────────────────────────────────────────────
+// ── Map pins, computed from real events ─────────────────────────────────────
+//
+// Map pins used to come from CITY_PINS, a hardcoded per-country lookup with
+// invented labels ("Live Music Tonight") that never matched any real event
+// and never moved when the category filter changed — confirmed live during
+// the UX audit. Pins are now derived from whatever `useEventCatalog()`
+// actually returned for the currently-filtered set, so the label on a pin is
+// always a real event title and the pins respond to every filter on this
+// screen exactly like the event list underneath them.
 
 interface EventPin {
   x: number;
   y: number;
   label: string;
   icon: string;
+  eventId: string;
 }
 
-const CITY_PINS: Record<string, EventPin[]> = {
-  KE: [
-    { x: 0.52, y: 0.35, label: "Art Exhibition", icon: "image" },
-    { x: 0.38, y: 0.55, label: "Cultural Festival", icon: "users" },
-    { x: 0.63, y: 0.25, label: "Live Music Tonight", icon: "music" },
-    { x: 0.72, y: 0.6, label: "Heritage Walk", icon: "globe" },
-    { x: 0.45, y: 0.7, label: "Food Experience", icon: "coffee" },
-  ],
-  NG: [
-    { x: 0.48, y: 0.32, label: "Afrobeats Night", icon: "music" },
-    { x: 0.62, y: 0.52, label: "Art Fair", icon: "image" },
-    { x: 0.33, y: 0.6, label: "Street Food", icon: "coffee" },
-    { x: 0.7, y: 0.38, label: "Comedy Show", icon: "smile" },
-  ],
-  GH: [
-    { x: 0.5, y: 0.4, label: "Highlife Concert", icon: "music" },
-    { x: 0.35, y: 0.58, label: "Craft Market", icon: "shopping-bag" },
-    { x: 0.67, y: 0.3, label: "Film Festival", icon: "film" },
-  ],
-  UG: [
-    { x: 0.45, y: 0.45, label: "Jazz Night", icon: "music" },
-    { x: 0.6, y: 0.35, label: "Art Walk", icon: "image" },
-    { x: 0.38, y: 0.65, label: "Cultural Fair", icon: "globe" },
-  ],
-  TZ: [
-    { x: 0.5, y: 0.42, label: "Bongo Flava Fest", icon: "music" },
-    { x: 0.64, y: 0.55, label: "Food & Culture", icon: "coffee" },
-    { x: 0.36, y: 0.3, label: "Art Expo", icon: "image" },
-  ],
+const CATEGORY_ICON: Record<string, string> = {
+  Music: "music",
+  Art: "image",
+  Food: "coffee",
+  Heritage: "globe",
+  Comedy: "smile",
+  Sports: "activity",
+  Nightlife: "moon",
 };
 
-const DEFAULT_PINS: EventPin[] = [
-  { x: 0.5, y: 0.38, label: "Live Event", icon: "music" },
-  { x: 0.35, y: 0.55, label: "Cultural Show", icon: "globe" },
-  { x: 0.67, y: 0.6, label: "Food Festival", icon: "coffee" },
-];
+// Deterministic hash so a given event's pin sits in the same spot on every
+// render/refresh instead of jittering around — there's no real lat/long for
+// map placement, so position is a stable pseudo-random layout derived from
+// the event's own id rather than anything invented on the spot.
+function hashId(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) {
+    h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  }
+  return h;
+}
+
+function truncateLabel(label: string, max = 22): string {
+  return label.length > max ? `${label.slice(0, max - 1)}…` : label;
+}
+
+function eventsToPins(events: Event[], max = 6): EventPin[] {
+  return events.slice(0, max).map((e) => {
+    const hash = hashId(e.id);
+    // Keep pins away from the very edge (0.12–0.88) so labels don't clip.
+    const x = 0.12 + ((hash % 1000) / 1000) * 0.76;
+    const y = 0.12 + (((hash >>> 10) % 1000) / 1000) * 0.76;
+    return {
+      x,
+      y,
+      label: truncateLabel(e.title),
+      icon: CATEGORY_ICON[e.category] ?? "map-pin",
+      eventId: e.id,
+    };
+  });
+}
 
 // ── Stylised city SVG map ────────────────────────────────────────────────────
 
 interface CityMapProps {
   pins: EventPin[];
   cityName: string;
+  onPressPin: (eventId: string) => void;
 }
 
-function CityMap({ pins, cityName }: CityMapProps) {
+function CityMap({ pins, cityName, onPressPin }: CityMapProps) {
   const cx = MAP_W / 2;
   const cy = MAP_H / 2;
 
@@ -142,7 +159,7 @@ function CityMap({ pins, cityName }: CityMapProps) {
         const isPrimary = i === 0;
 
         return (
-          <G key={i}>
+          <G key={pin.eventId} onPress={() => onPressPin(pin.eventId)}>
             {/* Outer glow */}
             <Circle cx={px} cy={py} r={isPrimary ? 22 : 18} fill="#FF6B00" fillOpacity={isPrimary ? 0.08 : 0.05} />
             {/* Pin circle */}
@@ -174,25 +191,81 @@ function CityMap({ pins, cityName }: CityMapProps) {
 const CATEGORY_FILTERS = ["For You", "Music", "Art", "Food", "Heritage", "More"] as const;
 type CategoryFilter = (typeof CATEGORY_FILTERS)[number];
 
+type DatePreset = "any" | "today" | "week" | "month";
+
+const DATE_PRESETS: { id: DatePreset; label: string }[] = [
+  { id: "any", label: "Any date" },
+  { id: "today", label: "Today" },
+  { id: "week", label: "This week" },
+  { id: "month", label: "This month" },
+];
+
+function toLocalISODate(d: Date): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function withinDatePreset(dateStr: string, preset: DatePreset): boolean {
+  if (preset === "any") return true;
+  const now = new Date();
+  const today = toLocalISODate(now);
+  if (preset === "today") return dateStr === today;
+  const end = new Date(now);
+  if (preset === "week") end.setDate(end.getDate() + 7);
+  if (preset === "month") end.setMonth(end.getMonth() + 1);
+  return dateStr >= today && dateStr <= toLocalISODate(end);
+}
+
 export default function CultureCompassScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { userCountry, setUserCountry } = useApp();
   const [selectedCat, setSelectedCat] = useState<CategoryFilter>("For You");
   const [showCityPicker, setShowCityPicker] = useState(false);
+  // Filters button used to have no onPress handler at all — confirmed dead
+  // on live audit. It now toggles this panel, which reuses the exact same
+  // category-chip filter state above (selectedCat) plus date/price, all
+  // feeding the one `filtered` list that drives both the map pins and the
+  // event list below — the same filtering pattern the rest of this screen
+  // already uses, not a new one bolted on for this panel.
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [datePreset, setDatePreset] = useState<DatePreset>("any");
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
   const { events } = useEventCatalog();
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 44) : insets.top;
 
-  const pins = CITY_PINS[userCountry.code] ?? DEFAULT_PINS;
   const cityName = userCountry.name.split(" ")[0]; // "Nairobi" from "Nairobi CBD"
+
+  const priceMinNum = priceMin.trim() !== "" && !Number.isNaN(Number(priceMin)) ? Number(priceMin) : undefined;
+  const priceMaxNum = priceMax.trim() !== "" && !Number.isNaN(Number(priceMax)) ? Number(priceMax) : undefined;
+  const activeFilterCount =
+    (datePreset !== "any" ? 1 : 0) + (priceMinNum !== undefined || priceMaxNum !== undefined ? 1 : 0);
 
   const filtered = useMemo(() => {
     return events.filter((e) => {
-      if (selectedCat === "For You" || selectedCat === "More") return true;
-      return e.category === selectedCat;
+      const matchesCat = selectedCat === "For You" || selectedCat === "More" || e.category === selectedCat;
+      const matchesDate = withinDatePreset(e.date, datePreset);
+      const matchesPrice =
+        (priceMinNum === undefined || e.price >= priceMinNum) &&
+        (priceMaxNum === undefined || e.price <= priceMaxNum);
+      return matchesCat && matchesDate && matchesPrice;
     });
-  }, [events, selectedCat]);
+  }, [events, selectedCat, datePreset, priceMinNum, priceMaxNum]);
+
+  // Real pins, derived from whatever `filtered` actually contains — no
+  // fabricated labels, and they shrink/grow with every filter above exactly
+  // like the event cards below do.
+  const pins = useMemo(() => eventsToPins(filtered), [filtered]);
+
+  const clearFilters = () => {
+    setDatePreset("any");
+    setPriceMin("");
+    setPriceMax("");
+  };
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -221,11 +294,93 @@ export default function CultureCompassScreen() {
               <Feather name="chevron-down" size={12} color={colors.mutedForeground} />
             </Pressable>
           </View>
-          <Pressable style={[styles.filterBtn, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-            <Feather name="sliders" size={14} color={colors.mutedForeground} />
-            <Text style={[styles.filterBtnText, { color: colors.mutedForeground }]}>Filters</Text>
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              setShowFilterPanel((v) => !v);
+            }}
+            style={[
+              styles.filterBtn,
+              {
+                backgroundColor: activeFilterCount > 0 ? "rgba(255,107,0,0.1)" : colors.muted,
+                borderColor: activeFilterCount > 0 ? "#FF6B00" : colors.border,
+              },
+            ]}
+            accessibilityLabel="Toggle date and price filters"
+            accessibilityRole="button"
+          >
+            <Feather name="sliders" size={14} color={activeFilterCount > 0 ? "#FF6B00" : colors.mutedForeground} />
+            <Text style={[styles.filterBtnText, { color: activeFilterCount > 0 ? "#FF6B00" : colors.mutedForeground }]}>
+              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+            </Text>
           </Pressable>
         </View>
+
+        {/* ── Filter Panel ── */}
+        {showFilterPanel && (
+          <View style={[styles.filterPanel, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.filterLabel, { color: colors.mutedForeground }]}>Date</Text>
+            <View style={styles.filterChipRow}>
+              {DATE_PRESETS.map((preset) => {
+                const active = datePreset === preset.id;
+                return (
+                  <Pressable
+                    key={preset.id}
+                    onPress={() => { Haptics.selectionAsync(); setDatePreset(preset.id); }}
+                    style={[
+                      styles.dateChip,
+                      {
+                        backgroundColor: active ? "#FF6B00" : colors.muted,
+                        borderColor: active ? "#FF6B00" : colors.border,
+                      },
+                    ]}
+                    accessibilityLabel={preset.label}
+                    accessibilityRole="button"
+                  >
+                    <Text style={[styles.dateChipText, { color: active ? "#fff" : colors.mutedForeground }]}>
+                      {preset.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <Text style={[styles.filterLabel, { color: colors.mutedForeground, marginTop: 14 }]}>
+              Price ({userCountry.currencyCode})
+            </Text>
+            <View style={styles.priceRow}>
+              <TextInput
+                value={priceMin}
+                onChangeText={setPriceMin}
+                placeholder="Min"
+                placeholderTextColor={colors.mutedForeground}
+                keyboardType="numeric"
+                style={[styles.priceInput, { backgroundColor: colors.muted, borderColor: colors.border, color: colors.foreground }]}
+              />
+              <Text style={{ color: colors.mutedForeground }}>–</Text>
+              <TextInput
+                value={priceMax}
+                onChangeText={setPriceMax}
+                placeholder="Max"
+                placeholderTextColor={colors.mutedForeground}
+                keyboardType="numeric"
+                style={[styles.priceInput, { backgroundColor: colors.muted, borderColor: colors.border, color: colors.foreground }]}
+              />
+            </View>
+
+            {activeFilterCount > 0 && (
+              <Pressable
+                onPress={() => { Haptics.selectionAsync(); clearFilters(); }}
+                style={styles.clearFiltersBtn}
+                accessibilityLabel="Clear date and price filters"
+                accessibilityRole="button"
+              >
+                <Feather name="x-circle" size={12} color="#FF6B00" />
+                <Text style={styles.clearFiltersText}>Clear filters</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
 
         {/* ── City Picker Dropdown ── */}
         {showCityPicker && (
@@ -261,7 +416,14 @@ export default function CultureCompassScreen() {
 
         {/* ── City Map ── */}
         <View style={[styles.mapContainer, { borderColor: colors.border }]}>
-          <CityMap pins={pins} cityName={cityName} />
+          <CityMap
+            pins={pins}
+            cityName={cityName}
+            onPressPin={(eventId) => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push(`/event/${eventId}`);
+            }}
+          />
           {/* Location button overlay */}
           <Pressable
             style={[styles.locateBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -269,6 +431,14 @@ export default function CultureCompassScreen() {
           >
             <Feather name="navigation" size={16} color="#FF6B00" />
           </Pressable>
+          {/* No events matching the current filters — an empty map beats one
+              with fabricated pins standing in for events that don't exist. */}
+          {pins.length === 0 && (
+            <View style={styles.mapEmptyOverlay} pointerEvents="none">
+              <Feather name="map-pin" size={22} color="#555" />
+              <Text style={styles.mapEmptyText}>No events match your filters</Text>
+            </View>
+          )}
         </View>
 
         {/* ── Category Filters ── */}
@@ -367,6 +537,40 @@ const styles = StyleSheet.create({
   },
   filterBtnText: { fontSize: 12, fontWeight: "600" },
 
+  filterPanel: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  filterLabel: { fontSize: 11, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 8 },
+  filterChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  dateChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  dateChipText: { fontSize: 12, fontWeight: "600" },
+  priceRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  priceInput: {
+    flex: 1,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    fontSize: 13,
+  },
+  clearFiltersBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 14,
+    alignSelf: "flex-start",
+  },
+  clearFiltersText: { color: "#FF6B00", fontSize: 12, fontWeight: "700" },
+
   cityDropdown: {
     maxHeight: 200,
     marginHorizontal: 16,
@@ -392,6 +596,18 @@ const styles = StyleSheet.create({
     position: "relative",
     marginBottom: 16,
   },
+  mapEmptyOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "rgba(13,13,13,0.55)",
+  },
+  mapEmptyText: { color: "#999", fontSize: 12, fontWeight: "600" },
   locateBtn: {
     position: "absolute",
     bottom: 12,

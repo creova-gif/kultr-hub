@@ -263,6 +263,28 @@ export default function CreatorStudioScreen() {
         </Pressable>
       </View>
 
+      {/* ── Payouts entry point ── */}
+      <Pressable
+        style={[styles.payoutsRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          router.push("/payouts" as any);
+        }}
+        accessibilityLabel="View balance and request a payout"
+        accessibilityRole="button"
+      >
+        <View style={[styles.payoutsIcon, { backgroundColor: "rgba(255,107,0,0.12)" }]}>
+          <Feather name="dollar-sign" size={18} color="#FF6B00" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.payoutsTitle, { color: colors.foreground }]}>Payouts</Text>
+          <Text style={[styles.payoutsSub, { color: colors.mutedForeground }]}>
+            View your balance and request a payout
+          </Text>
+        </View>
+        <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+      </Pressable>
+
       {/* ── Overview ── */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
@@ -561,6 +583,19 @@ const styles = StyleSheet.create({
   welcomeText: { flex: 1 },
   welcomeTitle: { fontSize: 22, fontWeight: "900" },
   welcomeSub: { fontSize: 12, marginTop: 2 },
+  payoutsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginHorizontal: 16,
+    marginBottom: 20,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+  },
+  payoutsIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  payoutsTitle: { fontSize: 14, fontWeight: "800" },
+  payoutsSub: { fontSize: 11, marginTop: 2 },
   createBtn: {
     backgroundColor: "#FF6B00",
     borderRadius: 24,

@@ -14,10 +14,62 @@ import {
   kultrPassSubscriptionsTable,
   userPerkUnlocksTable,
 } from "@workspace/db";
-import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
+import { requireAuth, requireAdmin, type AuthedRequest } from "../middleware/auth.js";
 import type { Request, Response } from "express";
 
 const router = Router();
+
+/**
+ * GET /api/users/:id/public
+ * Lightweight, unauthenticated lookup used to render trust signals (e.g. the
+ * "Verified Organizer" badge on event/[id].tsx) without extending the main
+ * GET /events/:id response, which lives in a file this route doesn't own.
+ */
+router.get("/:id/public", async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+  const [user] = await db
+    .select({ id: usersTable.id, displayName: usersTable.displayName, isVerifiedOrganizer: usersTable.isVerifiedOrganizer })
+    .from(usersTable)
+    .where(eq(usersTable.id, id))
+    .limit(1);
+
+  if (!user) {
+    res.status(404).json({ message: "User not found" });
+    return;
+  }
+
+  res.json(user);
+});
+
+/**
+ * PATCH /api/users/:id/verify
+ * Admin-only. Grants or revokes the "Verified Organizer" trust badge shown
+ * to buyers on that creator's events. Not a KYC pipeline — a manual signal
+ * an admin sets after reviewing an organizer, from the admin moderation
+ * screen.
+ */
+router.patch("/:id/verify", requireAuth, requireAdmin, async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+  const { isVerifiedOrganizer } = req.body as { isVerifiedOrganizer?: boolean };
+
+  if (typeof isVerifiedOrganizer !== "boolean") {
+    res.status(400).json({ message: "isVerifiedOrganizer must be a boolean" });
+    return;
+  }
+
+  const [updated] = await db
+    .update(usersTable)
+    .set({ isVerifiedOrganizer, updatedAt: new Date() })
+    .where(eq(usersTable.id, id))
+    .returning({ id: usersTable.id, isVerifiedOrganizer: usersTable.isVerifiedOrganizer });
+
+  if (!updated) {
+    res.status(404).json({ message: "User not found" });
+    return;
+  }
+
+  res.json(updated);
+});
 
 /**
  * GET /api/users/me/export

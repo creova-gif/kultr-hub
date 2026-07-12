@@ -7,5 +7,6 @@
  */
 
 export interface PassActivateRequest {
-  multiplier?: string;
+  /** Reference of a payment already verified via POST /payments/pass/verify. */
+  reference: string;
 }

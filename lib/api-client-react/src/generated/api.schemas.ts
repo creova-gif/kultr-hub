@@ -426,13 +426,115 @@ export interface GamificationProfile {
 }
 
 export interface PassActivateRequest {
-  multiplier?: string;
+  /** Reference of a payment already verified via POST /payments/pass/verify. */
+  reference: string;
 }
 
 export interface PassActivateResponse {
   active: boolean;
   multiplier: number;
   tier: string;
+  expiresAt?: string | null;
+}
+
+export interface CreateEventReportRequest {
+  /** e.g. misleading_listing, suspected_scam, inappropriate_content, duplicate_event, other */
+  reason: string;
+  details?: string;
+}
+
+export type EventReportStatus =
+  (typeof EventReportStatus)[keyof typeof EventReportStatus];
+
+export const EventReportStatus = {
+  open: "open",
+  reviewed: "reviewed",
+  dismissed: "dismissed",
+} as const;
+
+export interface EventReportView {
+  id: string;
+  eventId: string;
+  reason: string;
+  details?: string | null;
+  status: EventReportStatus;
+  createdAt: string;
+}
+
+export type AdminEventReportView = EventReportView & {
+  reporterId: string;
+  resolvedAt: string | null;
+};
+
+export interface EventReportListResponse {
+  reports: AdminEventReportView[];
+}
+
+export type ResolveEventReportRequestStatus =
+  (typeof ResolveEventReportRequestStatus)[keyof typeof ResolveEventReportRequestStatus];
+
+export const ResolveEventReportRequestStatus = {
+  reviewed: "reviewed",
+  dismissed: "dismissed",
+} as const;
+
+export interface ResolveEventReportRequest {
+  status: ResolveEventReportRequestStatus;
+}
+
+export interface EventReportResolution {
+  id: string;
+  status: EventReportStatus;
+  resolvedAt: string | null;
+}
+
+export interface PublicUserProfile {
+  id: string;
+  displayName: string;
+  isVerifiedOrganizer: boolean;
+}
+
+export interface VerifyOrganizerRequest {
+  isVerifiedOrganizer: boolean;
+}
+
+export interface VerifyOrganizerResponse {
+  id: string;
+  isVerifiedOrganizer: boolean;
+}
+
+export type NotificationType =
+  (typeof NotificationType)[keyof typeof NotificationType];
+
+export const NotificationType = {
+  ticket_confirmed: "ticket_confirmed",
+  event_approved: "event_approved",
+  event_rejected: "event_rejected",
+  event_cancelled: "event_cancelled",
+  payout_resolved: "payout_resolved",
+  kultroin_earned: "kultroin_earned",
+} as const;
+
+export type NotificationViewData = { [key: string]: unknown } | null;
+
+export interface NotificationView {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  data?: NotificationViewData;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface NotificationListResponse {
+  notifications: NotificationView[];
+  unreadCount: number;
+}
+
+export interface NotificationReadStatus {
+  id: string;
+  read: boolean;
 }
 
 export interface PayoutCurrencyBalance {
@@ -497,6 +599,44 @@ export type ListEventsParams = {
   city?: string;
   countryCode?: string;
   featured?: boolean;
+  /**
+   * Only include events on or after this ISO date/date-time.
+   */
+  dateFrom?: string;
+  /**
+   * Only include events on or before this ISO date/date-time.
+   */
+  dateTo?: string;
+  /**
+   * Only include events with at least one ticket type priced at or above this amount.
+   */
+  priceMin?: number;
+  /**
+   * Only include events with at least one ticket type priced at or below this amount.
+   */
+  priceMax?: number;
+  limit?: number;
+  offset?: number;
+};
+
+export type SearchEventsParams = {
+  q?: string;
+  /**
+   * Only include events on or after this ISO date/date-time.
+   */
+  dateFrom?: string;
+  /**
+   * Only include events on or before this ISO date/date-time.
+   */
+  dateTo?: string;
+  /**
+   * Only include events with at least one ticket type priced at or above this amount.
+   */
+  priceMin?: number;
+  /**
+   * Only include events with at least one ticket type priced at or below this amount.
+   */
+  priceMax?: number;
   limit?: number;
   offset?: number;
 };
@@ -523,4 +663,8 @@ export const ListAllEventsAdminStatus = {
 
 export type GetFxRatesParams = {
   base?: string;
+};
+
+export type ListNotificationsParams = {
+  limit?: number;
 };

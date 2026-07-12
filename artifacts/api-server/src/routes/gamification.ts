@@ -8,6 +8,7 @@ import {
   kultroinLedgerTable,
   collectibleInventoryTable,
   kultrPassSubscriptionsTable,
+  kultrPassPaymentsTable,
   perksTable,
   userPerkUnlocksTable,
   eventCheckinsTable,
@@ -349,26 +350,88 @@ router.get("/wallet/ledger", requireAuth, async (req: Request, res: Response) =>
 });
 
 /* ── POST /pass/activate ──────────────────────────────────────────────────
- * Grant / refresh the KULTR PASS entitlement. Stub for billing: until recurring
- * payments are wired, this simply flags the entitlement at the fixed default
- * multiplier — never a client-supplied one, which would let any user set an
- * arbitrary earn-rate on the KULTROIN ledger for free.
+ * Grant / refresh the KULTR PASS entitlement. Previously this simply flagged
+ * the entitlement active with no payment collected at all — a real billing
+ * gap. It now requires the `reference` of a payment that was already
+ * initiated (POST /payments/pass/init) and verified (POST /payments/pass/verify)
+ * for THIS user, and consumes it atomically so the same charge can never
+ * activate the pass twice. This is a one-time charge with manual renewal —
+ * expiresAt is set 30 days out, not left open-ended, so a lapsed payer's
+ * multiplier (see lib/gamification.ts getMultiplier) reverts to 1x until
+ * they pay again.
  * ───────────────────────────────────────────────────────────────────────── */
 const KULTR_PASS_MULTIPLIER = "1.50";
+const KULTR_PASS_DURATION_DAYS = 30;
+
+class PassActivationError extends Error {
+  constructor(public readonly status: number, message: string) {
+    super(message);
+    this.name = "PassActivationError";
+  }
+}
 
 router.post("/pass/activate", requireAuth, async (req: Request, res: Response) => {
   const { userId } = req as AuthedRequest;
+  const { reference } = req.body as { reference?: string };
 
-  const [sub] = await db
-    .insert(kultrPassSubscriptionsTable)
-    .values({ userId, multiplier: KULTR_PASS_MULTIPLIER, active: true })
-    .onConflictDoUpdate({
-      target: kultrPassSubscriptionsTable.userId,
-      set: { active: true, multiplier: KULTR_PASS_MULTIPLIER, startedAt: new Date() },
-    })
-    .returning();
+  if (!reference || typeof reference !== "string") {
+    res.status(400).json({
+      message: "reference is required — purchase KULTR PASS via POST /payments/pass/init and POST /payments/pass/verify first.",
+    });
+    return;
+  }
 
-  res.status(201).json({ active: sub.active, multiplier: Number(sub.multiplier), tier: sub.tier });
+  try {
+    const sub = await db.transaction(async (tx) => {
+      const [payment] = await tx
+        .select()
+        .from(kultrPassPaymentsTable)
+        .where(eq(kultrPassPaymentsTable.reference, reference))
+        .for("update");
+
+      if (!payment || payment.userId !== userId) {
+        throw new PassActivationError(404, "No matching payment found for this reference.");
+      }
+      if (payment.status === "consumed") {
+        throw new PassActivationError(409, "This payment has already been used to activate KULTR PASS.");
+      }
+      if (payment.status !== "verified") {
+        throw new PassActivationError(402, "Payment has not been verified yet.");
+      }
+
+      await tx
+        .update(kultrPassPaymentsTable)
+        .set({ status: "consumed", consumedAt: new Date() })
+        .where(eq(kultrPassPaymentsTable.reference, reference));
+
+      const startedAt = new Date();
+      const expiresAt = new Date(startedAt.getTime() + KULTR_PASS_DURATION_DAYS * 24 * 60 * 60 * 1000);
+
+      const [row] = await tx
+        .insert(kultrPassSubscriptionsTable)
+        .values({ userId, multiplier: KULTR_PASS_MULTIPLIER, active: true, startedAt, expiresAt })
+        .onConflictDoUpdate({
+          target: kultrPassSubscriptionsTable.userId,
+          set: { active: true, multiplier: KULTR_PASS_MULTIPLIER, startedAt, expiresAt },
+        })
+        .returning();
+
+      return row;
+    });
+
+    res.status(201).json({
+      active: sub.active,
+      multiplier: Number(sub.multiplier),
+      tier: sub.tier,
+      expiresAt: sub.expiresAt ? sub.expiresAt.toISOString() : null,
+    });
+  } catch (err) {
+    if (err instanceof PassActivationError) {
+      res.status(err.status).json({ message: err.message });
+      return;
+    }
+    throw err;
+  }
 });
 
 export default router;

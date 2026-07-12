@@ -1,6 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { db, ticketsTable, ticketTypesTable } from "@workspace/db";
+import { db, ticketsTable, ticketTypesTable, eventsTable } from "@workspace/db";
+import { notify } from "./notify.js";
 
 /**
  * Shared, hardened ticket-issuance path used by every payment provider.
@@ -65,7 +66,7 @@ export interface IssueTicketResult {
  * rolls back the just-inserted ticket so no orphan is left behind.
  */
 export async function issueTicket(params: IssueTicketParams): Promise<IssueTicketResult> {
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const [inserted] = await tx
       .insert(ticketsTable)
       .values({
@@ -113,4 +114,29 @@ export async function issueTicket(params: IssueTicketParams): Promise<IssueTicke
 
     return { ticket: inserted, deduped: false };
   });
+
+  // Best-effort, additive-only: a real notification whenever a fresh ticket
+  // is actually issued. Runs after the transaction commits and is never
+  // allowed to fail the purchase — the ticket is already confirmed at this
+  // point regardless of whether the notification row gets written.
+  if (!result.deduped) {
+    try {
+      const [event] = await db
+        .select({ title: eventsTable.title })
+        .from(eventsTable)
+        .where(eq(eventsTable.id, params.eventId))
+        .limit(1);
+      await notify({
+        userId: params.userId,
+        type: "ticket_confirmed",
+        title: "Booking confirmed",
+        body: `Your ticket for ${event?.title ?? "your event"} is ready.`,
+        data: { eventId: params.eventId, ticketId: result.ticket.id },
+      });
+    } catch (err) {
+      console.error("Failed to write ticket_confirmed notification", err);
+    }
+  }
+
+  return result;
 }

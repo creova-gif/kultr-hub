@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { db, ticketTypesTable, eventsTable, usersTable, pendingPaymentsTable } from "@workspace/db";
+import { db, ticketTypesTable, eventsTable, usersTable, pendingPaymentsTable, kultrPassPaymentsTable } from "@workspace/db";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { initializePayment, verifyPayment, isPaystackConfigured } from "../lib/paystack.js";
 import { initiateStkPush, queryStkPush, isMpesaConfigured } from "../lib/mpesa.js";
@@ -188,6 +188,141 @@ router.post("/verify", requireAuth, async (req: Request, res: Response) => {
     if (handleIssueError(err, res)) return;
     throw err;
   }
+});
+
+/**
+ * KULTR PASS is a one-time charge with manual renewal (not an
+ * auto-recurring subscription) — see routes/gamification.ts POST
+ * /pass/activate, which sets a real 30-day expiresAt on every activation.
+ * The price is deliberately a plain constant, not user- or client-supplied.
+ */
+const KULTR_PASS_PRICE_KES = 500; // KES — one 30-day KULTR PASS period.
+const KULTR_PASS_CURRENCY = "KES";
+
+/**
+ * POST /api/payments/pass/init
+ * Mirrors POST /payments/init above, but for a KULTR PASS purchase instead
+ * of a ticket. Writes a "pending" row to kultr_pass_payments before ever
+ * contacting Paystack (or, when unconfigured, before telling the client to
+ * simulate) so /pass/verify — and ultimately gamification.ts's
+ * /pass/activate — always has a server-authoritative record to check
+ * against instead of trusting the client's word that payment happened.
+ */
+router.post("/pass/init", requireAuth, async (req: Request, res: Response) => {
+  const authed = req as AuthedRequest;
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, authed.userId)).limit(1);
+  if (!user) { res.status(404).json({ message: "User not found" }); return; }
+
+  const reference = generatePaymentRef();
+
+  await db.insert(kultrPassPaymentsTable).values({
+    reference,
+    userId: authed.userId,
+    amount: String(KULTR_PASS_PRICE_KES),
+    currency: KULTR_PASS_CURRENCY,
+    status: "pending",
+  });
+
+  const callbackUrl =
+    process.env.PAYSTACK_CALLBACK_URL ??
+    `${process.env.API_BASE_URL ?? "http://localhost:3001"}/api/payments/callback?ref=${reference}`;
+
+  const paystack = await initializePayment({
+    email: user.email,
+    amountKobo: toCurrencyKobo(KULTR_PASS_PRICE_KES, KULTR_PASS_CURRENCY),
+    currency: KULTR_PASS_CURRENCY,
+    reference,
+    callbackUrl,
+    metadata: { userId: authed.userId, kind: "kultr_pass" },
+  });
+
+  if (!paystack) {
+    // Paystack key not configured — simulate payment for dev/demo, same as
+    // ticket purchase above. The client still has to call /pass/verify
+    // (and then gamification.ts's /pass/activate) before anything is granted.
+    res.json({
+      reference,
+      authorizationUrl: null,
+      simulated: true,
+      amount: KULTR_PASS_PRICE_KES,
+      currency: KULTR_PASS_CURRENCY,
+    });
+    return;
+  }
+
+  res.json({
+    reference: paystack.reference,
+    authorizationUrl: paystack.authorizationUrl,
+    simulated: false,
+    amount: KULTR_PASS_PRICE_KES,
+    currency: KULTR_PASS_CURRENCY,
+  });
+});
+
+/**
+ * POST /api/payments/pass/verify
+ * Verifies the charge from /pass/init (for real via Paystack, or simulated
+ * when no gateway is configured) and flips the payment row to "verified".
+ * Idempotent — replaying with an already-verified or already-consumed
+ * reference just confirms success again rather than erroring or re-verifying.
+ * Does NOT itself grant the entitlement; POST /pass/activate does that,
+ * consuming this row exactly once.
+ */
+router.post("/pass/verify", requireAuth, async (req: Request, res: Response) => {
+  const authed = req as AuthedRequest;
+  const { reference } = req.body as { reference?: string };
+
+  if (!reference) {
+    res.status(400).json({ message: "reference is required" });
+    return;
+  }
+
+  const [pending] = await db.select().from(kultrPassPaymentsTable)
+    .where(eq(kultrPassPaymentsTable.reference, reference)).limit(1);
+
+  if (!pending || pending.userId !== authed.userId) {
+    res.status(400).json({ message: "Unknown or expired payment reference" });
+    return;
+  }
+
+  if (pending.status !== "pending") {
+    // Already verified (or already consumed by /pass/activate) — replaying
+    // this call is harmless, just confirm success again.
+    res.json({ verified: true, reference });
+    return;
+  }
+
+  const allowSimulation = simulationAllowed(isPaystackConfigured());
+
+  if (!allowSimulation) {
+    const result = await verifyPayment(reference);
+    if (!result?.success) {
+      res.status(402).json({ message: "Payment could not be verified" });
+      return;
+    }
+    const expectedKobo = toCurrencyKobo(Number(pending.amount), pending.currency);
+    if (result.amount !== expectedKobo || result.currency !== pending.currency) {
+      res.status(400).json({ message: "Payment amount does not match the expected KULTR PASS price." });
+      return;
+    }
+    const metaUserId = (result.metadata as { userId?: string } | undefined)?.userId;
+    if (metaUserId && metaUserId !== authed.userId) {
+      res.status(403).json({ message: "This payment belongs to a different account." });
+      return;
+    }
+  }
+
+  // Guarded update: only transitions out of "pending" once, so a race
+  // between two concurrent verify calls can't double-apply anything here
+  // (there's nothing to double-apply yet — the real one-time effect is
+  // /pass/activate's consume step — but this keeps the row's history honest).
+  await db
+    .update(kultrPassPaymentsTable)
+    .set({ status: "verified", verifiedAt: new Date() })
+    .where(and(eq(kultrPassPaymentsTable.reference, reference), eq(kultrPassPaymentsTable.status, "pending")));
+
+  res.json({ verified: true, reference });
 });
 
 /**

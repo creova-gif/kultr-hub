@@ -196,6 +196,35 @@ export const kultrPassSubscriptionsTable = pgTable("kultr_pass_subscriptions", {
 });
 
 /* ──────────────────────────────────────────────────────────────────────────
+ * KULTR PASS payment attempts. Mirrors the ticket-purchase init/verify
+ * pattern in routes/payments.ts (POST /payments/pass/init writes the
+ * "pending" row before contacting Paystack, POST /payments/pass/verify
+ * flips it to "verified"). POST /pass/activate then requires a "verified"
+ * row it hasn't already consumed before it will grant the entitlement —
+ * closing the previous stub where activation needed no payment at all.
+ * ────────────────────────────────────────────────────────────────────────── */
+export const kultrPassPaymentStatusEnum = pgEnum("kultr_pass_payment_status", [
+  "pending",
+  "verified",
+  "consumed",
+]);
+
+export const kultrPassPaymentsTable = pgTable("kultr_pass_payments", {
+  reference: text("reference").primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => usersTable.id, { onDelete: "cascade" }),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  currency: text("currency").notNull(),
+  status: kultrPassPaymentStatusEnum("status").notNull().default("pending"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  verifiedAt: timestamp("verified_at", { withTimezone: true }),
+  consumedAt: timestamp("consumed_at", { withTimezone: true }),
+});
+
+export type KultrPassPayment = typeof kultrPassPaymentsTable.$inferSelect;
+
+/* ──────────────────────────────────────────────────────────────────────────
  * Spendable perks catalog ("unlock more experiences") + redemption records.
  * ────────────────────────────────────────────────────────────────────────── */
 export const perksTable = pgTable("perks", {

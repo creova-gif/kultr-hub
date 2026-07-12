@@ -20,12 +20,16 @@ import type {
   AuthResponse,
   CheckinRequest,
   CheckinResult,
+  CreateEventReportRequest,
   CreateEventRequest,
   CreatePayoutRequest,
   CreatorAnalytics,
   ErrorResponse,
   EventDetail,
   EventListResponse,
+  EventReportListResponse,
+  EventReportResolution,
+  EventReportView,
   EventStatusResponse,
   FxRates,
   GamificationProfile,
@@ -34,7 +38,10 @@ import type {
   LedgerResponse,
   ListAllEventsAdminParams,
   ListEventsParams,
+  ListNotificationsParams,
   LoginRequest,
+  NotificationListResponse,
+  NotificationReadStatus,
   OtpRequest,
   OtpRequestResponse,
   OtpVerifyRequest,
@@ -44,9 +51,12 @@ import type {
   PayoutListResponse,
   PayoutView,
   PerkListResponse,
+  PublicUserProfile,
   PurchaseTicketRequest,
   QuestProgress,
+  ResolveEventReportRequest,
   ResolvePayoutRequest,
+  SearchEventsParams,
   SignupRequest,
   TicketDetail,
   TicketListResponse,
@@ -55,6 +65,8 @@ import type {
   UpdateEventStatusRequest,
   UserDataExport,
   UserProfile,
+  VerifyOrganizerRequest,
+  VerifyOrganizerResponse,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -783,6 +795,180 @@ export const useDeleteMyAccount = <
 };
 
 /**
+ * @summary Lightweight public profile lookup — trust signals (e.g. the Verified Organizer badge)
+ */
+export const getGetPublicUserUrl = (id: string) => {
+  return `/api/users/${id}/public`;
+};
+
+export const getPublicUser = async (
+  id: string,
+  options?: RequestInit,
+): Promise<PublicUserProfile> => {
+  return customFetch<PublicUserProfile>(getGetPublicUserUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPublicUserQueryKey = (id: string) => {
+  return [`/api/users/${id}/public`] as const;
+};
+
+export const getGetPublicUserQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPublicUser>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPublicUser>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPublicUserQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicUser>>> = ({
+    signal,
+  }) => getPublicUser(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPublicUser>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPublicUserQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPublicUser>>
+>;
+export type GetPublicUserQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Lightweight public profile lookup — trust signals (e.g. the Verified Organizer badge)
+ */
+
+export function useGetPublicUser<
+  TData = Awaited<ReturnType<typeof getPublicUser>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPublicUser>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPublicUserQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Grant or revoke the Verified Organizer badge (admin only)
+ */
+export const getSetOrganizerVerifiedUrl = (id: string) => {
+  return `/api/users/${id}/verify`;
+};
+
+export const setOrganizerVerified = async (
+  id: string,
+  verifyOrganizerRequest: VerifyOrganizerRequest,
+  options?: RequestInit,
+): Promise<VerifyOrganizerResponse> => {
+  return customFetch<VerifyOrganizerResponse>(getSetOrganizerVerifiedUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(verifyOrganizerRequest),
+  });
+};
+
+export const getSetOrganizerVerifiedMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setOrganizerVerified>>,
+    TError,
+    { id: string; data: BodyType<VerifyOrganizerRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setOrganizerVerified>>,
+  TError,
+  { id: string; data: BodyType<VerifyOrganizerRequest> },
+  TContext
+> => {
+  const mutationKey = ["setOrganizerVerified"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setOrganizerVerified>>,
+    { id: string; data: BodyType<VerifyOrganizerRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return setOrganizerVerified(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetOrganizerVerifiedMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setOrganizerVerified>>
+>;
+export type SetOrganizerVerifiedMutationBody = BodyType<VerifyOrganizerRequest>;
+export type SetOrganizerVerifiedMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Grant or revoke the Verified Organizer badge (admin only)
+ */
+export const useSetOrganizerVerified = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setOrganizerVerified>>,
+    TError,
+    { id: string; data: BodyType<VerifyOrganizerRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setOrganizerVerified>>,
+  TError,
+  { id: string; data: BodyType<VerifyOrganizerRequest> },
+  TContext
+> => {
+  return useMutation(getSetOrganizerVerifiedMutationOptions(options));
+};
+
+/**
  * @summary List events with optional filters
  */
 export const getListEventsUrl = (params?: ListEventsParams) => {
@@ -961,6 +1147,100 @@ export const useCreateEvent = <
 > => {
   return useMutation(getCreateEventMutationOptions(options));
 };
+
+/**
+ * @summary Search live events by free-text query, with optional filters
+ */
+export const getSearchEventsUrl = (params?: SearchEventsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/events/search?${stringifiedParams}`
+    : `/api/events/search`;
+};
+
+export const searchEvents = async (
+  params?: SearchEventsParams,
+  options?: RequestInit,
+): Promise<EventListResponse> => {
+  return customFetch<EventListResponse>(getSearchEventsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getSearchEventsQueryKey = (params?: SearchEventsParams) => {
+  return [`/api/events/search`, ...(params ? [params] : [])] as const;
+};
+
+export const getSearchEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof searchEvents>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: SearchEventsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof searchEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSearchEventsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof searchEvents>>> = ({
+    signal,
+  }) => searchEvents(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof searchEvents>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type SearchEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof searchEvents>>
+>;
+export type SearchEventsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Search live events by free-text query, with optional filters
+ */
+
+export function useSearchEvents<
+  TData = Awaited<ReturnType<typeof searchEvents>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: SearchEventsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof searchEvents>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getSearchEventsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List events created by the current user
@@ -1295,6 +1575,257 @@ export function useListAllEventsAdmin<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * Purely additive — filing a report never changes the event's own status. Lands in the admin work queue at GET /events/admin/reports.
+ * @summary File a fraud/abuse report on an event — any authenticated user
+ */
+export const getReportEventUrl = (id: string) => {
+  return `/api/events/${id}/report`;
+};
+
+export const reportEvent = async (
+  id: string,
+  createEventReportRequest: CreateEventReportRequest,
+  options?: RequestInit,
+): Promise<EventReportView> => {
+  return customFetch<EventReportView>(getReportEventUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createEventReportRequest),
+  });
+};
+
+export const getReportEventMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reportEvent>>,
+    TError,
+    { id: string; data: BodyType<CreateEventReportRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reportEvent>>,
+  TError,
+  { id: string; data: BodyType<CreateEventReportRequest> },
+  TContext
+> => {
+  const mutationKey = ["reportEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reportEvent>>,
+    { id: string; data: BodyType<CreateEventReportRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return reportEvent(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReportEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reportEvent>>
+>;
+export type ReportEventMutationBody = BodyType<CreateEventReportRequest>;
+export type ReportEventMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary File a fraud/abuse report on an event — any authenticated user
+ */
+export const useReportEvent = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reportEvent>>,
+    TError,
+    { id: string; data: BodyType<CreateEventReportRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reportEvent>>,
+  TError,
+  { id: string; data: BodyType<CreateEventReportRequest> },
+  TContext
+> => {
+  return useMutation(getReportEventMutationOptions(options));
+};
+
+/**
+ * @summary List every event report, newest first (admin only)
+ */
+export const getListEventReportsAdminUrl = () => {
+  return `/api/events/admin/reports`;
+};
+
+export const listEventReportsAdmin = async (
+  options?: RequestInit,
+): Promise<EventReportListResponse> => {
+  return customFetch<EventReportListResponse>(getListEventReportsAdminUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListEventReportsAdminQueryKey = () => {
+  return [`/api/events/admin/reports`] as const;
+};
+
+export const getListEventReportsAdminQueryOptions = <
+  TData = Awaited<ReturnType<typeof listEventReportsAdmin>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listEventReportsAdmin>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListEventReportsAdminQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listEventReportsAdmin>>
+  > = ({ signal }) => listEventReportsAdmin({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listEventReportsAdmin>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListEventReportsAdminQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listEventReportsAdmin>>
+>;
+export type ListEventReportsAdminQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List every event report, newest first (admin only)
+ */
+
+export function useListEventReportsAdmin<
+  TData = Awaited<ReturnType<typeof listEventReportsAdmin>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listEventReportsAdmin>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListEventReportsAdminQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Mark a report reviewed or dismissed (admin only)
+ */
+export const getResolveEventReportUrl = (id: string) => {
+  return `/api/events/admin/reports/${id}`;
+};
+
+export const resolveEventReport = async (
+  id: string,
+  resolveEventReportRequest: ResolveEventReportRequest,
+  options?: RequestInit,
+): Promise<EventReportResolution> => {
+  return customFetch<EventReportResolution>(getResolveEventReportUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(resolveEventReportRequest),
+  });
+};
+
+export const getResolveEventReportMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resolveEventReport>>,
+    TError,
+    { id: string; data: BodyType<ResolveEventReportRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resolveEventReport>>,
+  TError,
+  { id: string; data: BodyType<ResolveEventReportRequest> },
+  TContext
+> => {
+  const mutationKey = ["resolveEventReport"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resolveEventReport>>,
+    { id: string; data: BodyType<ResolveEventReportRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return resolveEventReport(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResolveEventReportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resolveEventReport>>
+>;
+export type ResolveEventReportMutationBody =
+  BodyType<ResolveEventReportRequest>;
+export type ResolveEventReportMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Mark a report reviewed or dismissed (admin only)
+ */
+export const useResolveEventReport = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resolveEventReport>>,
+    TError,
+    { id: string; data: BodyType<ResolveEventReportRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof resolveEventReport>>,
+  TError,
+  { id: string; data: BodyType<ResolveEventReportRequest> },
+  TContext
+> => {
+  return useMutation(getResolveEventReportMutationOptions(options));
+};
 
 /**
  * @summary Get a single event by ID
@@ -2187,14 +2718,15 @@ export function useGetWalletLedger<
 }
 
 /**
- * @summary Activate or refresh the KULTR PASS entitlement
+ * A one-time charge with manual renewal (not auto-recurring). The caller must supply the `reference` of a payment already initiated via POST /payments/pass/init and verified via POST /payments/pass/verify; that reference is consumed exactly once. Every activation sets a 30-day expiresAt.
+ * @summary Activate or refresh the KULTR PASS entitlement — requires a verified payment
  */
 export const getActivatePassUrl = () => {
   return `/api/pass/activate`;
 };
 
 export const activatePass = async (
-  passActivateRequest?: PassActivateRequest,
+  passActivateRequest: PassActivateRequest,
   options?: RequestInit,
 ): Promise<PassActivateResponse> => {
   return customFetch<PassActivateResponse>(getActivatePassUrl(), {
@@ -2206,7 +2738,7 @@ export const activatePass = async (
 };
 
 export const getActivatePassMutationOptions = <
-  TError = ErrorType<unknown>,
+  TError = ErrorType<ErrorResponse>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -2247,13 +2779,13 @@ export type ActivatePassMutationResult = NonNullable<
   Awaited<ReturnType<typeof activatePass>>
 >;
 export type ActivatePassMutationBody = BodyType<PassActivateRequest>;
-export type ActivatePassMutationError = ErrorType<unknown>;
+export type ActivatePassMutationError = ErrorType<ErrorResponse>;
 
 /**
- * @summary Activate or refresh the KULTR PASS entitlement
+ * @summary Activate or refresh the KULTR PASS entitlement — requires a verified payment
  */
 export const useActivatePass = <
-  TError = ErrorType<unknown>,
+  TError = ErrorType<ErrorResponse>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -2270,6 +2802,271 @@ export const useActivatePass = <
   TContext
 > => {
   return useMutation(getActivatePassMutationOptions(options));
+};
+
+/**
+ * @summary List the signed-in user's notifications, newest first
+ */
+export const getListNotificationsUrl = (params?: ListNotificationsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/notifications?${stringifiedParams}`
+    : `/api/notifications`;
+};
+
+export const listNotifications = async (
+  params?: ListNotificationsParams,
+  options?: RequestInit,
+): Promise<NotificationListResponse> => {
+  return customFetch<NotificationListResponse>(
+    getListNotificationsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListNotificationsQueryKey = (
+  params?: ListNotificationsParams,
+) => {
+  return [`/api/notifications`, ...(params ? [params] : [])] as const;
+};
+
+export const getListNotificationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listNotifications>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListNotificationsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listNotifications>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListNotificationsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listNotifications>>
+  > = ({ signal }) => listNotifications(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listNotifications>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListNotificationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listNotifications>>
+>;
+export type ListNotificationsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List the signed-in user's notifications, newest first
+ */
+
+export function useListNotifications<
+  TData = Awaited<ReturnType<typeof listNotifications>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListNotificationsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listNotifications>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListNotificationsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Mark a single notification as read (idempotent)
+ */
+export const getMarkNotificationReadUrl = (id: string) => {
+  return `/api/notifications/${id}/read`;
+};
+
+export const markNotificationRead = async (
+  id: string,
+  options?: RequestInit,
+): Promise<NotificationReadStatus> => {
+  return customFetch<NotificationReadStatus>(getMarkNotificationReadUrl(id), {
+    ...options,
+    method: "PATCH",
+  });
+};
+
+export const getMarkNotificationReadMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markNotificationRead>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof markNotificationRead>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["markNotificationRead"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof markNotificationRead>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return markNotificationRead(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type MarkNotificationReadMutationResult = NonNullable<
+  Awaited<ReturnType<typeof markNotificationRead>>
+>;
+
+export type MarkNotificationReadMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Mark a single notification as read (idempotent)
+ */
+export const useMarkNotificationRead = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markNotificationRead>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof markNotificationRead>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getMarkNotificationReadMutationOptions(options));
+};
+
+/**
+ * @summary Mark every unread notification as read for the signed-in user
+ */
+export const getMarkAllNotificationsReadUrl = () => {
+  return `/api/notifications/read-all`;
+};
+
+export const markAllNotificationsRead = async (
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getMarkAllNotificationsReadUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getMarkAllNotificationsReadMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markAllNotificationsRead>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof markAllNotificationsRead>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["markAllNotificationsRead"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof markAllNotificationsRead>>,
+    void
+  > = () => {
+    return markAllNotificationsRead(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type MarkAllNotificationsReadMutationResult = NonNullable<
+  Awaited<ReturnType<typeof markAllNotificationsRead>>
+>;
+
+export type MarkAllNotificationsReadMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Mark every unread notification as read for the signed-in user
+ */
+export const useMarkAllNotificationsRead = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markAllNotificationsRead>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof markAllNotificationsRead>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getMarkAllNotificationsReadMutationOptions(options));
 };
 
 /**

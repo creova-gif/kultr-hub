@@ -216,6 +216,70 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /users/{id}/public:
+    get:
+      operationId: getPublicUser
+      tags: [users]
+      summary: Lightweight public profile lookup — trust signals (e.g. the Verified Organizer badge)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicUserProfile"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{id}/verify:
+    patch:
+      operationId: setOrganizerVerified
+      tags: [users]
+      summary: Grant or revoke the Verified Organizer badge (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyOrganizerRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifyOrganizerResponse"
+        "403":
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   # ── EVENTS ────────────────────────────────────────────────────────────────
   /events:
     get:
@@ -239,6 +303,32 @@ paths:
           in: query
           schema:
             type: boolean
+        - name: dateFrom
+          in: query
+          description: Only include events on or after this ISO date/date-time.
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          description: Only include events on or before this ISO date/date-time.
+          schema:
+            type: string
+            format: date
+        - name: priceMin
+          in: query
+          description: >-
+            Only include events with at least one ticket type priced at or
+            above this amount.
+          schema:
+            type: number
+        - name: priceMax
+          in: query
+          description: >-
+            Only include events with at least one ticket type priced at or
+            below this amount.
+          schema:
+            type: number
         - name: limit
           in: query
           schema:
@@ -276,6 +366,61 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EventDetail"
+
+  /events/search:
+    get:
+      operationId: searchEvents
+      tags: [events]
+      summary: Search live events by free-text query, with optional filters
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+            default: ""
+        - name: dateFrom
+          in: query
+          description: Only include events on or after this ISO date/date-time.
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          description: Only include events on or before this ISO date/date-time.
+          schema:
+            type: string
+            format: date
+        - name: priceMin
+          in: query
+          description: >-
+            Only include events with at least one ticket type priced at or
+            above this amount.
+          schema:
+            type: number
+        - name: priceMax
+          in: query
+          description: >-
+            Only include events with at least one ticket type priced at or
+            below this amount.
+          schema:
+            type: number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Matching events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventListResponse"
 
   /events/creator/me:
     get:
@@ -391,6 +536,96 @@ paths:
                 $ref: "#/components/schemas/EventListResponse"
         "403":
           description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /events/{id}/report:
+    post:
+      operationId: reportEvent
+      tags: [events]
+      summary: File a fraud/abuse report on an event — any authenticated user
+      description: >-
+        Purely additive — filing a report never changes the event's own
+        status. Lands in the admin work queue at GET /events/admin/reports.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEventReportRequest"
+      responses:
+        "201":
+          description: Report filed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventReportView"
+        "404":
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /events/admin/reports:
+    get:
+      operationId: listEventReportsAdmin
+      tags: [events]
+      summary: List every event report, newest first (admin only)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Event reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventReportListResponse"
+        "403":
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /events/admin/reports/{id}:
+    patch:
+      operationId: resolveEventReport
+      tags: [events]
+      summary: Mark a report reviewed or dismissed (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveEventReportRequest"
+      responses:
+        "200":
+          description: Report resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventReportResolution"
+        "404":
+          description: Report not found
           content:
             application/json:
               schema:
@@ -654,11 +889,17 @@ paths:
     post:
       operationId: activatePass
       tags: [gamification]
-      summary: Activate or refresh the KULTR PASS entitlement
+      summary: Activate or refresh the KULTR PASS entitlement — requires a verified payment
+      description: >-
+        A one-time charge with manual renewal (not auto-recurring). The
+        caller must supply the `reference` of a payment already initiated
+        via POST /payments/pass/init and verified via POST
+        /payments/pass/verify; that reference is consumed exactly once.
+        Every activation sets a 30-day expiresAt.
       security:
         - bearerAuth: []
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
             schema:
@@ -670,6 +911,84 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PassActivateResponse"
+        "400":
+          description: reference is missing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "402":
+          description: Payment has not been verified yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: No matching payment found for this reference
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: This payment reference was already used to activate KULTR PASS
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── NOTIFICATIONS ─────────────────────────────────────────────────────────
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List the signed-in user's notifications, newest first
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationListResponse"
+
+  /notifications/{id}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a single notification as read (idempotent)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Marked read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationReadStatus"
+
+  /notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark every unread notification as read for the signed-in user
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Marked all read
 
   # ── PAYOUTS ──────────────────────────────────────────────────────────────
   # A request queue, not a payment rail — see lib/db/src/schema/payouts.ts.
@@ -1637,9 +1956,11 @@ components:
 
     PassActivateRequest:
       type: object
+      required: [reference]
       properties:
-        multiplier:
+        reference:
           type: string
+          description: Reference of a payment already verified via POST /payments/pass/verify.
 
     PassActivateResponse:
       type: object
@@ -1651,6 +1972,168 @@ components:
           type: number
         tier:
           type: string
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    # ── EVENT REPORTS ─────────────────────────────────────────────────────────
+    CreateEventReportRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          description: "e.g. misleading_listing, suspected_scam, inappropriate_content, duplicate_event, other"
+        details:
+          type: string
+
+    EventReportStatus:
+      type: string
+      enum: [open, reviewed, dismissed]
+
+    EventReportView:
+      type: object
+      required: [id, eventId, reason, status, createdAt]
+      properties:
+        id:
+          type: string
+        eventId:
+          type: string
+        reason:
+          type: string
+        details:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/EventReportStatus"
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminEventReportView:
+      allOf:
+        - $ref: "#/components/schemas/EventReportView"
+        - type: object
+          required: [reporterId, resolvedAt]
+          properties:
+            reporterId:
+              type: string
+            resolvedAt:
+              type: string
+              format: date-time
+              nullable: true
+
+    EventReportListResponse:
+      type: object
+      required: [reports]
+      properties:
+        reports:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminEventReportView"
+
+    ResolveEventReportRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [reviewed, dismissed]
+
+    EventReportResolution:
+      type: object
+      required: [id, status, resolvedAt]
+      properties:
+        id:
+          type: string
+        status:
+          $ref: "#/components/schemas/EventReportStatus"
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    # ── USERS (public / admin) ─────────────────────────────────────────────────
+    PublicUserProfile:
+      type: object
+      required: [id, displayName, isVerifiedOrganizer]
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string
+        isVerifiedOrganizer:
+          type: boolean
+
+    VerifyOrganizerRequest:
+      type: object
+      required: [isVerifiedOrganizer]
+      properties:
+        isVerifiedOrganizer:
+          type: boolean
+
+    VerifyOrganizerResponse:
+      type: object
+      required: [id, isVerifiedOrganizer]
+      properties:
+        id:
+          type: string
+        isVerifiedOrganizer:
+          type: boolean
+
+    # ── NOTIFICATIONS ───────────────────────────────────────────────────────────
+    NotificationType:
+      type: string
+      enum:
+        - ticket_confirmed
+        - event_approved
+        - event_rejected
+        - event_cancelled
+        - payout_resolved
+        - kultroin_earned
+
+    NotificationView:
+      type: object
+      required: [id, type, title, body, read, createdAt]
+      properties:
+        id:
+          type: string
+        type:
+          $ref: "#/components/schemas/NotificationType"
+        title:
+          type: string
+        body:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+          nullable: true
+        read:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    NotificationListResponse:
+      type: object
+      required: [notifications, unreadCount]
+      properties:
+        notifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/NotificationView"
+        unreadCount:
+          type: integer
+
+    NotificationReadStatus:
+      type: object
+      required: [id, read]
+      properties:
+        id:
+          type: string
+        read:
+          type: boolean
 
     # ── PAYOUTS ──────────────────────────────────────────────────────────────
     PayoutCurrencyBalance:
