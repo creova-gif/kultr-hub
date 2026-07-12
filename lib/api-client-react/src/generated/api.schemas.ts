@@ -50,6 +50,7 @@ export interface UserProfile {
   avatarUrl?: string | null;
   countryCode: string;
   isCreator: boolean;
+  isAdmin: boolean;
   createdAt: string;
 }
 

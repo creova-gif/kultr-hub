@@ -46,6 +46,7 @@ export const AuthLoginResponse = zod.object({
     avatarUrl: zod.string().nullish(),
     countryCode: zod.string(),
     isCreator: zod.boolean(),
+    isAdmin: zod.boolean(),
     createdAt: zod.coerce.date(),
   }),
 });
@@ -86,6 +87,7 @@ export const AuthOtpVerifyResponse = zod.object({
     avatarUrl: zod.string().nullish(),
     countryCode: zod.string(),
     isCreator: zod.boolean(),
+    isAdmin: zod.boolean(),
     createdAt: zod.coerce.date(),
   }),
 });
@@ -100,6 +102,7 @@ export const AuthMeResponse = zod.object({
   avatarUrl: zod.string().nullish(),
   countryCode: zod.string(),
   isCreator: zod.boolean(),
+  isAdmin: zod.boolean(),
   createdAt: zod.coerce.date(),
 });
 

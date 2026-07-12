@@ -35,6 +35,7 @@ function userPublic(user: typeof usersTable.$inferSelect) {
     avatarUrl: user.avatarUrl,
     countryCode: user.countryCode,
     isCreator: user.isCreator,
+    isAdmin: user.isAdmin,
     createdAt: user.createdAt,
   };
 }
@@ -80,6 +81,7 @@ router.post("/signup", async (req: Request, res: Response) => {
       avatarUrl: user.avatarUrl,
       countryCode: user.countryCode,
       isCreator: user.isCreator,
+      isAdmin: user.isAdmin,
       createdAt: user.createdAt,
     },
   });
@@ -115,6 +117,7 @@ router.post("/login", async (req: Request, res: Response) => {
       avatarUrl: user.avatarUrl,
       countryCode: user.countryCode,
       isCreator: user.isCreator,
+      isAdmin: user.isAdmin,
       createdAt: user.createdAt,
     },
   });
@@ -277,6 +280,7 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
     avatarUrl: user.avatarUrl,
     countryCode: user.countryCode,
     isCreator: user.isCreator,
+    isAdmin: user.isAdmin,
     createdAt: user.createdAt,
   });
 });

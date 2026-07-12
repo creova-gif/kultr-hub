@@ -70,6 +70,9 @@ export default function ProfileScreen() {
   const isCreator = createdEvents.length > 0;
 
   const displayName = authUser?.displayName ?? "Kultr Member";
+  const menuItems = authUser?.isAdmin
+    ? [...MENU_ITEMS, { icon: "shield", label: "Admin", route: "/admin" } as const]
+    : MENU_ITEMS;
   const initials = getInitials(displayName);
   const handle = authUser
     ? `@${authUser.displayName.toLowerCase().replace(/\s+/g, "")}`
@@ -290,14 +293,14 @@ export default function ProfileScreen() {
 
       {/* Menu */}
       <View style={[styles.menuSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        {MENU_ITEMS.map((item, index) => (
+        {menuItems.map((item, index) => (
           <Pressable
             key={item.label}
             onPress={() => item.route && router.push(item.route as any)}
             style={({ pressed }) => [
               styles.menuItem,
               {
-                borderBottomWidth: index < MENU_ITEMS.length - 1 ? 1 : 0,
+                borderBottomWidth: index < menuItems.length - 1 ? 1 : 0,
                 borderBottomColor: colors.border,
                 backgroundColor: pressed ? colors.muted : "transparent",
               },

@@ -44,6 +44,7 @@ export interface AuthUser {
   avatarUrl: string | null;
   countryCode: string;
   isCreator: boolean;
+  isAdmin: boolean;
 }
 
 interface AppContextType {

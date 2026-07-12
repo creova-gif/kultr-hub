@@ -1249,6 +1249,8 @@ components:
           type: string
         isCreator:
           type: boolean
+        isAdmin:
+          type: boolean
         createdAt:
           type: string
           format: date-time
@@ -1258,6 +1260,7 @@ components:
         - displayName
         - countryCode
         - isCreator
+        - isAdmin
         - createdAt
 
     UserDataExport:

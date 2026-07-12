@@ -106,6 +106,7 @@ export default function LoginScreen() {
       avatarUrl: res.user.avatarUrl ?? null,
       countryCode: res.user.countryCode,
       isCreator: res.user.isCreator,
+      isAdmin: res.user.isAdmin,
     };
     await setAuth(res.token, user);
     router.back();
