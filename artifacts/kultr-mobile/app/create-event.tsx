@@ -123,6 +123,7 @@ export default function CreateEventScreen() {
             country: userCountry.name,
             countryCode: userCountry.code,
             eventDate,
+            imageUrl: coverImage ?? undefined,
             ticketTypes,
           },
         });
@@ -381,13 +382,28 @@ export default function CreateEventScreen() {
           style={[styles.mediaUpload, { backgroundColor: colors.card, borderColor: coverImage ? "#FF6B00" : colors.border }]}
           onPress={async () => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            // No cloud image storage is configured yet, so we read the picked
+            // image back as a compressed (quality 0.8), resized-on-device JPEG
+            // and inline it as a base64 data URI. The backend stores `imageUrl`
+            // as a plain text column, so this reaches the server without any
+            // backend changes. Tradeoff: larger payload / no CDN, fine for launch.
             const result = await ImagePicker.launchImageLibraryAsync({
               mediaTypes: ImagePicker.MediaTypeOptions.Images,
               allowsEditing: true,
               aspect: [16, 9],
               quality: 0.8,
+              base64: true,
             });
-            if (!result.canceled) setCoverImage(result.assets[0].uri);
+            if (!result.canceled) {
+              const asset = result.assets[0];
+              if (asset.base64) {
+                // The picker always returns base64 as JPEG data regardless of
+                // the source file's original format (per expo-image-picker docs).
+                setCoverImage(`data:image/jpeg;base64,${asset.base64}`);
+              } else {
+                setCoverImage(asset.uri);
+              }
+            }
           }}
         >
           {coverImage ? (

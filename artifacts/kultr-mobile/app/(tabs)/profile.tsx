@@ -35,6 +35,17 @@ const MENU_ITEMS = [
   { icon: "help-circle", label: "Help & Support", route: null },
 ] as const;
 
+// Mirrors the labeling in app/creator-studio.tsx so status is never shown as
+// just an ambiguous colored dot (draft/pending_review/cancelled all looked
+// like indistinguishable orange dots before this).
+const STATUS_LABELS: Record<string, string> = {
+  draft: "Draft",
+  pending_review: "In Review",
+  live: "Live",
+  ended: "Ended",
+  cancelled: "Cancelled",
+};
+
 function getInitials(name: string): string {
   return name
     .split(" ")
@@ -225,32 +236,39 @@ export default function ProfileScreen() {
           </View>
 
           {/* Created events list */}
-          {createdEvents.map((ev) => (
-            <View
-              key={ev.id}
-              style={[styles.eventRow, { backgroundColor: colors.card, borderColor: colors.border }]}
-            >
-              <View style={[styles.eventStatusDot, {
-                backgroundColor: ev.status === "live" ? "#00C853" : ev.status === "ended" ? "#777" : "#FF6B00",
-              }]} />
-              <View style={styles.eventRowLeft}>
-                <Text style={[styles.eventRowTitle, { color: colors.foreground }]} numberOfLines={1}>
-                  {ev.title}
-                </Text>
-                <Text style={[styles.eventRowMeta, { color: colors.mutedForeground }]}>
-                  {ev.date} · {ev.venue}
-                </Text>
+          {createdEvents.map((ev) => {
+            const statusColor =
+              ev.status === "live" ? "#00C853" : ev.status === "ended" ? "#777" : "#FF6B00";
+            return (
+              <View
+                key={ev.id}
+                style={[styles.eventRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+              >
+                <View style={[styles.eventStatusDot, { backgroundColor: statusColor }]} />
+                <View style={styles.eventRowLeft}>
+                  <Text style={[styles.eventRowTitle, { color: colors.foreground }]} numberOfLines={1}>
+                    {ev.title}
+                  </Text>
+                  <View style={styles.eventRowMetaRow}>
+                    <Text style={[styles.eventRowMeta, { color: colors.mutedForeground }]}>
+                      {ev.date} · {ev.venue}
+                    </Text>
+                    <Text style={[styles.eventStatusLabel, { color: statusColor }]}>
+                      {STATUS_LABELS[ev.status] ?? ev.status}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.eventRowRight}>
+                  <Text style={[styles.eventRowRevenue, { color: "#00C853" }]}>
+                    {formatRevenue(ev.revenue, ev.currencySymbol)}
+                  </Text>
+                  <Text style={[styles.eventRowSold, { color: colors.mutedForeground }]}>
+                    {ev.ticketsSold} sold
+                  </Text>
+                </View>
               </View>
-              <View style={styles.eventRowRight}>
-                <Text style={[styles.eventRowRevenue, { color: "#00C853" }]}>
-                  {formatRevenue(ev.revenue, ev.currencySymbol)}
-                </Text>
-                <Text style={[styles.eventRowSold, { color: colors.mutedForeground }]}>
-                  {ev.ticketsSold} sold
-                </Text>
-              </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
       ) : (
         /* ── Become a Creator CTA ── */
@@ -520,6 +538,8 @@ const styles = StyleSheet.create({
   eventRowLeft: { flex: 1 },
   eventRowTitle: { fontSize: 14, fontWeight: "700" },
   eventRowMeta: { fontSize: 11, marginTop: 2 },
+  eventRowMetaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },
+  eventStatusLabel: { fontSize: 10, fontWeight: "800" },
   eventRowRight: { alignItems: "flex-end" },
   eventRowRevenue: { fontSize: 15, fontWeight: "800" },
   eventRowSold: { fontSize: 11, marginTop: 1 },

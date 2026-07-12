@@ -511,6 +511,22 @@ export default function CheckoutScreen() {
               </Text>
             </View>
           )}
+
+          {/* Privacy notice — payment method and phone number are collected on this screen */}
+          <View style={[styles.cardHint, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Feather name="shield" size={13} color="#00C853" />
+            <Text style={[styles.cardHintText, { color: colors.mutedForeground }]}>
+              Your payment info is protected. See our{" "}
+              <Text
+                style={styles.privacyLink}
+                accessibilityRole="link"
+                onPress={() => router.push("/legal/privacy")}
+              >
+                Privacy Policy
+              </Text>
+              .
+            </Text>
+          </View>
         </View>
 
         {/* Order Summary */}
@@ -756,6 +772,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   cardHintText: { fontSize: 12, flex: 1, lineHeight: 17 },
+  privacyLink: { color: "#FF6B00", fontWeight: "700" },
   // Order
   orderCard: { borderRadius: 12, borderWidth: 1, padding: 14, gap: 10 },
   orderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },

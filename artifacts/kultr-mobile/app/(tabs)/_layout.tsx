@@ -14,12 +14,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApp } from "@/context/AppContext";
 
+// "Home" routes to index.tsx — the richer category-browsing screen (Featured
+// carousel + category pills + bento grid). It previously routed to foryou.tsx,
+// which left the real home screen reachable only once, right after onboarding.
+// foryou.tsx keeps its own file/route, it's just no longer wired into the tab
+// bar's "Home" slot (see Tabs.Screen below).
 const LEFT_TABS = [
-  { name: "foryou",   label: "Home",     icon: "home"           },
+  { name: "index",    label: "Home",     icon: "home"           },
   { name: "discover", label: "Discover", icon: "compass"        },
 ] as const;
 
 const RIGHT_TABS = [
+  { name: "tickets",  label: "Tickets",  icon: "tag"            },
   { name: "social",   label: "Messages", icon: "message-circle" },
   { name: "profile",  label: "Profile",  icon: "user"           },
 ] as const;
@@ -111,11 +117,11 @@ export default function TabLayout() {
       tabBar={(props) => <TabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
-      <Tabs.Screen name="index"    options={{ href: null }} />
-      <Tabs.Screen name="foryou"   options={{ title: "Home"     }} />
+      <Tabs.Screen name="index"    options={{ title: "Home"     }} />
+      <Tabs.Screen name="foryou"   options={{ href: null        }} />
       <Tabs.Screen name="discover" options={{ title: "Discover" }} />
       <Tabs.Screen name="social"   options={{ title: "Messages" }} />
-      <Tabs.Screen name="tickets"  options={{ href: null        }} />
+      <Tabs.Screen name="tickets"  options={{ title: "Tickets"  }} />
       <Tabs.Screen name="profile"  options={{ title: "Profile"  }} />
     </Tabs>
   );
