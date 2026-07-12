@@ -27,10 +27,20 @@ import {
   formatDate,
   formatTime,
 } from "@/constants/data";
+import { useGetEvent } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { useCheckIn } from "@/hooks/useQuests";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
 import { useEventDetail } from "@/hooks/useEventDetail";
+import { usePublicUser, useReportEvent } from "@/hooks/useReports";
+
+const REPORT_REASONS: { key: string; label: string }[] = [
+  { key: "suspected_scam", label: "Suspected scam" },
+  { key: "misleading_listing", label: "Misleading listing" },
+  { key: "inappropriate_content", label: "Inappropriate content" },
+  { key: "duplicate_event", label: "Duplicate event" },
+  { key: "other", label: "Other" },
+];
 
 // Avatar palette for the synthetic "who's going" stack.
 const GOING_AVATARS = [
@@ -120,6 +130,48 @@ export default function EventDetailScreen() {
     visible: false,
     pointsEarned: 0,
   });
+
+  // Trust signal: the raw (non-adapted) event detail carries creatorId, used
+  // to look up whether the organizer is verified. useGetEvent shares its
+  // react-query cache with useEventDetail's internal call, so this doesn't
+  // trigger a second network request.
+  const { data: rawEvent } = useGetEvent(id ?? "");
+  const { data: publicCreator } = usePublicUser(rawEvent?.creatorId);
+  const isVerifiedOrganizer = publicCreator?.isVerifiedOrganizer ?? false;
+
+  const reportEvent = useReportEvent();
+  const handleReport = () => {
+    if (!event) return;
+    if (!authToken) {
+      router.push("/login");
+      return;
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.alert(
+      "Report this event",
+      "Why are you reporting this event?",
+      [
+        ...REPORT_REASONS.map((r) => ({
+          text: r.label,
+          onPress: () => {
+            reportEvent.mutate(
+              event.id,
+              { reason: r.key },
+              {
+                onSuccess: () => {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  Alert.alert("Report submitted", "Thanks — our team will review this event.");
+                },
+                onError: (e) =>
+                  Alert.alert("Couldn't submit report", e instanceof Error ? e.message : "Please try again."),
+              },
+            );
+          },
+        })),
+        { text: "Cancel", style: "cancel" as const },
+      ],
+    );
+  };
 
   const relatedEvents = useMemo(
     () =>
@@ -260,23 +312,39 @@ export default function EventDetailScreen() {
               >
                 <Feather name="share-2" size={20} color="#fff" />
               </Pressable>
+              <Pressable
+                style={[styles.heroBtn, { backgroundColor: "rgba(0,0,0,0.5)" }]}
+                onPress={handleReport}
+                accessibilityLabel="Report this event"
+                accessibilityRole="button"
+              >
+                <Feather name="flag" size={18} color="#fff" />
+              </Pressable>
             </View>
           </View>
 
           {/* Hero bottom info */}
           <View style={styles.heroBottom}>
-            <View
-              style={[
-                styles.categoryBadge,
-                {
-                  backgroundColor: "rgba(255,107,0,0.25)",
-                  borderColor: "#FF6B00",
-                },
-              ]}
-            >
-              <Text style={[styles.categoryText, { color: "#FF6B00" }]}>
-                {event.category.toUpperCase()}
-              </Text>
+            <View style={styles.badgeRow}>
+              <View
+                style={[
+                  styles.categoryBadge,
+                  {
+                    backgroundColor: "rgba(255,107,0,0.25)",
+                    borderColor: "#FF6B00",
+                  },
+                ]}
+              >
+                <Text style={[styles.categoryText, { color: "#FF6B00" }]}>
+                  {event.category.toUpperCase()}
+                </Text>
+              </View>
+              {isVerifiedOrganizer && (
+                <View style={styles.verifiedBadge} accessibilityLabel="Verified organizer">
+                  <Feather name="check-circle" size={11} color="#4F9DFF" />
+                  <Text style={styles.verifiedBadgeText}>Verified Organizer</Text>
+                </View>
+              )}
             </View>
             <Text style={styles.heroTitle} numberOfLines={2}>
               {event.title}
@@ -790,15 +858,28 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
   },
+  badgeRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
   categoryBadge: {
     alignSelf: "flex-start",
     borderRadius: 6,
     borderWidth: 1,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    marginBottom: 8,
   },
   categoryText: { fontSize: 10, fontWeight: "700", letterSpacing: 1 },
+  verifiedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    alignSelf: "flex-start",
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#4F9DFF",
+    backgroundColor: "rgba(79,157,255,0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  verifiedBadgeText: { fontSize: 10, fontWeight: "700", color: "#4F9DFF" },
   heroTitle: {
     color: "#FFFFFF",
     fontSize: 28,

@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -13,10 +13,29 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useQueryClient } from "@tanstack/react-query";
+import { useActivatePass, getGetQuestProgressQueryKey } from "@workspace/api-client-react";
 
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { useQuestProgress, usePerks, useUnlockPerk, type PerkView } from "@/hooks/useQuests";
+
+/**
+ * KULTR PASS checkout — mirrors the raw-fetch pattern used by
+ * app/checkout/[eventId].tsx for POST /payments/init + /payments/verify
+ * (those payment routes aren't in the OpenAPI spec, so there's no generated
+ * hook for them; the app already talks to them this way). The final grant
+ * step, POST /pass/activate, IS in the spec, so that part uses the
+ * generated useActivatePass hook.
+ */
+async function readError(res: Response, fallback: string): Promise<string> {
+  try {
+    const body = (await res.json()) as { message?: string };
+    return body.message ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 export default function RewardsScreen() {
   const colors = useColors();
@@ -25,12 +44,59 @@ export default function RewardsScreen() {
   const { data: progress, isLoading, isError } = useQuestProgress();
   const { data: perksData, isError: isPerksError } = usePerks();
   const unlock = useUnlockPerk();
+  const activatePass = useActivatePass();
+  const qc = useQueryClient();
+  const [purchasingPass, setPurchasingPass] = useState(false);
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
   const bottomPad = Platform.OS === "web" ? Math.max(insets.bottom, 34) : insets.bottom;
 
   const balance = progress?.balance ?? 0;
   const perks = perksData?.perks ?? [];
+
+  const handleGetPass = async () => {
+    if (!authToken || purchasingPass) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setPurchasingPass(true);
+    const apiBase = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
+    const authHeader = { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` };
+
+    try {
+      const initRes = await fetch(`${apiBase}/api/payments/pass/init`, { method: "POST", headers: authHeader });
+      if (!initRes.ok) {
+        Alert.alert("Couldn't start payment", await readError(initRes, "Please try again."));
+        return;
+      }
+      const initData = (await initRes.json()) as { reference: string; amount: number; currency: string; simulated: boolean };
+
+      const verifyRes = await fetch(`${apiBase}/api/payments/pass/verify`, {
+        method: "POST",
+        headers: authHeader,
+        body: JSON.stringify({ reference: initData.reference }),
+      });
+      if (!verifyRes.ok) {
+        Alert.alert("Payment could not be verified", await readError(verifyRes, "Please try again."));
+        return;
+      }
+
+      activatePass.mutate(
+        { data: { reference: initData.reference } },
+        {
+          onSuccess: (res) => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            qc.invalidateQueries({ queryKey: getGetQuestProgressQueryKey() });
+            const until = res.expiresAt ? new Date(res.expiresAt).toLocaleDateString() : "in 30 days";
+            Alert.alert("KULTR PASS activated!", `${res.multiplier}× earning until ${until}.`);
+          },
+          onError: (e) => Alert.alert("Activation failed", e instanceof Error ? e.message : "Please try again."),
+        },
+      );
+    } catch {
+      Alert.alert("Network error", "Couldn't reach the server. Please try again.");
+    } finally {
+      setPurchasingPass(false);
+    }
+  };
 
   const handleUnlock = (perk: PerkView) => {
     if (balance < perk.cost) {
@@ -122,9 +188,27 @@ export default function RewardsScreen() {
                   <Text style={styles.passBadgeText}>KULTR PASS · {progress.pass.multiplier}× earning</Text>
                 </View>
               ) : (
-                <Text style={styles.balanceSub}>
-                  Lifetime earned: {(progress?.lifetimeEarned ?? 0).toLocaleString()}
-                </Text>
+                <>
+                  <Text style={styles.balanceSub}>
+                    Lifetime earned: {(progress?.lifetimeEarned ?? 0).toLocaleString()}
+                  </Text>
+                  <Pressable
+                    onPress={handleGetPass}
+                    disabled={purchasingPass || activatePass.isPending}
+                    style={[styles.getPassBtn, { opacity: purchasingPass || activatePass.isPending ? 0.6 : 1 }]}
+                    accessibilityLabel="Get KULTR PASS — 500 KES for 30 days of 1.5x earning"
+                    accessibilityRole="button"
+                  >
+                    {purchasingPass || activatePass.isPending ? (
+                      <ActivityIndicator color="#000" size="small" />
+                    ) : (
+                      <>
+                        <Feather name="zap" size={13} color="#000" />
+                        <Text style={styles.getPassBtnText}>Get KULTR PASS · 500 KES / 30 days</Text>
+                      </>
+                    )}
+                  </Pressable>
+                </>
               )}
             </View>
 
@@ -232,6 +316,19 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   passBadgeText: { color: "#FFB400", fontSize: 11, fontWeight: "700" },
+  getPassBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "flex-start",
+    gap: 6,
+    backgroundColor: "#FFB400",
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    marginTop: 4,
+  },
+  getPassBtnText: { color: "#000", fontSize: 12, fontWeight: "800" },
 
   section: { paddingHorizontal: 16, marginBottom: 20, gap: 12 },
   sectionTitle: { fontSize: 16, fontWeight: "700" },
