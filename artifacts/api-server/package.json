@@ -24,7 +24,7 @@
     "express-rate-limit": "^8.5.2",
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.2",
-    "nanoid": "^5.0.9",
+    "nanoid": "^6.0.0",
     "node-fetch": "^3.3.2",
     "pino": "^9",
     "pino-http": "^10",
