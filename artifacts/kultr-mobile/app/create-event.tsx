@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Alert } from "@/lib/alert";
 import { type CreatedEvent, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { localWallClockToUtcIso } from "@/constants/timezones";
 import { useCreateEvent, useUpdateEventStatus } from "@workspace/api-client-react";
 
 const LOGO_ICON = require("@/assets/images/logo-icon.png");
@@ -74,7 +75,11 @@ export default function CreateEventScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setPublishing(true);
 
-    const eventDate = `${date.trim()}T${time.trim() || "18:00"}:00`;
+    // The creator types this in their own country's local wall-clock time
+    // (e.g. "19:00" meaning 7pm Nairobi time) — convert it to the correct
+    // UTC instant here rather than storing the naive string as-is, which
+    // Postgres would otherwise interpret in the server's own timezone.
+    const eventDate = localWallClockToUtcIso(date.trim(), time.trim() || "18:00", userCountry.code);
     const price = parseFloat(prices.regular || prices.earlybird || "0") || 0;
 
     // Build the local event for fallback / immediate optimistic state

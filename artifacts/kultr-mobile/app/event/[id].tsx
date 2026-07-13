@@ -27,6 +27,7 @@ import {
   formatDate,
   formatTime,
 } from "@/constants/data";
+import { utcIsoToLocalWallClock } from "@/constants/timezones";
 import { useGetEvent } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { useCheckIn } from "@/hooks/useQuests";
@@ -121,7 +122,7 @@ export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { isSaved, toggleSaved, tickets, authToken } = useApp();
+  const { isSaved, toggleSaved, tickets, authToken, userCountry } = useApp();
   const [selectedTicketType, setSelectedTicketType] = useState(0);
   const { event, isLoading } = useEventDetail(id);
   const { events } = useEventCatalog();
@@ -235,6 +236,18 @@ export default function EventDetailScreen() {
   const saved = isSaved(event.id);
   const image = EVENT_IMAGES[event.imageKey];
   const bottomPad = Platform.OS === "web" ? Math.max(insets.bottom, 34) : insets.bottom;
+
+  // Diaspora hint: when the viewer's own country differs from the event's,
+  // show what the venue-local time converts to in the viewer's country too
+  // — e.g. a Nairobi event's "7:00 PM" also showing "11:00 AM your time"
+  // for someone browsing from Toronto.
+  const viewerTimeHint =
+    event.countryCode && event.eventDateUtc && event.countryCode !== userCountry.code
+      ? (() => {
+          const viewerLocal = utcIsoToLocalWallClock(event.eventDateUtc!, userCountry.code);
+          return `${formatTime(viewerLocal.time)} your time`;
+        })()
+      : undefined;
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -369,7 +382,7 @@ export default function EventDetailScreen() {
           >
             <InfoItem icon="calendar" label="Date" value={formatDate(event.date)} />
             <View style={[styles.infoDivider, { backgroundColor: colors.border }]} />
-            <InfoItem icon="clock" label="Time" value={formatTime(event.time)} />
+            <InfoItem icon="clock" label="Time" value={formatTime(event.time)} sub={viewerTimeHint} />
             <View style={[styles.infoDivider, { backgroundColor: colors.border }]} />
             <InfoItem
               icon="map-pin"
@@ -789,10 +802,12 @@ function InfoItem({
   icon,
   label,
   value,
+  sub,
 }: {
   icon: string;
   label: string;
   value: string;
+  sub?: string;
 }) {
   const colors = useColors();
   return (
@@ -807,6 +822,11 @@ function InfoItem({
       >
         {value}
       </Text>
+      {sub && (
+        <Text style={[styles.infoSub, { color: colors.mutedForeground }]} numberOfLines={1}>
+          {sub}
+        </Text>
+      )}
     </View>
   );
 }
@@ -903,6 +923,11 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "center",
     lineHeight: 16,
+  },
+  infoSub: {
+    fontSize: 10,
+    textAlign: "center",
+    lineHeight: 13,
   },
   goingCard: {
     flexDirection: "row",

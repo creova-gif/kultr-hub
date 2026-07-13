@@ -21,8 +21,17 @@ export interface Event {
   venue: string;
   city: string;
   country: string;
+  /** ISO-3166 country code, e.g. "KE" — used for venue-local/viewer-local
+   *  time conversion (see constants/timezones.ts). Absent on hardcoded
+   *  fallback/demo events, which have no real timezone to convert against. */
+  countryCode?: string;
+  /** date/time are the venue's own local wall-clock values (already
+   *  timezone-converted by adaptEventSummary for real API events). */
   date: string;
   time: string;
+  /** Raw UTC instant, when known — lets a screen derive the *viewer's*
+   *  local time on demand via utcIsoToLocalWallClock(eventDateUtc, viewerCountryCode). */
+  eventDateUtc?: string;
   price: number;
   currency: string;
   currencySymbol: string;

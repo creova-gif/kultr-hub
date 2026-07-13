@@ -3,6 +3,7 @@ import { useListEvents } from "@workspace/api-client-react";
 import type { EventSummary } from "@workspace/api-client-react";
 import { type Event } from "@/constants/data";
 import { getCountryByCurrency } from "@/constants/currencies";
+import { utcIsoToLocalWallClock } from "@/constants/timezones";
 import { useApp } from "@/context/AppContext";
 
 const VALID_IMAGE_KEYS = ["concert", "art", "food", "culture"] as const;
@@ -14,13 +15,20 @@ function toImageKey(raw: string | null | undefined): ImageKey {
 
 export function adaptEventSummary(e: EventSummary): Event {
   const iso = e.eventDate ?? "";
-  const date = iso.slice(0, 10);
+  // date/time must be the VENUE's local wall-clock values, not a naive
+  // slice of the UTC instant — e.g. a 19:00 Nairobi event is stored as
+  // 16:00 UTC, and slicing the raw ISO would silently display "16:00"
+  // (then re-interpreted through the *viewer's* device timezone on top of
+  // that) instead of "19:00 Nairobi time".
+  let date = iso.slice(0, 10);
   let time = "19:00";
   if (iso.length > 10) {
     try {
-      time = new Date(iso).toISOString().slice(11, 16);
+      const local = utcIsoToLocalWallClock(iso, e.countryCode);
+      date = local.date;
+      time = local.time;
     } catch {
-      // keep default
+      // keep defaults
     }
   }
   const currencySymbol = getCountryByCurrency(e.currency)?.currencySymbol ?? e.currency;
@@ -32,8 +40,10 @@ export function adaptEventSummary(e: EventSummary): Event {
     venue: e.venue,
     city: e.city,
     country: e.country,
+    countryCode: e.countryCode,
     date,
     time,
+    eventDateUtc: iso || undefined,
     price: e.minPrice,
     currency: e.currency,
     currencySymbol,
