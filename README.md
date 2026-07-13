@@ -55,8 +55,8 @@ Deployed via Replit, synced from this repository's `main` branch.
 ### Installation
 
 ```bash
-git clone https://github.com/creova-gif/Kultr-Hub.git
-cd Kultr-Hub
+git clone https://github.com/creova-gif/kultr-hub.git
+cd kultr-hub
 pnpm install
 cp .env.example .env
 # fill in DATABASE_URL and JWT_SECRET at minimum — see .env.example for the full list
