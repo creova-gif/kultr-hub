@@ -14,5 +14,8 @@ export interface UserProfile {
   countryCode: string;
   isCreator: boolean;
   isAdmin: boolean;
+  /** null means never asked yet — treated the same as false wherever tracking is actually gated. */
+  trackingConsent: boolean | null;
+  marketingSmsConsent: boolean;
   createdAt: Date;
 }

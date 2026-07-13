@@ -193,6 +193,43 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /users/me/consent:
+    patch:
+      operationId: updateMyConsent
+      tags: [users]
+      summary: Record an explicit opt-in consent choice (tracking/analytics and/or marketing SMS)
+      description: >-
+        Each field is stored and timestamped independently — declining is
+        recorded just as deliberately as accepting, and neither implies the
+        other. Only fields present in the body are updated.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConsentUpdateRequest"
+      responses:
+        "200":
+          description: Updated consent record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsentRecord"
+        "400":
+          description: Neither field provided, or a field is not a boolean
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /users/me:
     delete:
       operationId: deleteMyAccount
@@ -1739,6 +1776,12 @@ components:
           type: boolean
         isAdmin:
           type: boolean
+        trackingConsent:
+          type: boolean
+          nullable: true
+          description: null means never asked yet — treated the same as false wherever tracking is actually gated.
+        marketingSmsConsent:
+          type: boolean
         createdAt:
           type: string
           format: date-time
@@ -1749,7 +1792,36 @@ components:
         - countryCode
         - isCreator
         - isAdmin
+        - trackingConsent
+        - marketingSmsConsent
         - createdAt
+
+    ConsentUpdateRequest:
+      type: object
+      description: At least one of the two fields must be present.
+      properties:
+        trackingConsent:
+          type: boolean
+        marketingSmsConsent:
+          type: boolean
+
+    ConsentRecord:
+      type: object
+      required: [trackingConsent, trackingConsentAt, marketingSmsConsent, marketingSmsConsentAt]
+      properties:
+        trackingConsent:
+          type: boolean
+          nullable: true
+        trackingConsentAt:
+          type: string
+          format: date-time
+          nullable: true
+        marketingSmsConsent:
+          type: boolean
+        marketingSmsConsentAt:
+          type: string
+          format: date-time
+          nullable: true
 
     UserDataExport:
       type: object

@@ -14,6 +14,8 @@ export * from "./checkinResult";
 export * from "./citySalesPoint";
 export * from "./collectibleRarity";
 export * from "./collectibleView";
+export * from "./consentRecord";
+export * from "./consentUpdateRequest";
 export * from "./createdEventStats";
 export * from "./createEventReportRequest";
 export * from "./createEventRequest";

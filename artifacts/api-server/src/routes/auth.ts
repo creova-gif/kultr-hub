@@ -37,6 +37,11 @@ function userPublic(user: typeof usersTable.$inferSelect) {
     countryCode: user.countryCode,
     isCreator: user.isCreator,
     isAdmin: user.isAdmin,
+    // null = never asked yet (treated identically to false everywhere
+    // tracking is actually gated) — lets the client show the first-run
+    // consent prompt exactly once instead of re-asking someone who declined.
+    trackingConsent: user.trackingConsent,
+    marketingSmsConsent: user.marketingSmsConsent,
     createdAt: user.createdAt,
   };
 }
@@ -83,6 +88,8 @@ router.post("/signup", async (req: Request, res: Response) => {
       countryCode: user.countryCode,
       isCreator: user.isCreator,
       isAdmin: user.isAdmin,
+      trackingConsent: user.trackingConsent,
+      marketingSmsConsent: user.marketingSmsConsent,
       createdAt: user.createdAt,
     },
   });
@@ -119,6 +126,8 @@ router.post("/login", async (req: Request, res: Response) => {
       countryCode: user.countryCode,
       isCreator: user.isCreator,
       isAdmin: user.isAdmin,
+      trackingConsent: user.trackingConsent,
+      marketingSmsConsent: user.marketingSmsConsent,
       createdAt: user.createdAt,
     },
   });
@@ -291,16 +300,7 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
     res.status(401).json({ message: "User not found" });
     return;
   }
-  res.json({
-    id: user.id,
-    email: user.email,
-    displayName: user.displayName,
-    avatarUrl: user.avatarUrl,
-    countryCode: user.countryCode,
-    isCreator: user.isCreator,
-    isAdmin: user.isAdmin,
-    createdAt: user.createdAt,
-  });
+  res.json(userPublic(user));
 });
 
 export default router;

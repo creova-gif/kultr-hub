@@ -5,7 +5,7 @@ import { I18nManager, Platform } from "react-native";
 import { Alert } from "@/lib/alert";
 import { EA_COUNTRIES, getCountryByCurrency, type EACountry } from "@/constants/currencies";
 import type { Language } from "@/constants/translations";
-import { setAuthTokenGetter, useGetCreatorAnalytics, getGetCreatorAnalyticsQueryKey, useAuthLogout, type CreatedEventStats } from "@workspace/api-client-react";
+import { setAuthTokenGetter, useGetCreatorAnalytics, getGetCreatorAnalyticsQueryKey, useAuthLogout, useUpdateMyConsent, type CreatedEventStats } from "@workspace/api-client-react";
 
 export interface PurchasedTicket {
   id: string;
@@ -46,6 +46,9 @@ export interface AuthUser {
   countryCode: string;
   isCreator: boolean;
   isAdmin: boolean;
+  // null = never asked yet (treated as "no" everywhere consent is checked).
+  trackingConsent: boolean | null;
+  marketingSmsConsent: boolean;
 }
 
 interface AppContextType {
@@ -72,6 +75,7 @@ interface AppContextType {
   clearAuth: () => Promise<void>;
   setLanguage: (lang: Language) => Promise<void>;
   setLowBandwidth: (val: boolean) => void;
+  updateConsent: (patch: { trackingConsent?: boolean; marketingSmsConsent?: boolean }) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -153,6 +157,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [analyticsData]);
 
   const authLogoutMutation = useAuthLogout();
+  const updateConsentMutation = useUpdateMyConsent();
 
   // Register token getter with the API client so every request is authenticated
   React.useEffect(() => {
@@ -238,6 +243,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAuthUser(user);
   }, []);
 
+  const updateConsent = useCallback(async (patch: { trackingConsent?: boolean; marketingSmsConsent?: boolean }) => {
+    const result = await updateConsentMutation.mutateAsync({ data: patch });
+    setAuthUser((prev) => {
+      if (!prev) return prev;
+      const next: AuthUser = {
+        ...prev,
+        trackingConsent: result.trackingConsent,
+        marketingSmsConsent: result.marketingSmsConsent,
+      };
+      AsyncStorage.setItem(USER_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, [updateConsentMutation]);
+
   const clearAuth = useCallback(async () => {
     // Best-effort: revoke the token server-side (bumps tokenVersion, so it
     // can't be replayed) before wiping local state. A logged-out device
@@ -306,6 +325,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         clearAuth,
         setLanguage,
         setLowBandwidth,
+        updateConsent,
       }}
     >
       {children}

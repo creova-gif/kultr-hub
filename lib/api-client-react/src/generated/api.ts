@@ -20,6 +20,8 @@ import type {
   AuthResponse,
   CheckinRequest,
   CheckinResult,
+  ConsentRecord,
+  ConsentUpdateRequest,
   CreateEventReportRequest,
   CreateEventRequest,
   CreatePayoutRequest,
@@ -730,6 +732,93 @@ export function useExportMyData<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * Each field is stored and timestamped independently — declining is recorded just as deliberately as accepting, and neither implies the other. Only fields present in the body are updated.
+ * @summary Record an explicit opt-in consent choice (tracking/analytics and/or marketing SMS)
+ */
+export const getUpdateMyConsentUrl = () => {
+  return `/api/users/me/consent`;
+};
+
+export const updateMyConsent = async (
+  consentUpdateRequest: ConsentUpdateRequest,
+  options?: RequestInit,
+): Promise<ConsentRecord> => {
+  return customFetch<ConsentRecord>(getUpdateMyConsentUrl(), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(consentUpdateRequest),
+  });
+};
+
+export const getUpdateMyConsentMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateMyConsent>>,
+    TError,
+    { data: BodyType<ConsentUpdateRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateMyConsent>>,
+  TError,
+  { data: BodyType<ConsentUpdateRequest> },
+  TContext
+> => {
+  const mutationKey = ["updateMyConsent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateMyConsent>>,
+    { data: BodyType<ConsentUpdateRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateMyConsent(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateMyConsentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateMyConsent>>
+>;
+export type UpdateMyConsentMutationBody = BodyType<ConsentUpdateRequest>;
+export type UpdateMyConsentMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Record an explicit opt-in consent choice (tracking/analytics and/or marketing SMS)
+ */
+export const useUpdateMyConsent = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateMyConsent>>,
+    TError,
+    { data: BodyType<ConsentUpdateRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateMyConsent>>,
+  TError,
+  { data: BodyType<ConsentUpdateRequest> },
+  TContext
+> => {
+  return useMutation(getUpdateMyConsentMutationOptions(options));
+};
 
 /**
  * @summary Permanently delete the current user's account and data

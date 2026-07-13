@@ -107,6 +107,8 @@ export default function LoginScreen() {
       countryCode: res.user.countryCode,
       isCreator: res.user.isCreator,
       isAdmin: res.user.isAdmin,
+      trackingConsent: res.user.trackingConsent,
+      marketingSmsConsent: res.user.marketingSmsConsent,
     };
     await setAuth(res.token, user);
     // A signed-in user has nothing left to onboard for. router.back() used to

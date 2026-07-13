@@ -23,6 +23,19 @@ export const usersTable = pgTable("users", {
   // this invalidates every outstanding token for the user in one write,
   // without needing a denylist table. See routes/auth.ts POST /logout.
   tokenVersion: integer("token_version").notNull().default(0),
+  // ── Consent (GDPR / Quebec Law 25 bar — see global-expansion roadmap §5/§6 Phase 2) ──
+  // Opt-in, not opt-out: null means "never asked" (no tracking happens,
+  // same as false) rather than defaulting to granted. There is no analytics/
+  // tracking SDK wired up yet — this is the consent record built ahead of
+  // that feature, not behind it, so nothing ships un-gated later.
+  trackingConsent: boolean("tracking_consent"),
+  trackingConsentAt: timestamp("tracking_consent_at", { withTimezone: true }),
+  // Deliberately separate from OTP — OTP login codes are a transactional
+  // message the user directly requested, never marketing. This flag exists
+  // so a future marketing-SMS feature has an explicit, distinctly-recorded
+  // consent to check instead of assuming OTP usage implies it (TCPA).
+  marketingSmsConsent: boolean("marketing_sms_consent").notNull().default(false),
+  marketingSmsConsentAt: timestamp("marketing_sms_consent_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

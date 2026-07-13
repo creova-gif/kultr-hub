@@ -47,6 +47,13 @@ export const AuthLoginResponse = zod.object({
     countryCode: zod.string(),
     isCreator: zod.boolean(),
     isAdmin: zod.boolean(),
+    trackingConsent: zod
+      .boolean()
+      .nullable()
+      .describe(
+        "null means never asked yet — treated the same as false wherever tracking is actually gated.",
+      ),
+    marketingSmsConsent: zod.boolean(),
     createdAt: zod.coerce.date(),
   }),
 });
@@ -88,6 +95,13 @@ export const AuthOtpVerifyResponse = zod.object({
     countryCode: zod.string(),
     isCreator: zod.boolean(),
     isAdmin: zod.boolean(),
+    trackingConsent: zod
+      .boolean()
+      .nullable()
+      .describe(
+        "null means never asked yet — treated the same as false wherever tracking is actually gated.",
+      ),
+    marketingSmsConsent: zod.boolean(),
     createdAt: zod.coerce.date(),
   }),
 });
@@ -103,6 +117,13 @@ export const AuthMeResponse = zod.object({
   countryCode: zod.string(),
   isCreator: zod.boolean(),
   isAdmin: zod.boolean(),
+  trackingConsent: zod
+    .boolean()
+    .nullable()
+    .describe(
+      "null means never asked yet — treated the same as false wherever tracking is actually gated.",
+    ),
+  marketingSmsConsent: zod.boolean(),
   createdAt: zod.coerce.date(),
 });
 
@@ -118,6 +139,24 @@ export const ExportMyDataResponse = zod
     rewards: zod.record(zod.string(), zod.unknown()),
   })
   .describe("Full machine-readable copy of the data held about a user.");
+
+/**
+ * Each field is stored and timestamped independently — declining is recorded just as deliberately as accepting, and neither implies the other. Only fields present in the body are updated.
+ * @summary Record an explicit opt-in consent choice (tracking/analytics and/or marketing SMS)
+ */
+export const UpdateMyConsentBody = zod
+  .object({
+    trackingConsent: zod.boolean().optional(),
+    marketingSmsConsent: zod.boolean().optional(),
+  })
+  .describe("At least one of the two fields must be present.");
+
+export const UpdateMyConsentResponse = zod.object({
+  trackingConsent: zod.boolean().nullable(),
+  trackingConsentAt: zod.coerce.date().nullable(),
+  marketingSmsConsent: zod.boolean(),
+  marketingSmsConsentAt: zod.coerce.date().nullable(),
+});
 
 /**
  * @summary Lightweight public profile lookup — trust signals (e.g. the Verified Organizer badge)

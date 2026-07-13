@@ -51,6 +51,9 @@ export interface UserProfile {
   countryCode: string;
   isCreator: boolean;
   isAdmin: boolean;
+  /** null means never asked yet — treated the same as false wherever tracking is actually gated. */
+  trackingConsent: boolean | null;
+  marketingSmsConsent: boolean;
   createdAt: string;
 }
 
@@ -76,6 +79,21 @@ export interface OtpVerifyRequest {
   countryCode?: string;
   code: string;
   displayName?: string;
+}
+
+/**
+ * At least one of the two fields must be present.
+ */
+export interface ConsentUpdateRequest {
+  trackingConsent?: boolean;
+  marketingSmsConsent?: boolean;
+}
+
+export interface ConsentRecord {
+  trackingConsent: boolean | null;
+  trackingConsentAt: string | null;
+  marketingSmsConsent: boolean;
+  marketingSmsConsentAt: string | null;
 }
 
 export type UserDataExportProfile = { [key: string]: unknown };

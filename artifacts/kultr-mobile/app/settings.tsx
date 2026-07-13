@@ -1,11 +1,12 @@
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
-import { Platform, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { Alert } from "@/lib/alert";
 import type { Language } from "@/constants/translations";
 
 const LANGUAGES: { code: Language; label: string; native: string }[] = [
@@ -18,9 +19,32 @@ const LANGUAGES: { code: Language; label: string; native: string }[] = [
 export default function SettingsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { language, setLanguage, lowBandwidth, setLowBandwidth } = useApp();
+  const { language, setLanguage, lowBandwidth, setLowBandwidth, authUser, updateConsent } = useApp();
+  const [consentBusy, setConsentBusy] = React.useState<"tracking" | "marketing" | null>(null);
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
+
+  const handleTrackingConsentChange = async (value: boolean) => {
+    setConsentBusy("tracking");
+    try {
+      await updateConsent({ trackingConsent: value });
+    } catch {
+      Alert.alert("Couldn't save", "Your choice couldn't be saved. Please try again.");
+    } finally {
+      setConsentBusy(null);
+    }
+  };
+
+  const handleMarketingConsentChange = async (value: boolean) => {
+    setConsentBusy("marketing");
+    try {
+      await updateConsent({ marketingSmsConsent: value });
+    } catch {
+      Alert.alert("Couldn't save", "Your choice couldn't be saved. Please try again.");
+    } finally {
+      setConsentBusy(null);
+    }
+  };
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background, paddingTop: topPad + 12 }]}>
@@ -37,6 +61,7 @@ export default function SettingsScreen() {
         <View style={styles.backBtn} />
       </View>
 
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
       <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>LANGUAGE</Text>
 
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -114,6 +139,52 @@ export default function SettingsScreen() {
           />
         </View>
       </View>
+
+      <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>PRIVACY</Text>
+
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={[styles.row, { justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: colors.border }]}>
+          <View style={styles.rowText}>
+            <Text style={[styles.rowLabel, { color: colors.foreground }]}>Analytics &amp; Tracking</Text>
+            <Text style={[styles.rowSub, { color: colors.mutedForeground }]}>
+              Off by default. Helps us understand how the app is used — never sold or shared for advertising.
+            </Text>
+          </View>
+          {consentBusy === "tracking" ? (
+            <ActivityIndicator size="small" color="#FF6B00" />
+          ) : (
+            <Switch
+              value={authUser?.trackingConsent === true}
+              onValueChange={handleTrackingConsentChange}
+              disabled={!authUser}
+              accessibilityLabel="Allow analytics and tracking"
+              trackColor={{ false: "#333", true: "#FF6B00" }}
+              thumbColor="#fff"
+            />
+          )}
+        </View>
+        <View style={[styles.row, { justifyContent: "space-between" }]}>
+          <View style={styles.rowText}>
+            <Text style={[styles.rowLabel, { color: colors.foreground }]}>Marketing Messages</Text>
+            <Text style={[styles.rowSub, { color: colors.mutedForeground }]}>
+              Off by default. Separate from your login code texts, which always send regardless of this setting.
+            </Text>
+          </View>
+          {consentBusy === "marketing" ? (
+            <ActivityIndicator size="small" color="#FF6B00" />
+          ) : (
+            <Switch
+              value={authUser?.marketingSmsConsent === true}
+              onValueChange={handleMarketingConsentChange}
+              disabled={!authUser}
+              accessibilityLabel="Allow marketing SMS messages"
+              trackColor={{ false: "#333", true: "#FF6B00" }}
+              thumbColor="#fff"
+            />
+          )}
+        </View>
+      </View>
+      </ScrollView>
     </View>
   );
 }

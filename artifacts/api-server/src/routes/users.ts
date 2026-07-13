@@ -132,6 +132,60 @@ router.get("/me/export", requireAuth, async (req: Request, res: Response) => {
   });
 });
 
+/**
+ * PATCH /api/users/me/consent
+ * Records an explicit, opt-in consent choice — tracking/analytics and
+ * marketing SMS are stored (and timestamped) separately, never inferred
+ * from each other or from unrelated activity like requesting an OTP. Only
+ * fields present in the body are touched, each stamped with the moment the
+ * user actually made that choice (true or false — declining is recorded
+ * just as deliberately as accepting).
+ */
+router.patch("/me/consent", requireAuth, async (req: Request, res: Response) => {
+  const { userId } = req as AuthedRequest;
+  const { trackingConsent, marketingSmsConsent } = req.body as {
+    trackingConsent?: unknown;
+    marketingSmsConsent?: unknown;
+  };
+
+  if (trackingConsent === undefined && marketingSmsConsent === undefined) {
+    res.status(400).json({ message: "Provide trackingConsent and/or marketingSmsConsent" });
+    return;
+  }
+  if (trackingConsent !== undefined && typeof trackingConsent !== "boolean") {
+    res.status(400).json({ message: "trackingConsent must be a boolean" });
+    return;
+  }
+  if (marketingSmsConsent !== undefined && typeof marketingSmsConsent !== "boolean") {
+    res.status(400).json({ message: "marketingSmsConsent must be a boolean" });
+    return;
+  }
+
+  const now = new Date();
+  const patch: Partial<typeof usersTable.$inferInsert> = { updatedAt: now };
+  if (trackingConsent !== undefined) {
+    patch.trackingConsent = trackingConsent;
+    patch.trackingConsentAt = now;
+  }
+  if (marketingSmsConsent !== undefined) {
+    patch.marketingSmsConsent = marketingSmsConsent;
+    patch.marketingSmsConsentAt = now;
+  }
+
+  const [updated] = await db
+    .update(usersTable)
+    .set(patch)
+    .where(eq(usersTable.id, userId))
+    .returning({
+      trackingConsent: usersTable.trackingConsent,
+      trackingConsentAt: usersTable.trackingConsentAt,
+      marketingSmsConsent: usersTable.marketingSmsConsent,
+      marketingSmsConsentAt: usersTable.marketingSmsConsentAt,
+    });
+
+  res.json(updated);
+});
+
 class AttendeesExistError extends Error {}
 
 /**

@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApp } from "@/context/AppContext";
+import { ConsentBanner } from "@/components/ConsentBanner";
 
 // "Home" routes to index.tsx — the richer category-browsing screen (Featured
 // carousel + category pills + bento grid). It previously routed to foryou.tsx,
@@ -118,17 +119,20 @@ function TabBar({ state, navigation }: TabBarProps) {
 
 export default function TabLayout() {
   return (
-    <Tabs
-      tabBar={(props) => <TabBar {...props} />}
-      screenOptions={{ headerShown: false }}
-    >
-      <Tabs.Screen name="index"    options={{ title: "Home"     }} />
-      <Tabs.Screen name="foryou"   options={{ href: null        }} />
-      <Tabs.Screen name="discover" options={{ title: "Discover" }} />
-      <Tabs.Screen name="social"   options={{ href: null        }} />
-      <Tabs.Screen name="tickets"  options={{ title: "Tickets"  }} />
-      <Tabs.Screen name="profile"  options={{ title: "Profile"  }} />
-    </Tabs>
+    <>
+      <Tabs
+        tabBar={(props) => <TabBar {...props} />}
+        screenOptions={{ headerShown: false }}
+      >
+        <Tabs.Screen name="index"    options={{ title: "Home"     }} />
+        <Tabs.Screen name="foryou"   options={{ href: null        }} />
+        <Tabs.Screen name="discover" options={{ title: "Discover" }} />
+        <Tabs.Screen name="social"   options={{ href: null        }} />
+        <Tabs.Screen name="tickets"  options={{ title: "Tickets"  }} />
+        <Tabs.Screen name="profile"  options={{ title: "Profile"  }} />
+      </Tabs>
+      <ConsentBanner />
+    </>
   );
 }
 
