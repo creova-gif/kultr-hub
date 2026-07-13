@@ -88,6 +88,7 @@ const LANG_KEY = "kultr_language";
 const ONBOARDING_KEY = "kultr_onboarding_done";
 const INTERESTS_KEY = "kultr_user_interests";
 const TICKETS_KEY = "kultr_tickets";
+const LOW_BANDWIDTH_KEY = "kultr_low_bandwidth";
 
 // The auth token is the one piece of state worth OS keychain/keystore
 // protection; SecureStore has no web equivalent, so web keeps AsyncStorage.
@@ -201,6 +202,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           try { setTickets(JSON.parse(stored) as PurchasedTicket[]); } catch { /* ignore corrupt data */ }
         }
       }),
+      AsyncStorage.getItem(LOW_BANDWIDTH_KEY).then((stored) => {
+        if (stored === "true") setLowBandwidth(true);
+      }),
     ]).finally(() => {
       if (!cancelled) setIsHydrated(true);
     });
@@ -282,6 +286,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     AsyncStorage.setItem(TICKETS_KEY, JSON.stringify(tickets));
   }, [tickets]);
+
+  // Persist the Data Saver toggle — previously reset to off on every app
+  // restart despite the Settings switch implying it was a saved preference.
+  React.useEffect(() => {
+    AsyncStorage.setItem(LOW_BANDWIDTH_KEY, String(lowBandwidth));
+  }, [lowBandwidth]);
 
   const addTicket = (ticket: PurchasedTicket) => {
     setTickets((prev) => [ticket, ...prev]);
