@@ -60,12 +60,14 @@ export function EventCardHero({ event }: Props) {
   return (
     <Pressable
       onPress={handlePress}
+      accessibilityRole="button"
+      accessibilityLabel={`${event.title}, ${event.category}, ${event.venue}, ${event.city}, ${formatDate(event.date)}, ${event.currencySymbol} ${event.price.toLocaleString()}`}
       style={({ pressed }) => [
         styles.card,
         { opacity: pressed ? 0.96 : 1, transform: [{ scale: pressed ? 0.99 : 1 }] },
       ]}
     >
-      <Image source={image} style={styles.image} resizeMode="cover" />
+      <Image source={image} style={styles.image} resizeMode="cover" accessibilityElementsHidden importantForAccessibility="no" />
 
       <LinearGradient
         colors={["transparent", "rgba(0,0,0,0.3)", "rgba(0,0,0,0.96)"]}
@@ -93,6 +95,9 @@ export function EventCardHero({ event }: Props) {
         <Pressable
           onPress={handleSave}
           hitSlop={12}
+          accessibilityLabel={saved ? "Remove from saved events" : "Save event"}
+          accessibilityRole="button"
+          accessibilityState={{ selected: saved }}
           style={[styles.saveBtn, { backgroundColor: "rgba(0,0,0,0.5)" }]}
         >
           <Feather name="heart" size={16} color={saved ? "#FF6B00" : "#fff"} />

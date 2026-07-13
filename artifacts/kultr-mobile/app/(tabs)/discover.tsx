@@ -203,7 +203,7 @@ export default function DiscoverScreen() {
             onSubmitEditing={() => saveSearch(search)}
           />
           {search.length > 0 && (
-            <Pressable onPress={() => setSearch("")}>
+            <Pressable onPress={() => setSearch("")} accessibilityLabel="Clear search" accessibilityRole="button">
               <Feather name="x" size={16} color={colors.mutedForeground} />
             </Pressable>
           )}

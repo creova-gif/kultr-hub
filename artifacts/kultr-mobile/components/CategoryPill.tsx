@@ -27,6 +27,8 @@ export function CategoryPills({ categories, selected, onSelect }: Props) {
               Haptics.selectionAsync();
               onSelect(cat);
             }}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active }}
             style={[
               styles.pill,
               {

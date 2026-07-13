@@ -273,6 +273,7 @@ export default function CreateEventScreen() {
           <TextInput
             value={title}
             onChangeText={setTitle}
+            accessibilityLabel="Event Title"
             placeholder="e.g. Nairobi Jazz Collective"
             placeholderTextColor={colors.mutedForeground}
             style={[styles.input, { color: colors.foreground, backgroundColor: colors.card, borderColor: title.length > 2 ? "#FF6B00" : colors.border }]}
@@ -286,6 +287,7 @@ export default function CreateEventScreen() {
             <TextInput
               value={date}
               onChangeText={setDate}
+              accessibilityLabel="Date"
               placeholder="YYYY-MM-DD"
               placeholderTextColor={colors.mutedForeground}
               style={[styles.input, { color: colors.foreground, backgroundColor: colors.card, borderColor: colors.border }]}
@@ -296,6 +298,7 @@ export default function CreateEventScreen() {
             <TextInput
               value={time}
               onChangeText={setTime}
+              accessibilityLabel="Time"
               placeholder="18:00"
               placeholderTextColor={colors.mutedForeground}
               style={[styles.input, { color: colors.foreground, backgroundColor: colors.card, borderColor: colors.border }]}
@@ -310,6 +313,7 @@ export default function CreateEventScreen() {
             <TextInput
               value={venue}
               onChangeText={setVenue}
+              accessibilityLabel="Venue"
               placeholder="Venue name"
               placeholderTextColor={colors.mutedForeground}
               style={[styles.input, { color: colors.foreground, backgroundColor: colors.card, borderColor: colors.border }]}
@@ -320,6 +324,7 @@ export default function CreateEventScreen() {
             <TextInput
               value={city}
               onChangeText={setCity}
+              accessibilityLabel="City"
               placeholder="City"
               placeholderTextColor={colors.mutedForeground}
               style={[styles.input, { color: colors.foreground, backgroundColor: colors.card, borderColor: colors.border }]}
@@ -333,6 +338,7 @@ export default function CreateEventScreen() {
           <TextInput
             value={description}
             onChangeText={setDescription}
+            accessibilityLabel="Description"
             placeholder="Tell attendees what makes this event special..."
             placeholderTextColor={colors.mutedForeground}
             multiline
@@ -367,6 +373,7 @@ export default function CreateEventScreen() {
                 <TextInput
                   value={prices[tier.id as keyof typeof prices]}
                   onChangeText={(v) => setPrices((p) => ({ ...p, [tier.id]: v }))}
+                  accessibilityLabel={`${tier.name} price in ${userCountry.currencyCode}`}
                   placeholder="0"
                   placeholderTextColor={colors.mutedForeground}
                   keyboardType="numeric"

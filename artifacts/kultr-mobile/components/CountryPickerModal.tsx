@@ -31,6 +31,7 @@ export function CountryPickerModal({ visible, currentCode, onSelect, onClose }: 
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}
+      accessibilityViewIsModal
     >
       <View style={[styles.root, { backgroundColor: "#0E0E0E" }]}>
 
@@ -41,7 +42,7 @@ export function CountryPickerModal({ visible, currentCode, onSelect, onClose }: 
             <Text style={styles.title}>Where are you?</Text>
             <Text style={styles.sub}>Sets currency and payment methods</Text>
           </View>
-          <Pressable onPress={onClose} style={styles.closeBtn}>
+          <Pressable onPress={onClose} style={styles.closeBtn} accessibilityLabel="Close" accessibilityRole="button">
             <Feather name="x" size={16} color="#fff" />
           </Pressable>
         </View>
@@ -63,6 +64,9 @@ export function CountryPickerModal({ visible, currentCode, onSelect, onClose }: 
                   Haptics.selectionAsync();
                   onSelect(country);
                 }}
+                accessibilityLabel={`${country.name}, ${country.currencyCode}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
                 style={({ pressed }) => [
                   styles.card,
                   {

@@ -175,9 +175,11 @@ export default function AdminScreen() {
               <Pressable
                 key={t.id}
                 onPress={() => { Haptics.selectionAsync(); setTab(t.id); }}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: active }}
                 style={[styles.tab, { backgroundColor: active ? "#FF6B00" : colors.muted, borderColor: active ? "#FF6B00" : colors.border }]}
               >
-                <Text style={[styles.tabText, { color: active ? "#fff" : colors.mutedForeground }]}>
+                <Text style={[styles.tabText, { color: active ? colors.primaryForeground : colors.mutedForeground }]}>
                   {t.label}{t.count > 0 ? ` (${t.count})` : ""}
                 </Text>
               </Pressable>
@@ -345,7 +347,8 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 13, textAlign: "center" },
   emptyInline: { fontSize: 13, textAlign: "center", paddingVertical: 24 },
   cta: { backgroundColor: "#FF6B00", borderRadius: 22, paddingHorizontal: 24, paddingVertical: 11, marginTop: 6 },
-  ctaText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  // Near-black, not white — white-on-#FF6B00 measured ~2.86:1, failing WCAG AA.
+  ctaText: { color: "#111111", fontWeight: "700", fontSize: 14 },
 
   tabs: { flexDirection: "row", gap: 8, paddingHorizontal: 16, marginBottom: 16 },
   tab: { flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: 16, borderWidth: 1 },

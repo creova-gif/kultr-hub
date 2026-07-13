@@ -201,6 +201,7 @@ export default function PayoutsScreen() {
                   <TextInput
                     value={amount}
                     onChangeText={setAmount}
+                    accessibilityLabel="Amount"
                     keyboardType="decimal-pad"
                     placeholder="0.00"
                     placeholderTextColor={colors.mutedForeground}
@@ -211,6 +212,7 @@ export default function PayoutsScreen() {
                   <TextInput
                     value={currency}
                     onChangeText={(v) => setCurrency(v.toUpperCase())}
+                    accessibilityLabel="Currency"
                     placeholder="KES"
                     autoCapitalize="characters"
                     placeholderTextColor={colors.mutedForeground}
@@ -223,6 +225,7 @@ export default function PayoutsScreen() {
                   <TextInput
                     value={destination}
                     onChangeText={setDestination}
+                    accessibilityLabel="Destination, phone or bank reference"
                     placeholder="e.g. 0712 345 678"
                     placeholderTextColor={colors.mutedForeground}
                     style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]}

@@ -535,19 +535,24 @@ export default function CheckoutScreen() {
 
           {/* Phone input for mobile money / USSD */}
           {needsPhone && activeMethod && (
-            <View style={[styles.phoneInput, { backgroundColor: colors.card, borderColor: "#FF6B00" + "50" }]}>
-              <Text style={[styles.phoneFlag, { color: colors.foreground }]}>
-                {userCountry.flag} {activeMethod.phonePrefix ?? userCountry.phonePrefix}
+            <>
+              <Text style={{ fontSize: 12, fontWeight: "600", color: colors.mutedForeground, marginBottom: 6 }}>
+                Phone number
               </Text>
-              <TextInput
-                value={phone}
-                onChangeText={setPhone}
-                placeholder={activeMethod.phonePlaceholder ?? "712 345 678"}
-                placeholderTextColor={colors.mutedForeground}
-                keyboardType="phone-pad"
-                style={[styles.phoneField, { color: colors.foreground }]}
-                maxLength={13}
-              />
+              <View style={[styles.phoneInput, { backgroundColor: colors.card, borderColor: "#FF6B00" + "50" }]}>
+                <Text style={[styles.phoneFlag, { color: colors.foreground }]}>
+                  {userCountry.flag} {activeMethod.phonePrefix ?? userCountry.phonePrefix}
+                </Text>
+                <TextInput
+                  value={phone}
+                  onChangeText={setPhone}
+                  accessibilityLabel="Phone number"
+                  placeholder={activeMethod.phonePlaceholder ?? "712 345 678"}
+                  placeholderTextColor={colors.mutedForeground}
+                  keyboardType="phone-pad"
+                  style={[styles.phoneField, { color: colors.foreground }]}
+                  maxLength={13}
+                />
               {phone.length > 0 && (
                 <Pressable
                   onPress={() => setPhone("")}
@@ -557,7 +562,8 @@ export default function CheckoutScreen() {
                   <Feather name="x" size={16} color={colors.mutedForeground} />
                 </Pressable>
               )}
-            </View>
+              </View>
+            </>
           )}
 
           {/* Card hint */}

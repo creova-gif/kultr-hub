@@ -21,6 +21,8 @@ export function EventCardCompact({ event, horizontal }: Props) {
   return (
     <Pressable
       onPress={() => router.push(`/event/${event.id}`)}
+      accessibilityRole="button"
+      accessibilityLabel={`${event.title}, ${event.category}, ${event.city}, ${formatDate(event.date)}, ${event.currencySymbol} ${event.price.toLocaleString()}${saved ? ", saved" : ""}`}
       style={({ pressed }) => [
         styles.card,
         horizontal && styles.cardHorizontal,
@@ -31,7 +33,13 @@ export function EventCardCompact({ event, horizontal }: Props) {
         },
       ]}
     >
-      <Image source={image} style={horizontal ? styles.imageHorizontal : styles.image} resizeMode="cover" />
+      <Image
+        source={image}
+        style={horizontal ? styles.imageHorizontal : styles.image}
+        resizeMode="cover"
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+      />
       <View style={styles.overlay} />
       {saved && (
         <View style={styles.savedDot} />
