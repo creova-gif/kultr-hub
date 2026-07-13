@@ -180,7 +180,7 @@ export default function DiscoverScreen() {
 
         {/* Currency info strip */}
         <View style={[styles.currencyStrip, { backgroundColor: "rgba(255,107,0,0.08)", borderColor: "#FF6B00" + "30" }]}>
-          <Feather name="refresh-cw" size={12} color="#FF6B00" />
+          <Feather name="refresh-cw" size={12} color="#FF6B00" accessibilityElementsHidden importantForAccessibility="no" />
           <Text style={[styles.currencyStripText, { color: colors.mutedForeground, textAlign: isRTL ? "right" : "left" }]}>
             Viewing prices in event local currency · Checkout converts to{" "}
             <Text style={{ color: "#FF6B00", fontWeight: "700" }}>

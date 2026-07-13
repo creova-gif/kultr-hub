@@ -581,11 +581,27 @@ router.post("/mpesa/verify", requireAuth, async (req: Request, res: Response) =>
 /**
  * POST /api/payments/mpesa/callback
  * Safaricom calls this URL when the STK Push completes.
- * This is a webhook — no auth header from Safaricom.
+ * This is a webhook — no auth header from Safaricom, and Daraja has no
+ * signature scheme to verify against (unlike e.g. Stripe webhooks). Real
+ * ticket issuance never trusts this payload — it happens independently via
+ * /mpesa/verify re-querying Safaricom directly — so this handler is
+ * inherently low-risk today (it only logs). The one thing worth guarding
+ * against is anyone who discovers the URL polluting that log with fake
+ * callback noise, which is what MPESA_CALLBACK_TOKEN is for: set it, embed
+ * it as ?token=... in MPESA_CALLBACK_URL when registering the callback with
+ * Safaricom, and this handler will ignore any request missing a match.
+ * Unset (the default), behavior is unchanged from before this check existed.
  */
 router.post("/mpesa/callback", async (req: Request, res: Response) => {
-  // Acknowledge immediately — Safaricom requires a quick 200
+  // Acknowledge immediately — Safaricom requires a quick 200 regardless of
+  // whether the token check below passes, since we can't tell a legitimate
+  // late/duplicate callback from a probe without also delaying every real one.
   res.json({ ResultCode: 0, ResultDesc: "Accepted" });
+
+  const expectedToken = process.env.MPESA_CALLBACK_TOKEN;
+  if (expectedToken && req.query.token !== expectedToken) {
+    return;
+  }
 
   const body = req.body as {
     Body?: {
