@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { useMyNotifications } from "@/hooks/useNotifications";
 import { EVENT_IMAGES } from "@/constants/data";
 import { useGetCreatorAnalytics, getGetCreatorAnalyticsQueryKey } from "@workspace/api-client-react";
 
@@ -175,6 +176,8 @@ export default function CreatorStudioScreen() {
   const { data: analytics } = useGetCreatorAnalytics({
     query: { queryKey: getGetCreatorAnalyticsQueryKey(), enabled: !!authToken },
   });
+  const { data: notifData } = useMyNotifications();
+  const hasUnread = (notifData?.unreadCount ?? 0) > 0;
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 44) : insets.top;
 
@@ -229,15 +232,20 @@ export default function CreatorStudioScreen() {
     >
       {/* ── Header ── */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
+        <Pressable onPress={() => router.back()} style={styles.backBtn} accessibilityLabel="Go back" accessibilityRole="button">
           <Feather name="arrow-left" size={20} color={colors.foreground} />
         </Pressable>
         <View style={styles.headerCenter}>
           <Text style={[styles.headerStudio, { color: "#FF6B00" }]}>CREATOR STUDIO</Text>
         </View>
-        <Pressable style={[styles.notifBtn, { backgroundColor: colors.muted }]}>
+        <Pressable
+          onPress={() => router.push("/notifications")}
+          style={[styles.notifBtn, { backgroundColor: colors.muted }]}
+          accessibilityLabel="Notifications"
+          accessibilityRole="button"
+        >
           <Feather name="bell" size={16} color={colors.foreground} />
-          <View style={[styles.notifDot, { borderColor: colors.background }]} />
+          {hasUnread && <View style={[styles.notifDot, { borderColor: colors.background }]} />}
         </Pressable>
       </View>
 

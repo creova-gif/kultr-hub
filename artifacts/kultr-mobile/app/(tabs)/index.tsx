@@ -3,6 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   Image,
   Platform,
@@ -17,8 +18,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EventCardCompact } from "@/components/EventCardCompact";
 import { EventCardHero } from "@/components/EventCardHero";
 import { CATEGORIES, EVENTS, EVENT_IMAGES, getDaysUntil } from "@/constants/data";
+import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
+import { useMyNotifications } from "@/hooks/useNotifications";
+
+function getTimeGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 5) return "Good night";
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
 
 const { width } = Dimensions.get("window");
 
@@ -60,7 +71,11 @@ export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const [selectedCategory, setSelectedCategory] = useState("For You");
-  const { events } = useEventCatalog();
+  const { events, isLoading } = useEventCatalog();
+  const { authUser, userCountry } = useApp();
+  const { data: notifData } = useMyNotifications();
+  const hasUnread = (notifData?.unreadCount ?? 0) > 0;
+  const avatarInitial = authUser?.displayName?.trim()?.[0]?.toUpperCase();
 
   const featured = events.filter((e) => e.featured);
   const soonest = events.filter((e) => getDaysUntil(e.date) >= 0)
@@ -115,7 +130,7 @@ export default function HomeScreen() {
               accessibilityRole="button"
             >
               <Feather name="bell" size={17} color="#ccc" />
-              <View style={styles.notifDot} />
+              {hasUnread && <View style={styles.notifDot} />}
             </Pressable>
             <Pressable
               onPress={() => router.push("/(tabs)/profile")}
@@ -123,14 +138,18 @@ export default function HomeScreen() {
               accessibilityLabel="Profile"
               accessibilityRole="button"
             >
-              <Text style={styles.avatarText}>A</Text>
+              {avatarInitial ? (
+                <Text style={styles.avatarText}>{avatarInitial}</Text>
+              ) : (
+                <Feather name="user" size={16} color="#fff" />
+              )}
             </Pressable>
           </View>
         </View>
 
         {/* Big greeting */}
         <View style={styles.greetingBlock}>
-          <Text style={styles.greetingSmall}>Good evening — Nairobi, Kenya</Text>
+          <Text style={styles.greetingSmall}>{getTimeGreeting()} — {userCountry.name}</Text>
           <Text style={styles.greetingBig} numberOfLines={2}>
             {"What's your\n"}
             <Text style={{ color: "#FF6B00", fontStyle: "italic" }}>vibe</Text>
@@ -173,7 +192,11 @@ export default function HomeScreen() {
       </View>
 
       {/* ── FILTERED CATEGORY VIEW ── */}
-      {selectedCategory !== "For You" ? (
+      {isLoading && events.length === 0 ? (
+        <View style={styles.emptyState}>
+          <ActivityIndicator size="large" color="#FF6B00" />
+        </View>
+      ) : selectedCategory !== "For You" ? (
         <View style={styles.filteredSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionLabel}>{selectedCategory}</Text>

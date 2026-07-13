@@ -27,7 +27,8 @@ export function useMarkNotificationRead() {
   });
   return {
     isPending: m.isPending,
-    mutate: (id: string) => m.mutate({ id }),
+    mutate: (id: string, callbacks?: { onSuccess?: () => void; onError?: (e: unknown) => void }) =>
+      m.mutate({ id }, callbacks),
   };
 }
 

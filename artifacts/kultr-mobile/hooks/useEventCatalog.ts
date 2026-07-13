@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useListEvents } from "@workspace/api-client-react";
 import type { EventSummary } from "@workspace/api-client-react";
-import { EVENTS, type Event } from "@/constants/data";
+import { type Event } from "@/constants/data";
 import { getCountryByCurrency } from "@/constants/currencies";
 import { useApp } from "@/context/AppContext";
 
@@ -49,12 +49,18 @@ export function useEventCatalog() {
   const { lowBandwidth } = useApp();
   const { data, isLoading, isError } = useListEvents({ limit: lowBandwidth ? 20 : 100 });
 
+  // Real empty state on every path — loading, error, or a genuinely
+  // event-less deployment — never the old hardcoded EVENTS demo array. That
+  // fallback meant every screen reading this catalog could silently show
+  // fabricated events as real while loading (or forever, if the API call
+  // failed), the same class of bug already fixed for per-account data
+  // (tickets/saved/created events) earlier in this launch pass.
   const events = useMemo<Event[]>(() => {
-    if (!data?.events?.length) return EVENTS;
+    if (!data?.events?.length) return [];
     try {
       return data.events.map(adaptEventSummary);
     } catch {
-      return EVENTS;
+      return [];
     }
   }, [data]);
 

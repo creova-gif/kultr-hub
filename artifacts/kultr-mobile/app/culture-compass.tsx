@@ -424,13 +424,6 @@ export default function CultureCompassScreen() {
               router.push(`/event/${eventId}`);
             }}
           />
-          {/* Location button overlay */}
-          <Pressable
-            style={[styles.locateBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => Haptics.selectionAsync()}
-          >
-            <Feather name="navigation" size={16} color="#FF6B00" />
-          </Pressable>
           {/* No events matching the current filters — an empty map beats one
               with fabricated pins standing in for events that don't exist. */}
           {pins.length === 0 && (

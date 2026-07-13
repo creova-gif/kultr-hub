@@ -109,13 +109,26 @@ export default function TicketViewScreen() {
               }
             }}
             style={[styles.backBtn, { backgroundColor: colors.muted }]}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
           >
             <Feather name="arrow-left" size={20} color={colors.foreground} />
           </Pressable>
           <Text style={[styles.headerTitle, { color: colors.foreground }]}>
             {newPurchase === "true" ? "Booking Confirmed!" : "Your Ticket"}
           </Text>
-          <Pressable style={[styles.backBtn, { backgroundColor: colors.muted }]}>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              Share.share({
+                message: `My ticket to ${event.title} at ${event.venue}, ${event.city} on ${formatDate(event.date)}. Ticket #${resolvedTicketNumber} — See you there! 🎉`,
+                title: `Kultr Ticket — ${event.title}`,
+              });
+            }}
+            style={[styles.backBtn, { backgroundColor: colors.muted }]}
+            accessibilityLabel="Share ticket"
+            accessibilityRole="button"
+          >
             <Feather name="share-2" size={18} color={colors.foreground} />
           </Pressable>
         </View>

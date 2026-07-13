@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Alert } from "@/lib/alert";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import {
@@ -66,14 +67,20 @@ export default function NotificationsScreen() {
 
   const handlePress = (notif: NotificationView) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (!notif.read) markRead.mutate(notif.id);
+    if (!notif.read) {
+      markRead.mutate(notif.id, {
+        onError: () => Alert.alert("Couldn't update", "This notification couldn't be marked read. Please try again."),
+      });
+    }
     const eventId = (notif.data as { eventId?: string } | null | undefined)?.eventId;
     if (eventId) router.push(`/event/${eventId}` as any);
   };
 
   const handleMarkAllRead = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    markAllRead.mutate();
+    markAllRead.mutate({
+      onError: () => Alert.alert("Couldn't update", "Notifications couldn't be marked read. Please try again."),
+    });
   };
 
   return (
