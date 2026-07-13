@@ -27,8 +27,8 @@ router.post("/:id/report", requireAuth, async (req: Request, res: Response) => {
   const eventId = String(req.params.id);
   const { reason, details } = req.body as { reason?: string; details?: string };
 
-  if (!reason || typeof reason !== "string") {
-    res.status(400).json({ message: "reason is required" });
+  if (!reason || !REPORT_REASONS.includes(reason as (typeof REPORT_REASONS)[number])) {
+    res.status(400).json({ message: `reason must be one of: ${REPORT_REASONS.join(", ")}` });
     return;
   }
 

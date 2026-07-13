@@ -3,6 +3,7 @@ import { eq, desc, and, sql, inArray, ilike, or, gte, lte, type SQL } from "driz
 import { db, eventsTable, ticketTypesTable, ticketsTable, usersTable } from "@workspace/db";
 import { requireAuth, requireAdmin, type AuthedRequest } from "../middleware/auth.js";
 import { notify } from "../lib/notify.js";
+import { CreateEventBody } from "@workspace/api-zod";
 import type { Request, Response } from "express";
 
 const router = Router();
@@ -356,27 +357,13 @@ router.get("/:id", async (req: Request, res: Response) => {
 
 router.post("/", requireAuth, async (req: Request, res: Response) => {
   const authed = req as AuthedRequest;
-  const body = req.body as {
-    title: string;
-    subtitle?: string;
-    description: string;
-    category: "Music" | "Art" | "Food" | "Heritage" | "Comedy" | "Sports" | "Nightlife";
-    venue: string;
-    city: string;
-    country: string;
-    countryCode: string;
-    eventDate: string;
-    imageUrl?: string;
-    capacity?: number;
-    tags?: string[];
-    ticketTypes: Array<{
-      name: string;
-      description?: string;
-      price: number;
-      currency: string;
-      totalQuantity: number;
-    }>;
-  };
+
+  const parsed = CreateEventBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid event payload", errors: parsed.error.flatten() });
+    return;
+  }
+  const body = parsed.data;
 
   const [event] = await db.insert(eventsTable).values({
     creatorId: authed.userId,

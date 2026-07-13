@@ -17,6 +17,7 @@ import {
 } from "@workspace/db";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { award, processCheckin, getMultiplier, InsufficientFundsError } from "../lib/gamification.js";
+import { notify } from "../lib/notify.js";
 import type { Request, Response } from "express";
 
 const router = Router();
@@ -148,6 +149,24 @@ router.post("/check-in/verify", requireAuth, async (req: Request, res: Response)
       res.status(200).json({ alreadyCheckedIn: true, pointsEarned: 0, questsCompleted: [], collectiblesGranted: [] });
       return;
     }
+
+    // Additive-only, best-effort, fired only after the transaction above has
+    // actually committed — never inside it, so a rolled-back award can never
+    // produce a phantom "you earned KULTROINS" notification.
+    if (result.summary.pointsEarned > 0) {
+      try {
+        await notify({
+          userId,
+          type: "kultroin_earned",
+          title: "KULTROINS earned",
+          body: `You earned ${result.summary.pointsEarned.toLocaleString()} KULTROINS checking in to "${event.title}".`,
+          data: { eventId: event.id, pointsEarned: result.summary.pointsEarned },
+        });
+      } catch (err) {
+        console.error("Failed to write kultroin_earned notification", err);
+      }
+    }
+
     res.status(201).json({ alreadyCheckedIn: false, ...result.summary });
   } catch (err) {
     if (err instanceof InsufficientFundsError) {
