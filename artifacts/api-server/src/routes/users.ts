@@ -15,9 +15,11 @@ import {
   userPerkUnlocksTable,
 } from "@workspace/db";
 import { requireAuth, requireAdmin, type AuthedRequest } from "../middleware/auth.js";
+import { validateUuidParam } from "../middleware/validateUuidParam.js";
 import type { Request, Response } from "express";
 
 const router = Router();
+router.param("id", validateUuidParam);
 
 /**
  * GET /api/users/:id/public

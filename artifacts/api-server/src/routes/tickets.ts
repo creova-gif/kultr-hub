@@ -4,9 +4,11 @@ import { nanoid } from "nanoid";
 import { db, ticketsTable, ticketTypesTable, eventsTable } from "@workspace/db";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { issueTicket, validateQuantity, TicketIssueError } from "../lib/issue.js";
+import { validateUuidParam } from "../middleware/validateUuidParam.js";
 import type { Request, Response } from "express";
 
 const router = Router();
+router.param("id", validateUuidParam);
 
 async function buildTicketDetail(ticket: typeof ticketsTable.$inferSelect) {
   const [ticketType] = await db.select().from(ticketTypesTable).where(eq(ticketTypesTable.id, ticket.ticketTypeId)).limit(1);

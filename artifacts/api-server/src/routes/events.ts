@@ -4,9 +4,11 @@ import { db, eventsTable, ticketTypesTable, ticketsTable, usersTable } from "@wo
 import { requireAuth, requireAdmin, type AuthedRequest } from "../middleware/auth.js";
 import { notify } from "../lib/notify.js";
 import { CreateEventBody } from "@workspace/api-zod";
+import { validateUuidParam } from "../middleware/validateUuidParam.js";
 import type { Request, Response } from "express";
 
 const router = Router();
+router.param("id", validateUuidParam);
 
 /**
  * Shared date-range / price-range filters for GET /events and GET
