@@ -32,7 +32,19 @@ app.use(
 
 // Global rate limit — 300 req/min per IP. Backed by Redis when REDIS_URL is
 // set, so limits are shared across instances and survive restarts; falls
-// back to express-rate-limit's in-memory store otherwise.
+// back to express-rate-limit's in-memory store otherwise. That fallback is
+// silent by design (a missing Redis shouldn't take the API down), but in
+// production specifically it's worth surfacing loudly: each instance behind
+// a load balancer would get its own independent budget, silently
+// multiplying the effective rate limit by instance count.
+if (process.env.NODE_ENV === "production" && !process.env.REDIS_URL) {
+  logger.warn(
+    "REDIS_URL is not set in production — rate limiting is falling back to " +
+      "a per-instance in-memory store. If this deploys behind more than one " +
+      "instance, the effective rate limit is multiplied by instance count.",
+  );
+}
+
 app.use(
   rateLimit({
     windowMs: 60_000,
