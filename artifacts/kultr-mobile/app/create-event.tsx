@@ -19,23 +19,39 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Alert } from "@/lib/alert";
 import { type CreatedEvent, useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "@/hooks/useTranslation";
+import { getCategoryLabel } from "@/constants/translations";
 import { localWallClockToUtcIso } from "@/constants/timezones";
 import { useCreateEvent, useUpdateEventStatus } from "@workspace/api-client-react";
 
 const LOGO_ICON = require("@/assets/images/logo-icon.png");
 
+// Canonical English category values — stable identifiers sent to the API and
+// used as the filter/comparison key. Only the displayed label is translated
+// (via getCategoryLabel).
 const CATEGORIES = ["Music", "Art", "Food", "Heritage", "Comedy", "Sports", "Nightlife"] as const;
 type Category = (typeof CATEGORIES)[number];
 
+// `name` is the canonical English ticket type name sent to the API and stored
+// as-is (it's the actual persisted ticket type, potentially shown to buyers
+// regardless of the creator's UI language) — only the on-screen label is
+// translated, via TIER_LABEL_KEYS below.
 const TICKET_TIERS = [
   { id: "earlybird", name: "Early Bird", color: "#00C853" },
   { id: "regular", name: "Regular", color: "#FF6B00" },
   { id: "vip", name: "VIP", color: "#9C27B0" },
 ];
 
+const TIER_LABEL_KEYS: Record<string, "tierEarlyBird" | "tierRegular" | "tierVip"> = {
+  earlybird: "tierEarlyBird",
+  regular: "tierRegular",
+  vip: "tierVip",
+};
+
 export default function CreateEventScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const t = useTranslation();
   const { addCreatedEvent, userCountry, authToken } = useApp();
   const { mutateAsync: createEventApi } = useCreateEvent();
   const { mutateAsync: updateEventStatusApi } = useUpdateEventStatus();
@@ -66,9 +82,9 @@ export default function CreateEventScreen() {
   const handlePublish = async () => {
     if (!isValid) {
       if (!isDateValid) {
-        Alert.alert("Invalid Date", "Event date must be in the future (YYYY-MM-DD).");
+        Alert.alert(t.createEvent.invalidDateTitle, t.createEvent.invalidDateMsg);
       } else if (!isPriceValid) {
-        Alert.alert("Invalid Price", "All prices must be valid numbers.");
+        Alert.alert(t.createEvent.invalidPriceTitle, t.createEvent.invalidPriceMsg);
       }
       return;
     }
@@ -136,9 +152,9 @@ export default function CreateEventScreen() {
         if (authToken) {
           setPublishing(false);
           Alert.alert(
-            "Publish failed",
-            "Couldn't reach the server. Please check your connection and try again.",
-            [{ text: "OK" }]
+            t.createEvent.publishFailedTitle,
+            t.createEvent.publishFailedMsg,
+            [{ text: t.actions.ok }]
           );
           return;
         }
@@ -158,9 +174,9 @@ export default function CreateEventScreen() {
       } catch (err) {
         setPublishing(false);
         Alert.alert(
-          "Saved as draft",
-          "Your event was created but couldn't be submitted for review yet. Try submitting it again from your event list.",
-          [{ text: "OK", onPress: () => router.replace("/(tabs)/profile") }],
+          t.createEvent.savedAsDraftTitle,
+          t.createEvent.savedAsDraftMsg,
+          [{ text: t.actions.ok, onPress: () => router.replace("/(tabs)/profile") }],
         );
         return;
       }
@@ -182,12 +198,12 @@ export default function CreateEventScreen() {
           <Feather name="check" size={40} color="#fff" />
         </View>
         <Text style={styles.successTitle}>
-          {authToken ? "Submitted for Review" : "Event Published!"}
+          {authToken ? t.createEvent.submittedForReviewTitle : t.createEvent.publishedTitle}
         </Text>
         <Text style={styles.successSub}>
           {authToken
-            ? "We'll review your event shortly. You'll be able to share it once it's approved and live."
-            : "Your event is now live. Share it with the world."}
+            ? t.createEvent.submittedForReviewSub
+            : t.createEvent.publishedSub}
         </Text>
         <View style={styles.successActions}>
           {!authToken && (
@@ -198,14 +214,14 @@ export default function CreateEventScreen() {
               }}
             >
               <Feather name="share-2" size={16} color="#FF6B00" />
-              <Text style={styles.successShareText}>Share Event</Text>
+              <Text style={styles.successShareText}>{t.createEvent.shareEvent}</Text>
             </Pressable>
           )}
           <Pressable
             style={styles.successDone}
             onPress={() => router.replace("/(tabs)/profile")}
           >
-            <Text style={styles.successDoneText}>Go to Dashboard</Text>
+            <Text style={styles.successDoneText}>{t.createEvent.goToDashboard}</Text>
             <Feather name="arrow-right" size={16} color="#fff" />
           </Pressable>
         </View>
@@ -228,15 +244,15 @@ export default function CreateEventScreen() {
         <View style={styles.headerBrand}>
           <Image source={LOGO_ICON} style={styles.headerLogoImg} resizeMode="contain" />
           <View>
-            <Text style={[styles.headerTitle, { color: colors.foreground }]}>Create Event</Text>
+            <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t.actions.createEvent}</Text>
             <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
-              {userCountry.flag} Listing in {userCountry.currencyCode}
+              {userCountry.flag} {t.createEvent.listingIn} {userCountry.currencyCode}
             </Text>
           </View>
         </View>
         <View style={styles.liveChip}>
           <View style={styles.liveDot} />
-          <Text style={styles.liveText}>Creator</Text>
+          <Text style={styles.liveText}>{t.createEvent.creatorChip}</Text>
         </View>
       </View>
 
@@ -247,7 +263,7 @@ export default function CreateEventScreen() {
       >
         {/* Category */}
         <View style={styles.fieldGroup}>
-          <Text style={[styles.fieldLabel, { color: colors.foreground }]}>Category</Text>
+          <Text style={[styles.fieldLabel, { color: colors.foreground }]}>{t.createEvent.categoryLabel}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryRow}>
             {CATEGORIES.map((cat) => (
               <Pressable
@@ -265,7 +281,7 @@ export default function CreateEventScreen() {
                 ]}
               >
                 <Text style={[styles.categoryPillText, { color: category === cat ? "#FF6B00" : colors.mutedForeground }]}>
-                  {cat}
+                  {getCategoryLabel(cat, t)}
                 </Text>
               </Pressable>
             ))}
@@ -274,12 +290,12 @@ export default function CreateEventScreen() {
 
         {/* Title */}
         <View style={styles.fieldGroup}>
-          <Text style={[styles.fieldLabel, { color: colors.foreground }]}>Event Title *</Text>
+          <Text style={[styles.fieldLabel, { color: colors.foreground }]}>{t.createEvent.titleLabel} *</Text>
           <TextInput
             value={title}
             onChangeText={setTitle}
-            accessibilityLabel="Event Title"
-            placeholder="e.g. Nairobi Jazz Collective"
+            accessibilityLabel={t.createEvent.titleLabel}
+            placeholder={t.createEvent.titlePlaceholder}
             placeholderTextColor={colors.mutedForeground}
             style={[styles.input, { color: colors.foreground, backgroundColor: colors.card, borderColor: title.length > 2 ? "#FF6B00" : colors.border }]}
           />
@@ -288,22 +304,22 @@ export default function CreateEventScreen() {
         {/* Date + Time */}
         <View style={styles.row}>
           <View style={[styles.fieldGroup, { flex: 1 }]}>
-            <Text style={[styles.fieldLabel, { color: colors.foreground }]}>Date *</Text>
+            <Text style={[styles.fieldLabel, { color: colors.foreground }]}>{t.createEvent.dateLabel} *</Text>
             <TextInput
               value={date}
               onChangeText={setDate}
-              accessibilityLabel="Date"
-              placeholder="YYYY-MM-DD"
+              accessibilityLabel={t.createEvent.dateLabel}
+              placeholder={t.createEvent.datePlaceholder}
               placeholderTextColor={colors.mutedForeground}
               style={[styles.input, { color: colors.foreground, backgroundColor: colors.card, borderColor: colors.border }]}
             />
           </View>
           <View style={[styles.fieldGroup, { flex: 1 }]}>
-            <Text style={[styles.fieldLabel, { color: colors.foreground }]}>Time</Text>
+            <Text style={[styles.fieldLabel, { color: colors.foreground }]}>{t.createEvent.timeLabel}</Text>
             <TextInput
               value={time}
               onChangeText={setTime}
-              accessibilityLabel="Time"
+              accessibilityLabel={t.createEvent.timeLabel}
               placeholder="18:00"
               placeholderTextColor={colors.mutedForeground}
               style={[styles.input, { color: colors.foreground, backgroundColor: colors.card, borderColor: colors.border }]}
@@ -314,23 +330,23 @@ export default function CreateEventScreen() {
         {/* Venue + City */}
         <View style={styles.row}>
           <View style={[styles.fieldGroup, { flex: 1.5 }]}>
-            <Text style={[styles.fieldLabel, { color: colors.foreground }]}>Venue *</Text>
+            <Text style={[styles.fieldLabel, { color: colors.foreground }]}>{t.createEvent.venueLabel} *</Text>
             <TextInput
               value={venue}
               onChangeText={setVenue}
-              accessibilityLabel="Venue"
-              placeholder="Venue name"
+              accessibilityLabel={t.createEvent.venueLabel}
+              placeholder={t.createEvent.venuePlaceholder}
               placeholderTextColor={colors.mutedForeground}
               style={[styles.input, { color: colors.foreground, backgroundColor: colors.card, borderColor: colors.border }]}
             />
           </View>
           <View style={[styles.fieldGroup, { flex: 1 }]}>
-            <Text style={[styles.fieldLabel, { color: colors.foreground }]}>City</Text>
+            <Text style={[styles.fieldLabel, { color: colors.foreground }]}>{t.createEvent.cityLabel}</Text>
             <TextInput
               value={city}
               onChangeText={setCity}
-              accessibilityLabel="City"
-              placeholder="City"
+              accessibilityLabel={t.createEvent.cityLabel}
+              placeholder={t.createEvent.cityLabel}
               placeholderTextColor={colors.mutedForeground}
               style={[styles.input, { color: colors.foreground, backgroundColor: colors.card, borderColor: colors.border }]}
             />
@@ -339,12 +355,12 @@ export default function CreateEventScreen() {
 
         {/* Description */}
         <View style={styles.fieldGroup}>
-          <Text style={[styles.fieldLabel, { color: colors.foreground }]}>Description</Text>
+          <Text style={[styles.fieldLabel, { color: colors.foreground }]}>{t.createEvent.descriptionLabel}</Text>
           <TextInput
             value={description}
             onChangeText={setDescription}
-            accessibilityLabel="Description"
-            placeholder="Tell attendees what makes this event special..."
+            accessibilityLabel={t.createEvent.descriptionLabel}
+            placeholder={t.createEvent.descriptionPlaceholder}
             placeholderTextColor={colors.mutedForeground}
             multiline
             numberOfLines={4}
@@ -358,35 +374,38 @@ export default function CreateEventScreen() {
 
         {/* Ticket Tiers */}
         <View style={styles.fieldGroup}>
-          <Text style={[styles.fieldLabel, { color: colors.foreground }]}>Ticket Pricing</Text>
+          <Text style={[styles.fieldLabel, { color: colors.foreground }]}>{t.createEvent.ticketPricingLabel}</Text>
           <Text style={[styles.fieldHint, { color: colors.mutedForeground }]}>
-            Set prices in {userCountry.currencyCode} · Leave blank to skip a tier
+            {t.createEvent.pricingHintPrefix} {userCountry.currencyCode} · {t.createEvent.pricingHintSuffix}
           </Text>
-          {TICKET_TIERS.map((tier) => (
-            <View
-              key={tier.id}
-              style={[styles.tierRow, { backgroundColor: colors.card, borderColor: colors.border }]}
-            >
-              <View style={[styles.tierBadge, { backgroundColor: tier.color + "22" }]}>
-                <View style={[styles.tierDot, { backgroundColor: tier.color }]} />
-                <Text style={[styles.tierName, { color: tier.color }]}>{tier.name}</Text>
+          {TICKET_TIERS.map((tier) => {
+            const tierLabel = t.createEvent[TIER_LABEL_KEYS[tier.id]];
+            return (
+              <View
+                key={tier.id}
+                style={[styles.tierRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+              >
+                <View style={[styles.tierBadge, { backgroundColor: tier.color + "22" }]}>
+                  <View style={[styles.tierDot, { backgroundColor: tier.color }]} />
+                  <Text style={[styles.tierName, { color: tier.color }]}>{tierLabel}</Text>
+                </View>
+                <View style={styles.tierInputWrapper}>
+                  <Text style={[styles.currencySymbol, { color: colors.mutedForeground }]}>
+                    {userCountry.currencySymbol}
+                  </Text>
+                  <TextInput
+                    value={prices[tier.id as keyof typeof prices]}
+                    onChangeText={(v) => setPrices((p) => ({ ...p, [tier.id]: v }))}
+                    accessibilityLabel={`${tierLabel} price in ${userCountry.currencyCode}`}
+                    placeholder="0"
+                    placeholderTextColor={colors.mutedForeground}
+                    keyboardType="numeric"
+                    style={[styles.tierInput, { color: colors.foreground }]}
+                  />
+                </View>
               </View>
-              <View style={styles.tierInputWrapper}>
-                <Text style={[styles.currencySymbol, { color: colors.mutedForeground }]}>
-                  {userCountry.currencySymbol}
-                </Text>
-                <TextInput
-                  value={prices[tier.id as keyof typeof prices]}
-                  onChangeText={(v) => setPrices((p) => ({ ...p, [tier.id]: v }))}
-                  accessibilityLabel={`${tier.name} price in ${userCountry.currencyCode}`}
-                  placeholder="0"
-                  placeholderTextColor={colors.mutedForeground}
-                  keyboardType="numeric"
-                  style={[styles.tierInput, { color: colors.foreground }]}
-                />
-              </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
 
         {/* Media upload */}
@@ -426,15 +445,15 @@ export default function CreateEventScreen() {
                 resizeMode="cover"
               />
               <Text style={[styles.mediaUploadSub, { color: colors.mutedForeground, marginTop: 8 }]}>
-                Change Photo
+                {t.createEvent.changePhoto}
               </Text>
             </>
           ) : (
             <>
               <Feather name="image" size={24} color={colors.mutedForeground} />
-              <Text style={[styles.mediaUploadTitle, { color: colors.foreground }]}>Add Event Photo</Text>
+              <Text style={[styles.mediaUploadTitle, { color: colors.foreground }]}>{t.createEvent.addPhotoTitle}</Text>
               <Text style={[styles.mediaUploadSub, { color: colors.mutedForeground }]}>
-                Tap to upload a cover image or video teaser
+                {t.createEvent.addPhotoSub}
               </Text>
             </>
           )}
@@ -450,7 +469,7 @@ export default function CreateEventScreen() {
       >
         <View>
           <Text style={[styles.publishNote, { color: colors.mutedForeground }]}>
-            Platform fee: 5% per ticket sold
+            {t.createEvent.platformFeeNote}
           </Text>
         </View>
         <Pressable
@@ -459,11 +478,11 @@ export default function CreateEventScreen() {
           disabled={!isValid || publishing}
         >
           {publishing ? (
-            <Text style={styles.publishBtnText}>Publishing...</Text>
+            <Text style={styles.publishBtnText}>{t.createEvent.publishing}</Text>
           ) : (
             <>
               <Feather name="zap" size={16} color="#fff" />
-              <Text style={styles.publishBtnText}>Publish Event</Text>
+              <Text style={styles.publishBtnText}>{t.createEvent.publishEvent}</Text>
             </>
           )}
         </Pressable>

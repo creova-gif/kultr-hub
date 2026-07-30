@@ -24,6 +24,7 @@ export interface Translations {
     change: string;
     submit: string;
     loading: string;
+    ok: string;
   };
   // Event categories
   categories: {
@@ -331,6 +332,48 @@ export interface Translations {
     statusEnded: string;
     statusCancelled: string;
   };
+  // Create Event form
+  createEvent: {
+    listingIn: string;
+    creatorChip: string;
+    categoryLabel: string;
+    titleLabel: string;
+    titlePlaceholder: string;
+    dateLabel: string;
+    datePlaceholder: string;
+    timeLabel: string;
+    venueLabel: string;
+    venuePlaceholder: string;
+    cityLabel: string;
+    descriptionLabel: string;
+    descriptionPlaceholder: string;
+    ticketPricingLabel: string;
+    pricingHintPrefix: string;
+    pricingHintSuffix: string;
+    tierEarlyBird: string;
+    tierRegular: string;
+    tierVip: string;
+    addPhotoTitle: string;
+    addPhotoSub: string;
+    changePhoto: string;
+    platformFeeNote: string;
+    publishing: string;
+    publishEvent: string;
+    invalidDateTitle: string;
+    invalidDateMsg: string;
+    invalidPriceTitle: string;
+    invalidPriceMsg: string;
+    publishFailedTitle: string;
+    publishFailedMsg: string;
+    savedAsDraftTitle: string;
+    savedAsDraftMsg: string;
+    submittedForReviewTitle: string;
+    submittedForReviewSub: string;
+    publishedTitle: string;
+    publishedSub: string;
+    shareEvent: string;
+    goToDashboard: string;
+  };
 }
 
 const en: Translations = {
@@ -355,6 +398,7 @@ const en: Translations = {
     change: "Change",
     submit: "Submit",
     loading: "Loading...",
+    ok: "OK",
   },
   categories: {
     forYou: "For You",
@@ -646,6 +690,47 @@ const en: Translations = {
     statusEnded: "Ended",
     statusCancelled: "Cancelled",
   },
+  createEvent: {
+    listingIn: "Listing in",
+    creatorChip: "Creator",
+    categoryLabel: "Category",
+    titleLabel: "Event Title",
+    titlePlaceholder: "e.g. Nairobi Jazz Collective",
+    dateLabel: "Date",
+    datePlaceholder: "YYYY-MM-DD",
+    timeLabel: "Time",
+    venueLabel: "Venue",
+    venuePlaceholder: "Venue name",
+    cityLabel: "City",
+    descriptionLabel: "Description",
+    descriptionPlaceholder: "Tell attendees what makes this event special...",
+    ticketPricingLabel: "Ticket Pricing",
+    pricingHintPrefix: "Set prices in",
+    pricingHintSuffix: "Leave blank to skip a tier",
+    tierEarlyBird: "Early Bird",
+    tierRegular: "Regular",
+    tierVip: "VIP",
+    addPhotoTitle: "Add Event Photo",
+    addPhotoSub: "Tap to upload a cover image or video teaser",
+    changePhoto: "Change Photo",
+    platformFeeNote: "Platform fee: 5% per ticket sold",
+    publishing: "Publishing...",
+    publishEvent: "Publish Event",
+    invalidDateTitle: "Invalid Date",
+    invalidDateMsg: "Event date must be in the future (YYYY-MM-DD).",
+    invalidPriceTitle: "Invalid Price",
+    invalidPriceMsg: "All prices must be valid numbers.",
+    publishFailedTitle: "Publish failed",
+    publishFailedMsg: "Couldn't reach the server. Please check your connection and try again.",
+    savedAsDraftTitle: "Saved as draft",
+    savedAsDraftMsg: "Your event was created but couldn't be submitted for review yet. Try submitting it again from your event list.",
+    submittedForReviewTitle: "Submitted for Review",
+    submittedForReviewSub: "We'll review your event shortly. You'll be able to share it once it's approved and live.",
+    publishedTitle: "Event Published!",
+    publishedSub: "Your event is now live. Share it with the world.",
+    shareEvent: "Share Event",
+    goToDashboard: "Go to Dashboard",
+  },
 };
 
 const fr: Translations = {
@@ -670,6 +755,7 @@ const fr: Translations = {
     change: "Modifier",
     submit: "Soumettre",
     loading: "Chargement...",
+    ok: "OK",
   },
   categories: {
     forYou: "Pour vous",
@@ -961,6 +1047,47 @@ const fr: Translations = {
     statusEnded: "Terminé",
     statusCancelled: "Annulé",
   },
+  createEvent: {
+    listingIn: "Publié en",
+    creatorChip: "Créateur",
+    categoryLabel: "Catégorie",
+    titleLabel: "Titre de l'événement",
+    titlePlaceholder: "ex. Nairobi Jazz Collective",
+    dateLabel: "Date",
+    datePlaceholder: "YYYY-MM-DD",
+    timeLabel: "Heure",
+    venueLabel: "Lieu",
+    venuePlaceholder: "Nom du lieu",
+    cityLabel: "Ville",
+    descriptionLabel: "Description",
+    descriptionPlaceholder: "Décrivez ce qui rend cet événement spécial...",
+    ticketPricingLabel: "Tarification des billets",
+    pricingHintPrefix: "Définissez les prix en",
+    pricingHintSuffix: "Laissez vide pour ignorer un niveau",
+    tierEarlyBird: "Prévente",
+    tierRegular: "Standard",
+    tierVip: "VIP",
+    addPhotoTitle: "Ajouter une photo",
+    addPhotoSub: "Appuyez pour ajouter une image ou une vidéo de couverture",
+    changePhoto: "Changer la photo",
+    platformFeeNote: "Frais de plateforme : 5 % par billet vendu",
+    publishing: "Publication...",
+    publishEvent: "Publier l'événement",
+    invalidDateTitle: "Date invalide",
+    invalidDateMsg: "La date de l'événement doit être dans le futur (YYYY-MM-DD).",
+    invalidPriceTitle: "Prix invalide",
+    invalidPriceMsg: "Tous les prix doivent être des nombres valides.",
+    publishFailedTitle: "Échec de la publication",
+    publishFailedMsg: "Impossible de joindre le serveur. Vérifiez votre connexion et réessayez.",
+    savedAsDraftTitle: "Enregistré comme brouillon",
+    savedAsDraftMsg: "Votre événement a été créé mais n'a pas pu être soumis pour révision. Réessayez depuis votre liste d'événements.",
+    submittedForReviewTitle: "Soumis pour révision",
+    submittedForReviewSub: "Nous examinerons votre événement sous peu. Vous pourrez le partager une fois approuvé et en ligne.",
+    publishedTitle: "Événement publié !",
+    publishedSub: "Votre événement est maintenant en ligne. Partagez-le avec le monde.",
+    shareEvent: "Partager l'événement",
+    goToDashboard: "Aller au tableau de bord",
+  },
 };
 
 const sw: Translations = {
@@ -985,6 +1112,7 @@ const sw: Translations = {
     change: "Badilisha",
     submit: "Wasilisha",
     loading: "Inapakia...",
+    ok: "Sawa",
   },
   categories: {
     forYou: "Kwako",
@@ -1276,6 +1404,47 @@ const sw: Translations = {
     statusEnded: "Imeisha",
     statusCancelled: "Imeghairiwa",
   },
+  createEvent: {
+    listingIn: "Inaorodheshwa kwa",
+    creatorChip: "Muundaji",
+    categoryLabel: "Jamii",
+    titleLabel: "Jina la Tukio",
+    titlePlaceholder: "mfano: Nairobi Jazz Collective",
+    dateLabel: "Tarehe",
+    datePlaceholder: "YYYY-MM-DD",
+    timeLabel: "Saa",
+    venueLabel: "Mahali",
+    venuePlaceholder: "Jina la mahali",
+    cityLabel: "Mji",
+    descriptionLabel: "Maelezo",
+    descriptionPlaceholder: "Waeleze wahudhuriaji nini kinachofanya tukio hili kuwa la kipekee...",
+    ticketPricingLabel: "Bei za Tikiti",
+    pricingHintPrefix: "Weka bei kwa",
+    pricingHintSuffix: "Acha wazi ili kuruka daraja",
+    tierEarlyBird: "Ununuzi wa Mapema",
+    tierRegular: "Kawaida",
+    tierVip: "VIP",
+    addPhotoTitle: "Ongeza Picha ya Tukio",
+    addPhotoSub: "Gonga ili kupakia picha ya jalada au klipu ya video",
+    changePhoto: "Badilisha Picha",
+    platformFeeNote: "Ada ya jukwaa: 5% kwa kila tikiti iliyouzwa",
+    publishing: "Inachapisha...",
+    publishEvent: "Chapisha Tukio",
+    invalidDateTitle: "Tarehe Batili",
+    invalidDateMsg: "Tarehe ya tukio lazima iwe siku zijazo (YYYY-MM-DD).",
+    invalidPriceTitle: "Bei Batili",
+    invalidPriceMsg: "Bei zote lazima ziwe nambari halali.",
+    publishFailedTitle: "Uchapishaji umeshindwa",
+    publishFailedMsg: "Imeshindwa kufikia seva. Tafadhali angalia muunganisho wako na ujaribu tena.",
+    savedAsDraftTitle: "Imehifadhiwa kama rasimu",
+    savedAsDraftMsg: "Tukio lako liliundwa lakini halikuweza kuwasilishwa kwa ukaguzi bado. Jaribu kuliwasilisha tena kutoka kwenye orodha yako ya matukio.",
+    submittedForReviewTitle: "Limewasilishwa kwa Ukaguzi",
+    submittedForReviewSub: "Tutakagua tukio lako hivi karibuni. Utaweza kulishiriki mara litakapoidhinishwa na kuwa hai.",
+    publishedTitle: "Tukio Limechapishwa!",
+    publishedSub: "Tukio lako sasa liko hai. Lishiriki na ulimwengu.",
+    shareEvent: "Shiriki Tukio",
+    goToDashboard: "Nenda kwenye Dashibodi",
+  },
 };
 
 const ar: Translations = {
@@ -1300,6 +1469,7 @@ const ar: Translations = {
     change: "تغيير",
     submit: "إرسال",
     loading: "جار التحميل...",
+    ok: "حسناً",
   },
   categories: {
     forYou: "لك",
@@ -1590,6 +1760,47 @@ const ar: Translations = {
     statusLive: "مباشر",
     statusEnded: "منتهية",
     statusCancelled: "ملغاة",
+  },
+  createEvent: {
+    listingIn: "الإدراج بعملة",
+    creatorChip: "منشئ",
+    categoryLabel: "الفئة",
+    titleLabel: "عنوان الفعالية",
+    titlePlaceholder: "مثال: Nairobi Jazz Collective",
+    dateLabel: "التاريخ",
+    datePlaceholder: "YYYY-MM-DD",
+    timeLabel: "الوقت",
+    venueLabel: "المكان",
+    venuePlaceholder: "اسم المكان",
+    cityLabel: "المدينة",
+    descriptionLabel: "الوصف",
+    descriptionPlaceholder: "أخبر الحضور بما يجعل هذه الفعالية مميزة...",
+    ticketPricingLabel: "أسعار التذاكر",
+    pricingHintPrefix: "حدد الأسعار بعملة",
+    pricingHintSuffix: "اترك الحقل فارغاً لتخطي فئة",
+    tierEarlyBird: "الحجز المبكر",
+    tierRegular: "عادي",
+    tierVip: "VIP",
+    addPhotoTitle: "أضف صورة للفعالية",
+    addPhotoSub: "اضغط لتحميل صورة غلاف أو مقطع فيديو ترويجي",
+    changePhoto: "تغيير الصورة",
+    platformFeeNote: "رسوم المنصة: ٥٪ لكل تذكرة مباعة",
+    publishing: "جار النشر...",
+    publishEvent: "نشر الفعالية",
+    invalidDateTitle: "تاريخ غير صالح",
+    invalidDateMsg: "يجب أن يكون تاريخ الفعالية في المستقبل (YYYY-MM-DD).",
+    invalidPriceTitle: "سعر غير صالح",
+    invalidPriceMsg: "يجب أن تكون جميع الأسعار أرقاماً صالحة.",
+    publishFailedTitle: "فشل النشر",
+    publishFailedMsg: "تعذّر الوصول إلى الخادم. يرجى التحقق من اتصالك والمحاولة مرة أخرى.",
+    savedAsDraftTitle: "تم الحفظ كمسودة",
+    savedAsDraftMsg: "تم إنشاء فعاليتك لكن تعذّر إرسالها للمراجعة بعد. حاول إرسالها مرة أخرى من قائمة فعالياتك.",
+    submittedForReviewTitle: "تم الإرسال للمراجعة",
+    submittedForReviewSub: "سنراجع فعاليتك قريباً. ستتمكن من مشاركتها بمجرد الموافقة عليها وتفعيلها.",
+    publishedTitle: "تم نشر الفعالية!",
+    publishedSub: "فعاليتك الآن مباشرة. شاركها مع العالم.",
+    shareEvent: "شارك الفعالية",
+    goToDashboard: "الذهاب إلى لوحة التحكم",
   },
 };
 
