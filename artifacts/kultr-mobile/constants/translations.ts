@@ -512,6 +512,42 @@ export interface Translations {
     screenTitle: string;
     goHome: string;
   };
+  // Social Hub tab screen
+  social: {
+    title: string;
+    subtitle: string;
+    tabFriends: string;
+    tabInvites: string;
+    tabActivity: string;
+    noEventsTitle: string;
+    noEventsSub: string;
+    chat: string;
+    invite: string;
+    dontGoSoloTitle: string;
+    dontGoSoloSub: string;
+    findFriends: string;
+    actionJustBought: string;
+    actionSaved: string;
+    actionCheckedInAt: string;
+    actionBought: string;
+    actionNowFollowing: string;
+    actionReviewed: string;
+    actionInvitedYouTo: string;
+    actionEarnedBadgeAt: string;
+    tagLiveMusic: string;
+    tagAfrobeats: string;
+    tagArtExhibition: string;
+    tagCreative: string;
+    tagFoodExperience: string;
+    tagCulinary: string;
+    tagCulture: string;
+    tagComedyShow: string;
+    tagFun: string;
+    tagActive: string;
+    tagHouse: string;
+    tagMovies: string;
+    tagChill: string;
+  };
 }
 
 const en: Translations = {
@@ -1000,6 +1036,41 @@ const en: Translations = {
     title: "This screen doesn't exist.",
     screenTitle: "Oops!",
     goHome: "Go to home screen!",
+  },
+  social: {
+    title: "Social Hub",
+    subtitle: "See what your friends are into.",
+    tabFriends: "Friends",
+    tabInvites: "Invites",
+    tabActivity: "Activity",
+    noEventsTitle: "No events yet",
+    noEventsSub: "Check back soon — your friends will be going somewhere.",
+    chat: "Chat",
+    invite: "Invite",
+    dontGoSoloTitle: "Don't go solo.",
+    dontGoSoloSub: "Invite your friends and make memories.",
+    findFriends: "Find Friends",
+    actionJustBought: "just bought a ticket to",
+    actionSaved: "saved",
+    actionCheckedInAt: "checked in at",
+    actionBought: "bought a ticket to",
+    actionNowFollowing: "is now following",
+    actionReviewed: "reviewed",
+    actionInvitedYouTo: "invited you to",
+    actionEarnedBadgeAt: "earned 'Kultr Legend' at",
+    tagLiveMusic: "Live Music",
+    tagAfrobeats: "Afrobeats",
+    tagArtExhibition: "Art Exhibition",
+    tagCreative: "Creative",
+    tagFoodExperience: "Food Experience",
+    tagCulinary: "Culinary",
+    tagCulture: "Culture",
+    tagComedyShow: "Comedy Show",
+    tagFun: "Fun",
+    tagActive: "Active",
+    tagHouse: "House",
+    tagMovies: "Movies",
+    tagChill: "Chill",
   },
 };
 
@@ -1490,6 +1561,41 @@ const fr: Translations = {
     screenTitle: "Oups !",
     goHome: "Aller à l'écran d'accueil !",
   },
+  social: {
+    title: "Espace Social",
+    subtitle: "Découvrez ce que font vos amis.",
+    tabFriends: "Amis",
+    tabInvites: "Invitations",
+    tabActivity: "Activité",
+    noEventsTitle: "Aucun événement pour l'instant",
+    noEventsSub: "Revenez bientôt — vos amis iront quelque part.",
+    chat: "Discuter",
+    invite: "Inviter",
+    dontGoSoloTitle: "N'y allez pas seul.",
+    dontGoSoloSub: "Invitez vos amis et créez des souvenirs.",
+    findFriends: "Trouver des amis",
+    actionJustBought: "vient d'acheter un billet pour",
+    actionSaved: "a sauvegardé",
+    actionCheckedInAt: "s'est enregistré à",
+    actionBought: "a acheté un billet pour",
+    actionNowFollowing: "suit maintenant",
+    actionReviewed: "a évalué",
+    actionInvitedYouTo: "vous a invité à",
+    actionEarnedBadgeAt: "a obtenu 'Légende Kultr' à",
+    tagLiveMusic: "Musique Live",
+    tagAfrobeats: "Afrobeats",
+    tagArtExhibition: "Exposition d'Art",
+    tagCreative: "Créatif",
+    tagFoodExperience: "Expérience Culinaire",
+    tagCulinary: "Gastronomie",
+    tagCulture: "Culture",
+    tagComedyShow: "Spectacle Comique",
+    tagFun: "Fun",
+    tagActive: "Actif",
+    tagHouse: "House",
+    tagMovies: "Films",
+    tagChill: "Détente",
+  },
 };
 
 const sw: Translations = {
@@ -1979,6 +2085,41 @@ const sw: Translations = {
     screenTitle: "Samahani!",
     goHome: "Nenda kwenye skrini ya nyumbani!",
   },
+  social: {
+    title: "Kituo cha Kijamii",
+    subtitle: "Angalia marafiki zako wanapendezwa na nini.",
+    tabFriends: "Marafiki",
+    tabInvites: "Mialiko",
+    tabActivity: "Shughuli",
+    noEventsTitle: "Bado hakuna matukio",
+    noEventsSub: "Angalia tena hivi karibuni — marafiki zako watakuwa wanaenda mahali fulani.",
+    chat: "Ongea",
+    invite: "Alika",
+    dontGoSoloTitle: "Usiende peke yako.",
+    dontGoSoloSub: "Waalike marafiki zako na mtengeneze kumbukumbu.",
+    findFriends: "Tafuta Marafiki",
+    actionJustBought: "amenunua tu tikiti ya",
+    actionSaved: "amehifadhi",
+    actionCheckedInAt: "ameingia kwenye",
+    actionBought: "amenunua tikiti ya",
+    actionNowFollowing: "sasa anafuata",
+    actionReviewed: "amekagua",
+    actionInvitedYouTo: "amekualika kwenye",
+    actionEarnedBadgeAt: "amepata 'Hadithi ya Kultr' kwenye",
+    tagLiveMusic: "Muziki wa Moja kwa Moja",
+    tagAfrobeats: "Afrobeats",
+    tagArtExhibition: "Maonyesho ya Sanaa",
+    tagCreative: "Ubunifu",
+    tagFoodExperience: "Uzoefu wa Chakula",
+    tagCulinary: "Upishi",
+    tagCulture: "Utamaduni",
+    tagComedyShow: "Onyesho la Vichekesho",
+    tagFun: "Furaha",
+    tagActive: "Hai",
+    tagHouse: "House",
+    tagMovies: "Filamu",
+    tagChill: "Utulivu",
+  },
 };
 
 const ar: Translations = {
@@ -2467,6 +2608,41 @@ const ar: Translations = {
     title: "هذه الشاشة غير موجودة.",
     screenTitle: "عذراً!",
     goHome: "الذهاب إلى الشاشة الرئيسية!",
+  },
+  social: {
+    title: "المركز الاجتماعي",
+    subtitle: "اطّلع على ما يهتم به أصدقاؤك.",
+    tabFriends: "الأصدقاء",
+    tabInvites: "الدعوات",
+    tabActivity: "النشاط",
+    noEventsTitle: "لا توجد فعاليات بعد",
+    noEventsSub: "عد قريباً — سيذهب أصدقاؤك إلى مكان ما.",
+    chat: "دردشة",
+    invite: "دعوة",
+    dontGoSoloTitle: "لا تذهب وحدك.",
+    dontGoSoloSub: "ادعُ أصدقاءك واصنعوا ذكريات معاً.",
+    findFriends: "ابحث عن أصدقاء",
+    actionJustBought: "اشترى للتو تذكرة إلى",
+    actionSaved: "حفظ",
+    actionCheckedInAt: "سجّل حضوره في",
+    actionBought: "اشترى تذكرة إلى",
+    actionNowFollowing: "يتابع الآن",
+    actionReviewed: "قيّم",
+    actionInvitedYouTo: "دعاك إلى",
+    actionEarnedBadgeAt: "حصل على 'أسطورة كلتر' في",
+    tagLiveMusic: "موسيقى حية",
+    tagAfrobeats: "أفروبيت",
+    tagArtExhibition: "معرض فني",
+    tagCreative: "إبداعي",
+    tagFoodExperience: "تجربة طعام",
+    tagCulinary: "فن الطهي",
+    tagCulture: "ثقافة",
+    tagComedyShow: "عرض كوميدي",
+    tagFun: "مرح",
+    tagActive: "نشاط",
+    tagHouse: "هاوس",
+    tagMovies: "أفلام",
+    tagChill: "استرخاء",
   },
 };
 

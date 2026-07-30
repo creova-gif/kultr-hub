@@ -18,6 +18,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
+import { useTranslation } from "@/hooks/useTranslation";
+import type { Translations } from "@/constants/translations";
 import { EVENT_IMAGES, formatDate } from "@/constants/data";
 
 const { width } = Dimensions.get("window");
@@ -58,31 +60,44 @@ function getEventDay(dateStr: string): string {
 
 type SocialTab = "all" | "friends" | "invites" | "activity";
 
-const ACTIVITY_ITEMS = [
-  { id: "a1", user: "Kemi O.", color: "#FF6B00", action: "just bought a ticket to", event: "Nairobi Jazz Collective", time: "2m ago" },
-  { id: "a2", user: "Kwame A.", color: "#7B61FF", action: "saved", event: "Afrobeats NYC", time: "15m ago" },
-  { id: "a3", user: "Zara M.", color: "#00C853", action: "checked in at", event: "Lagos Street Food Festival", time: "1h ago" },
-  { id: "a4", user: "Dami K.", color: "#E91E63", action: "bought a ticket to", event: "Accra Jazz & Blues", time: "2h ago" },
-  { id: "a5", user: "Seun B.", color: "#FFA726", action: "is now following", event: "Kultr Creator: SoundMaster", time: "3h ago" },
-  { id: "a6", user: "Fatima Y.", color: "#00BCD4", action: "reviewed", event: "Nairobi Jazz Collective ⭐⭐⭐⭐⭐", time: "5h ago" },
-  { id: "a7", user: "Ade F.", color: "#FF6B00", action: "invited you to", event: "Kingston Carnival", time: "Yesterday" },
-  { id: "a8", user: "Kofi A.", color: "#4F9DFF", action: "earned 'Kultr Legend' at", event: "Afro Nation Portugal", time: "2 days ago" },
-];
+// `time` stays in English everywhere — relative-time strings ("2m ago",
+// "Yesterday") don't translate safely with a simple suffix swap across these
+// four languages, so they're left as-is intentionally (same call made
+// elsewhere in this i18n effort). `event` names are demo/seed content (proper
+// nouns), left untranslated like the tribe names on vibe-tribes.tsx.
+function getActivityItems(t: Translations) {
+  return [
+    { id: "a1", user: "Kemi O.", color: "#FF6B00", action: t.social.actionJustBought, event: "Nairobi Jazz Collective", time: "2m ago" },
+    { id: "a2", user: "Kwame A.", color: "#7B61FF", action: t.social.actionSaved, event: "Afrobeats NYC", time: "15m ago" },
+    { id: "a3", user: "Zara M.", color: "#00C853", action: t.social.actionCheckedInAt, event: "Lagos Street Food Festival", time: "1h ago" },
+    { id: "a4", user: "Dami K.", color: "#E91E63", action: t.social.actionBought, event: "Accra Jazz & Blues", time: "2h ago" },
+    { id: "a5", user: "Seun B.", color: "#FFA726", action: t.social.actionNowFollowing, event: "Kultr Creator: SoundMaster", time: "3h ago" },
+    { id: "a6", user: "Fatima Y.", color: "#00BCD4", action: t.social.actionReviewed, event: "Nairobi Jazz Collective ⭐⭐⭐⭐⭐", time: "5h ago" },
+    { id: "a7", user: "Ade F.", color: "#FF6B00", action: t.social.actionInvitedYouTo, event: "Kingston Carnival", time: "Yesterday" },
+    { id: "a8", user: "Kofi A.", color: "#4F9DFF", action: t.social.actionEarnedBadgeAt, event: "Afro Nation Portugal", time: "2 days ago" },
+  ];
+}
 
-const CATEGORY_TAGS: Record<string, string[]> = {
-  Music: ["Live Music", "Afrobeats"],
-  Art: ["Art Exhibition", "Creative"],
-  Food: ["Food Experience", "Culinary"],
-  Heritage: ["Culture", "Heritage"],
-  Comedy: ["Comedy Show", "Fun"],
-  Sports: ["Sports", "Active"],
-  Nightlife: ["Nightlife", "House"],
-  Film: ["Movies", "Chill"],
-};
+// Second element of Heritage/Sports/Nightlife intentionally reuses the
+// canonical category label (see categories.heritage/sports/nightlife) since
+// the English source text was identical.
+function getCategoryTags(t: Translations): Record<string, string[]> {
+  return {
+    Music: [t.social.tagLiveMusic, t.social.tagAfrobeats],
+    Art: [t.social.tagArtExhibition, t.social.tagCreative],
+    Food: [t.social.tagFoodExperience, t.social.tagCulinary],
+    Heritage: [t.social.tagCulture, t.categories.heritage],
+    Comedy: [t.social.tagComedyShow, t.social.tagFun],
+    Sports: [t.categories.sports, t.social.tagActive],
+    Nightlife: [t.categories.nightlife, t.social.tagHouse],
+    Film: [t.social.tagMovies, t.social.tagChill],
+  };
+}
 
 export default function SocialScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const t = useTranslation();
   const [activeTab, setActiveTab] = useState<SocialTab>("all");
   const { events, isLoading } = useEventCatalog();
 
@@ -98,11 +113,14 @@ export default function SocialScreen() {
     return upcoming;
   }, [events, activeTab]);
 
+  const ACTIVITY_ITEMS = useMemo(() => getActivityItems(t), [t]);
+  const CATEGORY_TAGS = useMemo(() => getCategoryTags(t), [t]);
+
   const tabs: { id: SocialTab; label: string }[] = [
-    { id: "all", label: "All Events" },
-    { id: "friends", label: "Friends" },
-    { id: "invites", label: "Invites" },
-    { id: "activity", label: "Activity" },
+    { id: "all", label: t.discover.allEvents },
+    { id: "friends", label: t.social.tabFriends },
+    { id: "invites", label: t.social.tabInvites },
+    { id: "activity", label: t.social.tabActivity },
   ];
 
   return (
@@ -117,14 +135,14 @@ export default function SocialScreen() {
       {/* ── Header ── */}
       <View style={styles.header}>
         <View>
-          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Social Hub</Text>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t.social.title}</Text>
           <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
-            See what your friends are into.
+            {t.social.subtitle}
           </Text>
         </View>
         <Pressable
           style={[styles.notifBtn, { backgroundColor: colors.muted }]}
-          accessibilityLabel="Notifications"
+          accessibilityLabel={t.profile.notifications}
           accessibilityRole="button"
         >
           <Feather name="bell" size={18} color={colors.foreground} />
@@ -163,7 +181,7 @@ export default function SocialScreen() {
         </ScrollView>
         <Pressable style={[styles.filtersBtn, { backgroundColor: colors.muted, borderColor: colors.border }]}>
           <Feather name="sliders" size={14} color={colors.mutedForeground} />
-          <Text style={[styles.filtersBtnText, { color: colors.mutedForeground }]}>Filters</Text>
+          <Text style={[styles.filtersBtnText, { color: colors.mutedForeground }]}>{t.cultureCompass.filters}</Text>
         </Pressable>
       </View>
 
@@ -205,9 +223,9 @@ export default function SocialScreen() {
         {!isLoading && socialEvents.length === 0 && (
           <View style={styles.emptyWrap}>
             <Feather name="users" size={36} color="#333" />
-            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No events yet</Text>
+            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t.social.noEventsTitle}</Text>
             <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              Check back soon — your friends will be going somewhere.
+              {t.social.noEventsSub}
             </Text>
           </View>
         )}
@@ -320,7 +338,7 @@ export default function SocialScreen() {
                     }}
                   >
                     <Feather name="message-circle" size={13} color={colors.foreground} />
-                    <Text style={[styles.chatBtnText, { color: colors.foreground }]}>Chat</Text>
+                    <Text style={[styles.chatBtnText, { color: colors.foreground }]}>{t.social.chat}</Text>
                   </Pressable>
                   <Pressable
                     style={styles.inviteBtn}
@@ -333,7 +351,7 @@ export default function SocialScreen() {
                     }}
                   >
                     <Feather name="user-plus" size={13} color="#fff" />
-                    <Text style={styles.inviteBtnText}>Invite</Text>
+                    <Text style={styles.inviteBtnText}>{t.social.invite}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -348,9 +366,9 @@ export default function SocialScreen() {
           <Feather name="users" size={20} color="#FF6B00" />
         </View>
         <View style={styles.soloText}>
-          <Text style={[styles.soloTitle, { color: colors.foreground }]}>Don't go solo.</Text>
+          <Text style={[styles.soloTitle, { color: colors.foreground }]}>{t.social.dontGoSoloTitle}</Text>
           <Text style={[styles.soloSub, { color: colors.mutedForeground }]}>
-            Invite your friends and make memories.
+            {t.social.dontGoSoloSub}
           </Text>
         </View>
         <Pressable
@@ -363,7 +381,7 @@ export default function SocialScreen() {
                 });
               }}
         >
-          <Text style={styles.findFriendsBtnText}>Find Friends</Text>
+          <Text style={styles.findFriendsBtnText}>{t.social.findFriends}</Text>
         </Pressable>
       </View>
     </ScrollView>
