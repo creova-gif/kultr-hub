@@ -193,6 +193,36 @@ export interface Translations {
     fashion: string;
     tech: string;
   };
+  // Settings screen
+  settings: {
+    language: string;
+    rtlNote: string;
+    programs: string;
+    tribeLeaders: string;
+    tribeLeadersSub: string;
+    connectivity: string;
+    dataSaver: string;
+    dataSaverSub: string;
+    privacy: string;
+    analyticsTracking: string;
+    analyticsTrackingSub: string;
+    marketingMessages: string;
+    marketingMessagesSub: string;
+  };
+  // Notifications screen
+  notifications: {
+    markAllRead: string;
+    signInForNotifications: string;
+    signInSub: string;
+    couldntLoad: string;
+    retry: string;
+    retrying: string;
+    allCaughtUp: string;
+    emptySub: string;
+    newLabel: string;
+    earlierLabel: string;
+    settingsHint: string;
+  };
 }
 
 const en: Translations = {
@@ -375,6 +405,34 @@ const en: Translations = {
     film: "Film",
     fashion: "Fashion",
     tech: "Tech",
+  },
+  settings: {
+    language: "Language",
+    rtlNote: "Arabic uses a right-to-left layout. Changing the language requires restarting the app for the layout to fully apply.",
+    programs: "Programs",
+    tribeLeaders: "Kultr Tribe Leaders",
+    tribeLeadersSub: "Ambassador program — lead & earn",
+    connectivity: "Connectivity",
+    dataSaver: "Data Saver Mode",
+    dataSaverSub: "Loads fewer events for slow connections",
+    privacy: "Privacy",
+    analyticsTracking: "Analytics & Tracking",
+    analyticsTrackingSub: "Off by default. Helps us understand how the app is used — never sold or shared for advertising.",
+    marketingMessages: "Marketing Messages",
+    marketingMessagesSub: "Off by default. Separate from your login code texts, which always send regardless of this setting.",
+  },
+  notifications: {
+    markAllRead: "Mark all read",
+    signInForNotifications: "Sign in for notifications",
+    signInSub: "Real updates about your tickets, events and payouts show up here.",
+    couldntLoad: "Couldn't load notifications",
+    retry: "Retry",
+    retrying: "Retrying…",
+    allCaughtUp: "You're all caught up!",
+    emptySub: "Real activity — ticket confirmations, event approvals, payout updates — will show up here.",
+    newLabel: "New",
+    earlierLabel: "Earlier",
+    settingsHint: "Manage notification preferences in Settings",
   },
 };
 
@@ -559,6 +617,34 @@ const fr: Translations = {
     fashion: "Mode",
     tech: "Tech",
   },
+  settings: {
+    language: "Langue",
+    rtlNote: "L'arabe utilise une mise en page de droite à gauche. Changer de langue nécessite de redémarrer l'application pour que la mise en page s'applique entièrement.",
+    programs: "Programmes",
+    tribeLeaders: "Kultr Tribe Leaders",
+    tribeLeadersSub: "Programme d'ambassadeurs — dirigez et gagnez",
+    connectivity: "Connectivité",
+    dataSaver: "Mode économie de données",
+    dataSaverSub: "Charge moins d'événements pour les connexions lentes",
+    privacy: "Confidentialité",
+    analyticsTracking: "Analyses et suivi",
+    analyticsTrackingSub: "Désactivé par défaut. Nous aide à comprendre l'utilisation de l'application — jamais vendu ni partagé à des fins publicitaires.",
+    marketingMessages: "Messages marketing",
+    marketingMessagesSub: "Désactivé par défaut. Distinct de vos codes de connexion par SMS, qui sont toujours envoyés quel que soit ce réglage.",
+  },
+  notifications: {
+    markAllRead: "Tout marquer comme lu",
+    signInForNotifications: "Connectez-vous pour les notifications",
+    signInSub: "Les mises à jour réelles sur vos billets, événements et paiements s'affichent ici.",
+    couldntLoad: "Impossible de charger les notifications",
+    retry: "Réessayer",
+    retrying: "Nouvelle tentative…",
+    allCaughtUp: "Vous êtes à jour !",
+    emptySub: "L'activité réelle — confirmations de billets, approbations d'événements, mises à jour de paiements — s'affichera ici.",
+    newLabel: "Nouveau",
+    earlierLabel: "Plus tôt",
+    settingsHint: "Gérez vos préférences de notification dans les Paramètres",
+  },
 };
 
 const sw: Translations = {
@@ -742,6 +828,34 @@ const sw: Translations = {
     fashion: "Mitindo",
     tech: "Teknolojia",
   },
+  settings: {
+    language: "Lugha",
+    rtlNote: "Kiarabu hutumia mpangilio wa kulia kwenda kushoto. Kubadilisha lugha kunahitaji kuanzisha upya programu ili mpangilio utumike kikamilifu.",
+    programs: "Programu",
+    tribeLeaders: "Kultr Tribe Leaders",
+    tribeLeadersSub: "Programu ya ubalozi — ongoza na upate",
+    connectivity: "Muunganisho",
+    dataSaver: "Hali ya Kuhifadhi Data",
+    dataSaverSub: "Hupakia matukio machache kwa miunganisho ya polepole",
+    privacy: "Faragha",
+    analyticsTracking: "Uchambuzi na Ufuatiliaji",
+    analyticsTrackingSub: "Imezimwa kwa chaguo-msingi. Hutusaidia kuelewa jinsi programu inavyotumika — haiuzwi wala kushirikiwa kwa matangazo.",
+    marketingMessages: "Ujumbe wa Masoko",
+    marketingMessagesSub: "Imezimwa kwa chaguo-msingi. Tofauti na misimbo yako ya kuingia kwa SMS, ambayo hutumwa kila wakati bila kujali mpangilio huu.",
+  },
+  notifications: {
+    markAllRead: "Weka zote kama zimesomwa",
+    signInForNotifications: "Ingia ili upate arifa",
+    signInSub: "Taarifa halisi kuhusu tikiti zako, matukio na malipo zitaonekana hapa.",
+    couldntLoad: "Imeshindwa kupakia arifa",
+    retry: "Jaribu tena",
+    retrying: "Inajaribu tena…",
+    allCaughtUp: "Umepata yote!",
+    emptySub: "Shughuli halisi — uthibitisho wa tikiti, idhini za matukio, masasisho ya malipo — zitaonekana hapa.",
+    newLabel: "Mpya",
+    earlierLabel: "Awali",
+    settingsHint: "Simamia mapendeleo ya arifa kwenye Mipangilio",
+  },
 };
 
 const ar: Translations = {
@@ -924,6 +1038,34 @@ const ar: Translations = {
     film: "أفلام",
     fashion: "أزياء",
     tech: "تقنية",
+  },
+  settings: {
+    language: "اللغة",
+    rtlNote: "تستخدم اللغة العربية تخطيطاً من اليمين إلى اليسار. يتطلب تغيير اللغة إعادة تشغيل التطبيق لتطبيق التخطيط بالكامل.",
+    programs: "البرامج",
+    tribeLeaders: "قادة قبيلة كلتر",
+    tribeLeadersSub: "برنامج السفراء — قُد واكسب",
+    connectivity: "الاتصال",
+    dataSaver: "وضع توفير البيانات",
+    dataSaverSub: "يحمّل عدداً أقل من الفعاليات للاتصالات البطيئة",
+    privacy: "الخصوصية",
+    analyticsTracking: "التحليلات والتتبع",
+    analyticsTrackingSub: "معطّل افتراضياً. يساعدنا على فهم كيفية استخدام التطبيق — لا يُباع أو يُشارك أبداً لأغراض إعلانية.",
+    marketingMessages: "الرسائل التسويقية",
+    marketingMessagesSub: "معطّل افتراضياً. منفصل عن رسائل رمز الدخول التي تُرسل دائماً بغض النظر عن هذا الإعداد.",
+  },
+  notifications: {
+    markAllRead: "تحديد الكل كمقروء",
+    signInForNotifications: "سجّل الدخول لتلقي الإشعارات",
+    signInSub: "تظهر هنا التحديثات الفعلية حول تذاكرك وفعالياتك ومدفوعاتك.",
+    couldntLoad: "تعذّر تحميل الإشعارات",
+    retry: "إعادة المحاولة",
+    retrying: "جارٍ إعادة المحاولة…",
+    allCaughtUp: "لقد اطلعت على كل شيء!",
+    emptySub: "ستظهر هنا الأنشطة الفعلية — تأكيدات التذاكر، موافقات الفعاليات، تحديثات المدفوعات.",
+    newLabel: "جديد",
+    earlierLabel: "سابقاً",
+    settingsHint: "أدر تفضيلات الإشعارات من الإعدادات",
   },
 };
 

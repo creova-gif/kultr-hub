@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Alert } from "@/lib/alert";
 import type { Language } from "@/constants/translations";
 
@@ -20,6 +21,7 @@ export default function SettingsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { language, setLanguage, lowBandwidth, setLowBandwidth, authUser, updateConsent } = useApp();
+  const t = useTranslation();
   const [consentBusy, setConsentBusy] = React.useState<"tracking" | "marketing" | null>(null);
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
@@ -57,12 +59,12 @@ export default function SettingsScreen() {
         >
           <Feather name="arrow-left" size={20} color={colors.foreground} />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: colors.foreground }]}>Settings</Text>
+        <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t.profile.settings}</Text>
         <View style={styles.backBtn} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
-      <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>LANGUAGE</Text>
+      <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>{t.settings.language.toUpperCase()}</Text>
 
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         {LANGUAGES.map((lang, i) => (
@@ -93,10 +95,10 @@ export default function SettingsScreen() {
       </View>
 
       <Text style={[styles.footnote, { color: colors.mutedForeground }]}>
-        Arabic uses a right-to-left layout. Changing the language requires restarting the app for the layout to fully apply.
+        {t.settings.rtlNote}
       </Text>
 
-      <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>PROGRAMS</Text>
+      <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>{t.settings.programs.toUpperCase()}</Text>
 
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Pressable
@@ -112,23 +114,23 @@ export default function SettingsScreen() {
             <Feather name="flag" size={16} color="#FF6B00" />
           </View>
           <View style={styles.rowText}>
-            <Text style={[styles.rowLabel, { color: colors.foreground }]}>Kultr Tribe Leaders</Text>
+            <Text style={[styles.rowLabel, { color: colors.foreground }]}>{t.settings.tribeLeaders}</Text>
             <Text style={[styles.rowSub, { color: colors.mutedForeground }]}>
-              Ambassador program — lead & earn
+              {t.settings.tribeLeadersSub}
             </Text>
           </View>
           <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
         </Pressable>
       </View>
 
-      <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>CONNECTIVITY</Text>
+      <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>{t.settings.connectivity.toUpperCase()}</Text>
 
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={[styles.row, { justifyContent: "space-between" }]}>
           <View style={styles.rowText}>
-            <Text style={[styles.rowLabel, { color: colors.foreground }]}>Data Saver Mode</Text>
+            <Text style={[styles.rowLabel, { color: colors.foreground }]}>{t.settings.dataSaver}</Text>
             <Text style={[styles.rowSub, { color: colors.mutedForeground }]}>
-              Loads fewer events for slow connections
+              {t.settings.dataSaverSub}
             </Text>
           </View>
           <Switch
@@ -140,14 +142,14 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>PRIVACY</Text>
+      <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>{t.settings.privacy.toUpperCase()}</Text>
 
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={[styles.row, { justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: colors.border }]}>
           <View style={styles.rowText}>
-            <Text style={[styles.rowLabel, { color: colors.foreground }]}>Analytics &amp; Tracking</Text>
+            <Text style={[styles.rowLabel, { color: colors.foreground }]}>{t.settings.analyticsTracking}</Text>
             <Text style={[styles.rowSub, { color: colors.mutedForeground }]}>
-              Off by default. Helps us understand how the app is used — never sold or shared for advertising.
+              {t.settings.analyticsTrackingSub}
             </Text>
           </View>
           {consentBusy === "tracking" ? (
@@ -165,9 +167,9 @@ export default function SettingsScreen() {
         </View>
         <View style={[styles.row, { justifyContent: "space-between" }]}>
           <View style={styles.rowText}>
-            <Text style={[styles.rowLabel, { color: colors.foreground }]}>Marketing Messages</Text>
+            <Text style={[styles.rowLabel, { color: colors.foreground }]}>{t.settings.marketingMessages}</Text>
             <Text style={[styles.rowSub, { color: colors.mutedForeground }]}>
-              Off by default. Separate from your login code texts, which always send regardless of this setting.
+              {t.settings.marketingMessagesSub}
             </Text>
           </View>
           {consentBusy === "marketing" ? (

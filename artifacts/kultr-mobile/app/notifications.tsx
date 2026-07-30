@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Alert } from "@/lib/alert";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "@/hooks/useTranslation";
 import {
   useMyNotifications,
   useMarkNotificationRead,
@@ -51,6 +52,7 @@ export default function NotificationsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { authToken } = useApp();
+  const t = useTranslation();
   const { data, isLoading, isError, refetch, isRefetching } = useMyNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
@@ -104,7 +106,7 @@ export default function NotificationsScreen() {
 
           <View style={styles.headerCenter}>
             <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-              Notifications
+              {t.profile.notifications}
             </Text>
             {unreadCount > 0 && (
               <View style={styles.badge}>
@@ -121,7 +123,7 @@ export default function NotificationsScreen() {
               accessibilityLabel="Mark all notifications as read"
             >
               <Text style={[styles.markAllText, { color: "#FF6B00" }]}>
-                Mark all read
+                {t.notifications.markAllRead}
               </Text>
             </Pressable>
           ) : (
@@ -132,12 +134,12 @@ export default function NotificationsScreen() {
         {!authToken ? (
           <View style={styles.emptyState}>
             <Feather name="bell" size={48} color={colors.mutedForeground} />
-            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Sign in for notifications</Text>
+            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t.notifications.signInForNotifications}</Text>
             <Text style={[styles.emptySubtitle, { color: colors.mutedForeground }]}>
-              Real updates about your tickets, events and payouts show up here.
+              {t.notifications.signInSub}
             </Text>
             <Pressable style={styles.cta} onPress={() => router.push("/login")}>
-              <Text style={styles.ctaText}>Sign In</Text>
+              <Text style={styles.ctaText}>{t.auth.signIn}</Text>
             </Pressable>
           </View>
         ) : isLoading ? (
@@ -147,13 +149,13 @@ export default function NotificationsScreen() {
         ) : isError ? (
           <View style={styles.emptyState}>
             <Feather name="wifi-off" size={40} color={colors.mutedForeground} />
-            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Couldn't load notifications</Text>
+            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t.notifications.couldntLoad}</Text>
             <Pressable
               onPress={() => refetch()}
               style={[styles.markAllBtn, { backgroundColor: colors.card, marginTop: 8 }]}
             >
               <Text style={[styles.markAllText, { color: "#FF6B00" }]}>
-                {isRefetching ? "Retrying…" : "Retry"}
+                {isRefetching ? t.notifications.retrying : t.notifications.retry}
               </Text>
             </Pressable>
           </View>
@@ -172,7 +174,7 @@ export default function NotificationsScreen() {
               >
                 <Feather name="check-circle" size={14} color="#00C853" />
                 <Text style={[styles.caughtUpText, { color: "#00C853" }]}>
-                  You're all caught up!
+                  {t.notifications.allCaughtUp}
                 </Text>
               </View>
             )}
@@ -182,12 +184,12 @@ export default function NotificationsScreen() {
               <View style={styles.emptyState}>
                 <Feather name="check-circle" size={48} color="#00C853" />
                 <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-                  You're all caught up!
+                  {t.notifications.allCaughtUp}
                 </Text>
                 <Text
                   style={[styles.emptySubtitle, { color: colors.mutedForeground }]}
                 >
-                  Real activity — ticket confirmations, event approvals, payout updates — will show up here.
+                  {t.notifications.emptySub}
                 </Text>
               </View>
             )}
@@ -198,7 +200,7 @@ export default function NotificationsScreen() {
                 <Text
                   style={[styles.groupLabel, { color: colors.mutedForeground }]}
                 >
-                  NEW
+                  {t.notifications.newLabel.toUpperCase()}
                 </Text>
                 <View style={styles.groupList}>
                   {unreadNotifs.map((notif) => (
@@ -219,7 +221,7 @@ export default function NotificationsScreen() {
                 <Text
                   style={[styles.groupLabel, { color: colors.mutedForeground }]}
                 >
-                  EARLIER
+                  {t.notifications.earlierLabel.toUpperCase()}
                 </Text>
                 <View style={styles.groupList}>
                   {readNotifs.map((notif) => (
@@ -247,7 +249,7 @@ export default function NotificationsScreen() {
           <Text
             style={[styles.settingsText, { color: colors.mutedForeground }]}
           >
-            Manage notification preferences in Settings
+            {t.notifications.settingsHint}
           </Text>
         </View>
       </ScrollView>
