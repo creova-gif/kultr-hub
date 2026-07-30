@@ -28,6 +28,7 @@ import { useColors } from "@/hooks/useColors";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
 import { useCheckIn } from "@/hooks/useQuests";
 import { useGetTicket, getGetTicketQueryKey, useUpdateTicketAccessibilityInfo } from "@workspace/api-client-react";
+import { POPIA_SECTION_26_NOTE } from "@/constants/consentCopy";
 
 const LOGO_WORDMARK = require("@/assets/images/logo-wordmark.png");
 
@@ -41,7 +42,7 @@ export default function TicketViewScreen() {
   }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { tickets, authToken } = useApp();
+  const { tickets, authToken, userCountry } = useApp();
   const { getEventById } = useEventCatalog();
   const checkIn = useCheckIn();
 
@@ -334,6 +335,11 @@ export default function TicketViewScreen() {
               Optional and off by default. Share dietary restrictions or accessibility needs so the organizer can
               plan catering/venue accommodation — never required to attend, and you can withdraw this at any time.
             </Text>
+            {userCountry.code === "ZA" && (
+              <Text style={[styles.a11ySub, { color: colors.mutedForeground, fontStyle: "italic" }]}>
+                {POPIA_SECTION_26_NOTE}
+              </Text>
+            )}
             {accessibilityOptIn && (
               <TextInput
                 value={accessibilityDraft}
