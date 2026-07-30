@@ -493,9 +493,12 @@ export default function CreatorStudioScreen() {
             const cap = ev.ticketsSold + Math.round(ev.ticketsSold * 0.4);
 
             return (
-              <View
+              <Pressable
                 key={ev.id}
+                onPress={() => router.push(`/event-attendee-needs/${ev.id}` as any)}
                 style={[styles.eventRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+                accessibilityLabel={`View attendee accessibility and dietary needs for ${ev.title}`}
+                accessibilityRole="button"
               >
                 <Image source={image} style={styles.eventRowImage} resizeMode="cover" />
                 <View style={styles.eventRowInfo}>
@@ -535,8 +538,8 @@ export default function CreatorStudioScreen() {
                     Tickets Sold
                   </Text>
                 </View>
-                <Feather name="more-vertical" size={18} color={colors.mutedForeground} />
-              </View>
+                <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+              </Pressable>
             );
           })}
         </View>

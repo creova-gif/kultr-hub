@@ -2,15 +2,18 @@ import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   Platform,
   Pressable,
   ScrollView,
   Share,
   StyleSheet,
+  Switch,
   Text,
+  TextInput,
   View,
 } from "react-native";
 
@@ -24,6 +27,7 @@ import { formatDate, formatTime } from "@/constants/data";
 import { useColors } from "@/hooks/useColors";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
 import { useCheckIn } from "@/hooks/useQuests";
+import { useGetTicket, getGetTicketQueryKey, useUpdateTicketAccessibilityInfo } from "@workspace/api-client-react";
 
 const LOGO_WORDMARK = require("@/assets/images/logo-wordmark.png");
 
@@ -46,6 +50,41 @@ export default function TicketViewScreen() {
   const event = getEventById(resolvedEventId);
   const resolvedTicketNumber = ticket?.ticketNumber ?? ticketNumber ?? "KTR-00000";
   const resolvedTicketTypeName = ticket?.ticketTypeName ?? ticketTypeName ?? "General Admission";
+
+  // Live fetch — the client-cached `tickets` list (constants/data.ts's
+  // PurchasedTicket) has no accessibilityInfo field; this is opt-in special-
+  // category data (POPIA §26) that's never included in the purchase flow.
+  const { data: liveTicket, refetch: refetchTicket } = useGetTicket(id ?? "", {
+    query: { queryKey: getGetTicketQueryKey(id ?? ""), enabled: !!id && !!authToken },
+  });
+  const updateAccessibilityMutation = useUpdateTicketAccessibilityInfo();
+  const [accessibilityDraft, setAccessibilityDraft] = useState("");
+  const [accessibilityOptIn, setAccessibilityOptIn] = useState(false);
+  const [accessibilitySaving, setAccessibilitySaving] = useState(false);
+
+  useEffect(() => {
+    if (liveTicket?.accessibilityInfo) {
+      setAccessibilityDraft(liveTicket.accessibilityInfo);
+      setAccessibilityOptIn(true);
+    }
+  }, [liveTicket?.accessibilityInfo]);
+
+  const handleSaveAccessibilityInfo = async () => {
+    if (!id) return;
+    setAccessibilitySaving(true);
+    try {
+      await updateAccessibilityMutation.mutateAsync({
+        id,
+        data: { info: accessibilityOptIn ? accessibilityDraft.trim() : null },
+      });
+      await refetchTicket();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (e) {
+      Alert.alert("Couldn't save", e instanceof Error ? e.message : "Please try again.");
+    } finally {
+      setAccessibilitySaving(false);
+    }
+  };
 
   useEffect(() => {
     if (newPurchase === "true") {
@@ -271,6 +310,58 @@ export default function TicketViewScreen() {
           />
         </View>
 
+        {/* Accessibility & Dietary Needs — standalone, explicit opt-in
+            (POPIA §26). Never required for purchase; shown here, on the
+            ticket itself, entirely independent of checkout. */}
+        {!!authToken && (
+          <View style={[styles.a11yCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.a11yHeaderRow}>
+              <Text style={[styles.a11yTitle, { color: colors.foreground }]}>
+                Accessibility &amp; Dietary Needs
+              </Text>
+              <Switch
+                value={accessibilityOptIn}
+                onValueChange={(val) => {
+                  setAccessibilityOptIn(val);
+                  if (!val) setAccessibilityDraft("");
+                }}
+                accessibilityLabel="Share accessibility and dietary needs with the organizer"
+                trackColor={{ false: "#333", true: "#FF6B00" }}
+                thumbColor="#fff"
+              />
+            </View>
+            <Text style={[styles.a11ySub, { color: colors.mutedForeground }]}>
+              Optional and off by default. Share dietary restrictions or accessibility needs so the organizer can
+              plan catering/venue accommodation — never required to attend, and you can withdraw this at any time.
+            </Text>
+            {accessibilityOptIn && (
+              <TextInput
+                value={accessibilityDraft}
+                onChangeText={setAccessibilityDraft}
+                placeholder="e.g. vegetarian, nut allergy, wheelchair access"
+                placeholderTextColor={colors.mutedForeground}
+                multiline
+                maxLength={500}
+                style={[styles.a11yInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]}
+                accessibilityLabel="Accessibility and dietary needs details"
+              />
+            )}
+            <Pressable
+              onPress={handleSaveAccessibilityInfo}
+              disabled={accessibilitySaving}
+              style={[styles.a11ySaveBtn, { borderColor: "#FF6B00", opacity: accessibilitySaving ? 0.6 : 1 }]}
+              accessibilityLabel="Save accessibility and dietary needs"
+              accessibilityRole="button"
+            >
+              {accessibilitySaving ? (
+                <ActivityIndicator size="small" color="#FF6B00" />
+              ) : (
+                <Text style={styles.a11ySaveBtnText}>Save</Text>
+              )}
+            </Pressable>
+          </View>
+        )}
+
         {newPurchase === "true" && (
           <Pressable
             style={styles.homeBtn}
@@ -409,6 +500,33 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   actionLabel: { fontSize: 12, fontWeight: "600" },
+  a11yCard: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 10,
+  },
+  a11yHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  a11yTitle: { fontSize: 15, fontWeight: "700", flex: 1, marginRight: 12 },
+  a11ySub: { fontSize: 12, lineHeight: 17 },
+  a11yInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 13,
+    minHeight: 60,
+    textAlignVertical: "top",
+  },
+  a11ySaveBtn: {
+    alignSelf: "flex-start",
+    borderWidth: 1.5,
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+  },
+  a11ySaveBtnText: { color: "#FF6B00", fontSize: 13, fontWeight: "700" },
   homeBtn: {
     marginHorizontal: 16,
     backgroundColor: "#FF6B00",
