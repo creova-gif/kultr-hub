@@ -480,6 +480,25 @@ export interface Translations {
     tribeDanceName: string;
     tribeDanceTagline: string;
   };
+  // Culture Compass map/discovery screen
+  cultureCompass: {
+    headerTitlePlain: string;
+    headerTitleAccent: string;
+    filters: string;
+    toggleFiltersA11y: string;
+    dateLabel: string;
+    dateAny: string;
+    dateToday: string;
+    dateWeek: string;
+    dateMonth: string;
+    priceLabel: string;
+    min: string;
+    max: string;
+    clearFilters: string;
+    clearFiltersA11y: string;
+    noEventsMatch: string;
+    moreCategory: string;
+  };
 }
 
 const en: Translations = {
@@ -939,6 +958,24 @@ const en: Translations = {
     tribeTechTagline: "Builders shaping the future.",
     tribeDanceName: "Step & Sway",
     tribeDanceTagline: "If it moves you, it's home.",
+  },
+  cultureCompass: {
+    headerTitlePlain: "Culture",
+    headerTitleAccent: "Compass",
+    filters: "Filters",
+    toggleFiltersA11y: "Toggle date and price filters",
+    dateLabel: "Date",
+    dateAny: "Any date",
+    dateToday: "Today",
+    dateWeek: "This week",
+    dateMonth: "This month",
+    priceLabel: "Price",
+    min: "Min",
+    max: "Max",
+    clearFilters: "Clear filters",
+    clearFiltersA11y: "Clear date and price filters",
+    noEventsMatch: "No events match your filters",
+    moreCategory: "More",
   },
 };
 
@@ -1400,6 +1437,24 @@ const fr: Translations = {
     tribeDanceName: "Step & Sway",
     tribeDanceTagline: "Si ça vous fait bouger, c'est chez vous.",
   },
+  cultureCompass: {
+    headerTitlePlain: "Boussole",
+    headerTitleAccent: "Culturelle",
+    filters: "Filtres",
+    toggleFiltersA11y: "Basculer les filtres de date et de prix",
+    dateLabel: "Date",
+    dateAny: "N'importe quelle date",
+    dateToday: "Aujourd'hui",
+    dateWeek: "Cette semaine",
+    dateMonth: "Ce mois-ci",
+    priceLabel: "Prix",
+    min: "Min",
+    max: "Max",
+    clearFilters: "Effacer les filtres",
+    clearFiltersA11y: "Effacer les filtres de date et de prix",
+    noEventsMatch: "Aucun événement ne correspond à vos filtres",
+    moreCategory: "Plus",
+  },
 };
 
 const sw: Translations = {
@@ -1860,6 +1915,24 @@ const sw: Translations = {
     tribeDanceName: "Step & Sway",
     tribeDanceTagline: "Ikikusogeza, ni nyumbani.",
   },
+  cultureCompass: {
+    headerTitlePlain: "Dira ya",
+    headerTitleAccent: "Utamaduni",
+    filters: "Vichujio",
+    toggleFiltersA11y: "Geuza vichujio vya tarehe na bei",
+    dateLabel: "Tarehe",
+    dateAny: "Tarehe yoyote",
+    dateToday: "Leo",
+    dateWeek: "Wiki hii",
+    dateMonth: "Mwezi huu",
+    priceLabel: "Bei",
+    min: "Kima cha chini",
+    max: "Kima cha juu",
+    clearFilters: "Futa vichujio",
+    clearFiltersA11y: "Futa vichujio vya tarehe na bei",
+    noEventsMatch: "Hakuna matukio yanayolingana na vichujio vyako",
+    moreCategory: "Zaidi",
+  },
 };
 
 const ar: Translations = {
@@ -2319,6 +2392,24 @@ const ar: Translations = {
     tribeTechTagline: "بناة يشكّلون المستقبل.",
     tribeDanceName: "Step & Sway",
     tribeDanceTagline: "إن حرّكك، فهو وطنك.",
+  },
+  cultureCompass: {
+    headerTitlePlain: "بوصلة",
+    headerTitleAccent: "الثقافة",
+    filters: "الفلاتر",
+    toggleFiltersA11y: "تبديل فلاتر التاريخ والسعر",
+    dateLabel: "التاريخ",
+    dateAny: "أي تاريخ",
+    dateToday: "اليوم",
+    dateWeek: "هذا الأسبوع",
+    dateMonth: "هذا الشهر",
+    priceLabel: "السعر",
+    min: "الأدنى",
+    max: "الأقصى",
+    clearFilters: "مسح الفلاتر",
+    clearFiltersA11y: "مسح فلاتر التاريخ والسعر",
+    noEventsMatch: "لا توجد فعاليات تطابق فلاترك",
+    moreCategory: "المزيد",
   },
 };
 

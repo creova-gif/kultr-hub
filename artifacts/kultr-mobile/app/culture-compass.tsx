@@ -26,6 +26,8 @@ import { EventCardCompact } from "@/components/EventCardCompact";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
+import { useTranslation } from "@/hooks/useTranslation";
+import { getCategoryLabel, Translations } from "@/constants/translations";
 import { EA_COUNTRIES } from "@/constants/currencies";
 import type { Event } from "@/constants/data";
 
@@ -188,17 +190,26 @@ function CityMap({ pins, cityName, onPressPin }: CityMapProps) {
 
 // ── Main Screen ──────────────────────────────────────────────────────────────
 
+// Canonical English category filter values — stable identifiers used for
+// comparison against event.category — only the displayed chip label is
+// translated (via categoryFilterLabel below).
 const CATEGORY_FILTERS = ["For You", "Music", "Art", "Food", "Heritage", "More"] as const;
 type CategoryFilter = (typeof CATEGORY_FILTERS)[number];
 
+function categoryFilterLabel(cat: CategoryFilter, t: Translations): string {
+  return cat === "More" ? t.cultureCompass.moreCategory : getCategoryLabel(cat, t);
+}
+
 type DatePreset = "any" | "today" | "week" | "month";
 
-const DATE_PRESETS: { id: DatePreset; label: string }[] = [
-  { id: "any", label: "Any date" },
-  { id: "today", label: "Today" },
-  { id: "week", label: "This week" },
-  { id: "month", label: "This month" },
-];
+function getDatePresets(t: Translations): { id: DatePreset; label: string }[] {
+  return [
+    { id: "any", label: t.cultureCompass.dateAny },
+    { id: "today", label: t.cultureCompass.dateToday },
+    { id: "week", label: t.cultureCompass.dateWeek },
+    { id: "month", label: t.cultureCompass.dateMonth },
+  ];
+}
 
 function toLocalISODate(d: Date): string {
   const year = d.getFullYear();
@@ -221,6 +232,8 @@ function withinDatePreset(dateStr: string, preset: DatePreset): boolean {
 export default function CultureCompassScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const t = useTranslation();
+  const DATE_PRESETS = useMemo(() => getDatePresets(t), [t]);
   const { userCountry, setUserCountry } = useApp();
   const [selectedCat, setSelectedCat] = useState<CategoryFilter>("For You");
   const [showCityPicker, setShowCityPicker] = useState(false);
@@ -277,8 +290,8 @@ export default function CultureCompassScreen() {
           </Pressable>
           <View style={styles.headerCenter}>
             <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-              Culture{" "}
-              <Text style={{ color: "#FF6B00" }}>Compass</Text>
+              {t.cultureCompass.headerTitlePlain}{" "}
+              <Text style={{ color: "#FF6B00" }}>{t.cultureCompass.headerTitleAccent}</Text>
             </Text>
             <Pressable
               onPress={() => {
@@ -306,12 +319,12 @@ export default function CultureCompassScreen() {
                 borderColor: activeFilterCount > 0 ? "#FF6B00" : colors.border,
               },
             ]}
-            accessibilityLabel="Toggle date and price filters"
+            accessibilityLabel={t.cultureCompass.toggleFiltersA11y}
             accessibilityRole="button"
           >
             <Feather name="sliders" size={14} color={activeFilterCount > 0 ? "#FF6B00" : colors.mutedForeground} />
             <Text style={[styles.filterBtnText, { color: activeFilterCount > 0 ? "#FF6B00" : colors.mutedForeground }]}>
-              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+              {t.cultureCompass.filters}{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
             </Text>
           </Pressable>
         </View>
@@ -319,7 +332,7 @@ export default function CultureCompassScreen() {
         {/* ── Filter Panel ── */}
         {showFilterPanel && (
           <View style={[styles.filterPanel, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.filterLabel, { color: colors.mutedForeground }]}>Date</Text>
+            <Text style={[styles.filterLabel, { color: colors.mutedForeground }]}>{t.cultureCompass.dateLabel}</Text>
             <View style={styles.filterChipRow}>
               {DATE_PRESETS.map((preset) => {
                 const active = datePreset === preset.id;
@@ -346,13 +359,13 @@ export default function CultureCompassScreen() {
             </View>
 
             <Text style={[styles.filterLabel, { color: colors.mutedForeground, marginTop: 14 }]}>
-              Price ({userCountry.currencyCode})
+              {t.cultureCompass.priceLabel} ({userCountry.currencyCode})
             </Text>
             <View style={styles.priceRow}>
               <TextInput
                 value={priceMin}
                 onChangeText={setPriceMin}
-                placeholder="Min"
+                placeholder={t.cultureCompass.min}
                 placeholderTextColor={colors.mutedForeground}
                 keyboardType="numeric"
                 style={[styles.priceInput, { backgroundColor: colors.muted, borderColor: colors.border, color: colors.foreground }]}
@@ -361,7 +374,7 @@ export default function CultureCompassScreen() {
               <TextInput
                 value={priceMax}
                 onChangeText={setPriceMax}
-                placeholder="Max"
+                placeholder={t.cultureCompass.max}
                 placeholderTextColor={colors.mutedForeground}
                 keyboardType="numeric"
                 style={[styles.priceInput, { backgroundColor: colors.muted, borderColor: colors.border, color: colors.foreground }]}
@@ -372,11 +385,11 @@ export default function CultureCompassScreen() {
               <Pressable
                 onPress={() => { Haptics.selectionAsync(); clearFilters(); }}
                 style={styles.clearFiltersBtn}
-                accessibilityLabel="Clear date and price filters"
+                accessibilityLabel={t.cultureCompass.clearFiltersA11y}
                 accessibilityRole="button"
               >
                 <Feather name="x-circle" size={12} color="#FF6B00" />
-                <Text style={styles.clearFiltersText}>Clear filters</Text>
+                <Text style={styles.clearFiltersText}>{t.cultureCompass.clearFilters}</Text>
               </Pressable>
             )}
           </View>
@@ -429,7 +442,7 @@ export default function CultureCompassScreen() {
           {pins.length === 0 && (
             <View style={styles.mapEmptyOverlay} pointerEvents="none">
               <Feather name="map-pin" size={22} color="#555" />
-              <Text style={styles.mapEmptyText}>No events match your filters</Text>
+              <Text style={styles.mapEmptyText}>{t.cultureCompass.noEventsMatch}</Text>
             </View>
           )}
         </View>
@@ -462,7 +475,7 @@ export default function CultureCompassScreen() {
                   <Feather name="zap" size={12} color={active ? "#fff" : colors.mutedForeground} />
                 )}
                 <Text style={[styles.catChipText, { color: active ? "#fff" : colors.mutedForeground }]}>
-                  {cat}
+                  {categoryFilterLabel(cat, t)}
                 </Text>
               </Pressable>
             );
