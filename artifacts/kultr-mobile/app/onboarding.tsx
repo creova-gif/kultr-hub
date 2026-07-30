@@ -20,32 +20,36 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { EA_COUNTRIES } from "@/constants/currencies";
 import { useApp } from "@/context/AppContext";
+import { useTranslation } from "@/hooks/useTranslation";
+import type { Translations } from "@/constants/translations";
 
 const LOGO_ICON = require("@/assets/images/logo-icon.png");
 const { width } = Dimensions.get("window");
 
 // ─── Content data ────────────────────────────────────────────────────────────
+// Feature/interest copy keys look up onboarding.*/categories.* in
+// constants/translations.ts — resolved inside the component via useTranslation().
 
-const FEATURES = [
+const FEATURE_KEYS = [
   {
     emoji: "🎶",
     accent: "#FF6B00",
     bg: "rgba(255,107,0,0.13)",
-    title: "Discover Events",
-    sub: "From Afrobeats concerts to art exhibitions — curated for you.",
+    titleKey: "feature1Title" as const,
+    subKey: "feature1Sub" as const,
     cards: [
-      { emoji: "🎵", label: "Music" },
-      { emoji: "🎨", label: "Art" },
-      { emoji: "🍖", label: "Food" },
-      { emoji: "🎬", label: "Film" },
+      { emoji: "🎵", labelKey: "music" as const },
+      { emoji: "🎨", labelKey: "art" as const },
+      { emoji: "🍖", labelKey: "food" as const },
+      { emoji: "🎬", labelKey: "film" as const },
     ],
   },
   {
     emoji: "👥",
     accent: "#7B61FF",
     bg: "rgba(123,97,255,0.13)",
-    title: "Find Your Tribe",
-    sub: "Connect with people who share your culture and your vibe.",
+    titleKey: "feature2Title" as const,
+    subKey: "feature2Sub" as const,
     cards: [
       { emoji: "🇰🇪", label: "Nairobi" },
       { emoji: "🇳🇬", label: "Lagos" },
@@ -57,8 +61,8 @@ const FEATURES = [
     emoji: "⚡",
     accent: "#00C853",
     bg: "rgba(0,200,83,0.13)",
-    title: "Earn as You Go",
-    sub: "Check in, complete quests, level up. Culture pays back.",
+    titleKey: "feature3Title" as const,
+    subKey: "feature3Sub" as const,
     cards: [
       { emoji: "🏅", label: "Badges" },
       { emoji: "🔥", label: "Streaks" },
@@ -69,18 +73,22 @@ const FEATURES = [
 ] as const;
 
 const INTERESTS = [
-  { id: "music",    label: "Music",    emoji: "🎵" },
-  { id: "art",      label: "Art",      emoji: "🎨" },
-  { id: "food",     label: "Food",     emoji: "🍖" },
-  { id: "dance",    label: "Dance",    emoji: "💃" },
-  { id: "film",     label: "Film",     emoji: "🎬" },
-  { id: "fashion",  label: "Fashion",  emoji: "👗" },
-  { id: "comedy",   label: "Comedy",   emoji: "😄" },
-  { id: "tech",     label: "Tech",     emoji: "💡" },
-  { id: "heritage", label: "Heritage", emoji: "🏛️" },
-  { id: "sports",   label: "Sports",   emoji: "⚽" },
+  { id: "music",    labelKey: "music" as const,    emoji: "🎵" },
+  { id: "art",      labelKey: "art" as const,      emoji: "🎨" },
+  { id: "food",     labelKey: "food" as const,      emoji: "🍖" },
+  { id: "dance",    labelKey: "dance" as const,    emoji: "💃" },
+  { id: "film",     labelKey: "film" as const,     emoji: "🎬" },
+  { id: "fashion",  labelKey: "fashion" as const,  emoji: "👗" },
+  { id: "comedy",   labelKey: "comedy" as const,   emoji: "😄" },
+  { id: "tech",     labelKey: "tech" as const,     emoji: "💡" },
+  { id: "heritage", labelKey: "heritage" as const, emoji: "🏛️" },
+  { id: "sports",   labelKey: "sports" as const,   emoji: "⚽" },
 ];
 
+// Left in English deliberately — a numeric count string ("3.2K members")
+// isn't core navigational chrome, and pluralization rules differ enough
+// across these languages (especially Arabic) that a naive suffix swap
+// would risk being grammatically wrong rather than just untranslated.
 const MEMBER_COUNTS: Record<string, string> = {
   KE: "3.2K members",
   TZ: "1.8K members",
@@ -96,6 +104,13 @@ const MEMBER_COUNTS: Record<string, string> = {
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const { setOnboardingDone, setUserInterests, setUserCountry } = useApp();
+  const t = useTranslation();
+  // Interest chip labels draw from two sections — most already exist under
+  // categories.* (shared with the event-category filters elsewhere in the
+  // app); dance/film/fashion/tech are onboarding-only additions. Merging
+  // into one flat lookup avoids indexing either section with a key it
+  // doesn't have.
+  const interestLabels: Record<string, string> = { ...t.categories, ...t.onboarding };
 
   const [step, setStep]                       = useState(0);
   const [featureIdx, setFeatureIdx]           = useState(0);
@@ -218,7 +233,7 @@ export default function OnboardingScreen() {
             style={[styles.skipTopBtn, { top: topPad + 16 }]}
             hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
           >
-            <Text style={styles.skipTopText}>Skip</Text>
+            <Text style={styles.skipTopText}>{t.onboarding.skip}</Text>
           </Pressable>
 
           {/* Central hero */}
@@ -235,19 +250,19 @@ export default function OnboardingScreen() {
                 { opacity: headOpacity, transform: [{ translateY: headSlide }] },
               ]}
             >
-              {"Your Culture.\nYour Tribe.\nYour Story."}
+              {t.onboarding.welcomeTagline}
             </Animated.Text>
 
             <Animated.Text style={[styles.welcomeSub, { opacity: subOpacity }]}>
-              The boldest events across Africa —{"\n"}made for people who truly feel it.
+              {t.onboarding.welcomeSub}
             </Animated.Text>
 
             {/* Social proof pills — Von Restorff: stand out with colour */}
             <Animated.View style={[styles.proofRow, { opacity: subOpacity }]}>
               {[
-                { icon: "map-pin",    text: "7 Countries" },
-                { icon: "users",      text: "24K Members" },
-                { icon: "credit-card", text: "M-Pesa Ready" },
+                { icon: "map-pin",    text: t.onboarding.proofCountries },
+                { icon: "users",      text: t.onboarding.proofMembers },
+                { icon: "credit-card", text: t.onboarding.proofMpesa },
               ].map((p) => (
                 <View key={p.text} style={styles.proofPill}>
                   <Feather name={p.icon as any} size={11} color="#FF6B00" />
@@ -270,7 +285,7 @@ export default function OnboardingScreen() {
               accessibilityRole="button"
               accessibilityLabel="Start your journey"
             >
-              <Text style={styles.primaryBtnText}>Start Your Journey</Text>
+              <Text style={styles.primaryBtnText}>{t.onboarding.startJourney}</Text>
               <Feather name="arrow-right" size={18} color="#fff" />
             </Pressable>
 
@@ -280,8 +295,8 @@ export default function OnboardingScreen() {
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Text style={styles.signinText}>
-                Already a member?{"  "}
-                <Text style={styles.signinAccent}>Sign in</Text>
+                {t.onboarding.alreadyMember}{"  "}
+                <Text style={styles.signinAccent}>{t.onboarding.signIn}</Text>
               </Text>
             </Pressable>
           </Animated.View>
@@ -316,20 +331,20 @@ export default function OnboardingScreen() {
           {step === 1 && (
             <View style={styles.flex1}>
               <View style={styles.stepHeader}>
-                <Text style={styles.eyebrow}>WHAT YOU GET</Text>
-                <Text style={styles.stepTitle}>{"Everything\nyou need."}</Text>
+                <Text style={styles.eyebrow}>{t.onboarding.featuresEyebrow.toUpperCase()}</Text>
+                <Text style={styles.stepTitle}>{t.onboarding.featuresTitle}</Text>
               </View>
 
               {/* Paging FlatList — swipe to explore each feature */}
               <FlatList
                 ref={featureListRef}
-                data={FEATURES}
+                data={FEATURE_KEYS}
                 keyExtractor={(_, i) => String(i)}
                 horizontal
                 pagingEnabled
                 showsHorizontalScrollIndicator={false}
                 onMomentumScrollEnd={onFeatureScroll}
-                renderItem={({ item }) => (
+                renderItem={({ item }: { item: (typeof FEATURE_KEYS)[number] }) => (
                   <View style={[styles.featureSlide, { width }]}>
                     {/* Emoji hero with coloured blob */}
                     <View style={[styles.featureEmojiWrap, { backgroundColor: item.bg }]}>
@@ -337,18 +352,21 @@ export default function OnboardingScreen() {
                     </View>
 
                     <Text style={[styles.featureTitle, { color: item.accent }]}>
-                      {item.title}
+                      {t.onboarding[item.titleKey]}
                     </Text>
-                    <Text style={styles.featureSub}>{item.sub}</Text>
+                    <Text style={styles.featureSub}>{t.onboarding[item.subKey]}</Text>
 
                     {/* Mini preview cards */}
                     <View style={styles.featureCardRow}>
-                      {(item.cards as ReadonlyArray<{ emoji: string; label: string }>).map((c) => (
-                        <View key={c.label} style={[styles.featureCard, { borderColor: item.accent + "33" }]}>
-                          <Text style={styles.featureCardEmoji}>{c.emoji}</Text>
-                          <Text style={[styles.featureCardLabel, { color: item.accent }]}>{c.label}</Text>
-                        </View>
-                      ))}
+                      {item.cards.map((c) => {
+                        const label = "labelKey" in c ? t.categories[c.labelKey as keyof Translations["categories"]] : c.label;
+                        return (
+                          <View key={label} style={[styles.featureCard, { borderColor: item.accent + "33" }]}>
+                            <Text style={styles.featureCardEmoji}>{c.emoji}</Text>
+                            <Text style={[styles.featureCardLabel, { color: item.accent }]}>{label}</Text>
+                          </View>
+                        );
+                      })}
                     </View>
                   </View>
                 )}
@@ -356,7 +374,7 @@ export default function OnboardingScreen() {
 
               {/* Slide dots */}
               <View style={styles.dotsRow}>
-                {FEATURES.map((f, i) => (
+                {FEATURE_KEYS.map((f, i) => (
                   <Pressable
                     key={i}
                     hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
@@ -368,7 +386,7 @@ export default function OnboardingScreen() {
                     <View
                       style={[
                         styles.dot,
-                        featureIdx === i && { backgroundColor: FEATURES[i].accent, width: 20 },
+                        featureIdx === i && { backgroundColor: FEATURE_KEYS[i].accent, width: 20 },
                       ]}
                     />
                   </Pressable>
@@ -378,7 +396,7 @@ export default function OnboardingScreen() {
               <View style={[styles.ctaArea, { paddingBottom: botPad + 20 }]}>
                 <Pressable style={styles.primaryBtn} onPress={() => goTo(2)}>
                   <Text style={styles.primaryBtnText}>
-                    {featureIdx < FEATURES.length - 1 ? "Next" : "Continue"}
+                    {featureIdx < FEATURE_KEYS.length - 1 ? t.onboarding.next : t.onboarding.continue}
                   </Text>
                   <Feather name="arrow-right" size={18} color="#fff" />
                 </Pressable>
@@ -390,11 +408,11 @@ export default function OnboardingScreen() {
           {step === 2 && (
             <View style={styles.flex1}>
               <View style={styles.stepHeader}>
-                <Text style={styles.eyebrow}>PERSONALISE YOUR FEED</Text>
-                <Text style={styles.stepTitle}>{"What moves\nyou?"}</Text>
+                <Text style={styles.eyebrow}>{t.onboarding.interestsEyebrow.toUpperCase()}</Text>
+                <Text style={styles.stepTitle}>{t.onboarding.interestsTitle}</Text>
                 <Text style={styles.stepSub}>
-                  Select all that call to you.{" "}
-                  <Text style={{ color: "#FF6B00" }}>No pressure.</Text>
+                  {t.onboarding.interestsSub}{" "}
+                  <Text style={{ color: "#FF6B00" }}>{t.onboarding.noPressure}</Text>
                 </Text>
               </View>
 
@@ -405,6 +423,7 @@ export default function OnboardingScreen() {
               >
                 {INTERESTS.map((item, idx) => {
                   const on = selectedInterests.includes(item.id);
+                  const label = interestLabels[item.labelKey];
                   return (
                     <Animated.View
                       key={item.id}
@@ -418,7 +437,7 @@ export default function OnboardingScreen() {
                         style={[styles.interestCard, on && styles.interestCardOn]}
                         accessibilityRole="checkbox"
                         accessibilityState={{ checked: on }}
-                        accessibilityLabel={item.label}
+                        accessibilityLabel={label}
                       >
                         {on && (
                           <View style={styles.checkBadge}>
@@ -427,7 +446,7 @@ export default function OnboardingScreen() {
                         )}
                         <Text style={styles.interestEmoji}>{item.emoji}</Text>
                         <Text style={[styles.interestLabel, on && styles.interestLabelOn]}>
-                          {item.label}
+                          {label}
                         </Text>
                       </Pressable>
                     </Animated.View>
@@ -443,7 +462,7 @@ export default function OnboardingScreen() {
                 )}
                 <Pressable style={styles.primaryBtn} onPress={() => goTo(3)}>
                   <Text style={styles.primaryBtnText}>
-                    {selectedInterests.length === 0 ? "Skip for now" : "Continue"}
+                    {selectedInterests.length === 0 ? t.onboarding.skipForNow : t.onboarding.continue}
                   </Text>
                   <Feather name="arrow-right" size={18} color="#fff" />
                 </Pressable>
@@ -455,10 +474,10 @@ export default function OnboardingScreen() {
           {step === 3 && (
             <View style={styles.flex1}>
               <View style={styles.stepHeader}>
-                <Text style={styles.eyebrow}>YOUR SCENE</Text>
-                <Text style={styles.stepTitle}>{"Where are\nyou based?"}</Text>
+                <Text style={styles.eyebrow}>{t.onboarding.locationEyebrow.toUpperCase()}</Text>
+                <Text style={styles.stepTitle}>{t.onboarding.locationTitle}</Text>
                 <Text style={styles.stepSub}>
-                  Sets your currency and surfaces nearby events first.
+                  {t.onboarding.locationSub}
                 </Text>
               </View>
 
@@ -469,7 +488,7 @@ export default function OnboardingScreen() {
               >
                 {EA_COUNTRIES.map((country) => {
                   const on      = selectedCountry === country.code;
-                  const members = MEMBER_COUNTS[country.code] ?? "Coming soon";
+                  const members = MEMBER_COUNTS[country.code] ?? t.onboarding.comingSoon;
                   return (
                     <Pressable
                       key={country.code}
@@ -513,23 +532,23 @@ export default function OnboardingScreen() {
 
               <View style={[styles.ctaArea, { paddingBottom: botPad + 20 }]}>
                 <Pressable style={styles.primaryBtn} onPress={finish}>
-                  <Text style={styles.primaryBtnText}>Start Exploring</Text>
+                  <Text style={styles.primaryBtnText}>{t.onboarding.startExploring}</Text>
                   <Feather name="zap" size={18} color="#fff" />
                 </Pressable>
                 <Text style={styles.legalNote}>
-                  By continuing you agree to our{" "}
+                  {t.onboarding.legalNoteIntro}{" "}
                   <Text
                     style={styles.legalLink}
                     onPress={() => router.push("/legal/terms" as any)}
                   >
-                    Terms
+                    {t.auth.termsOfService}
                   </Text>
-                  {" "}and{" "}
+                  {" "}{t.auth.and}{" "}
                   <Text
                     style={styles.legalLink}
                     onPress={() => router.push("/legal/privacy" as any)}
                   >
-                    Privacy Policy
+                    {t.auth.privacyPolicy}
                   </Text>
                 </Text>
               </View>

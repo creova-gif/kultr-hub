@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "@/hooks/useTranslation";
 import { EA_COUNTRIES } from "@/constants/currencies";
 import {
   useAuthOtpRequest,
@@ -35,6 +36,7 @@ export default function LoginScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { setAuth, setOnboardingDone, userCountry } = useApp();
+  const t = useTranslation();
 
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
@@ -241,21 +243,21 @@ export default function LoginScreen() {
           {step === "phone" ? (
             <>
               <Text style={styles.eyebrow}>
-                {authMethod === "email" && emailMode === "signup" ? "CREATE ACCOUNT" : "SIGN IN"}
+                {(authMethod === "email" && emailMode === "signup" ? t.auth.createAccount : t.auth.signIn).toUpperCase()}
               </Text>
               <Text style={[styles.title, { color: colors.foreground }]}>
                 {authMethod === "phone"
-                  ? "Your number"
+                  ? t.auth.yourNumber
                   : emailMode === "signup"
-                  ? "Create your account"
-                  : "Welcome back"}
+                  ? t.auth.createYourAccount
+                  : t.auth.welcomeBack}
               </Text>
               <Text style={[styles.sub, { color: colors.mutedForeground }]}>
                 {authMethod === "phone"
-                  ? "We'll send a verification code via SMS."
+                  ? t.auth.smsCodeSub
                   : emailMode === "signup"
-                  ? "Sign up with your email and a password."
-                  : "Sign in with your email and password."}
+                  ? t.auth.signupEmailSub
+                  : t.auth.loginEmailSub}
               </Text>
 
               {/* Phone / Email method toggle */}
@@ -283,7 +285,7 @@ export default function LoginScreen() {
                       { color: authMethod === "phone" ? "#fff" : colors.foreground },
                     ]}
                   >
-                    Phone
+                    {t.auth.phoneTab}
                   </Text>
                 </Pressable>
                 <Pressable
@@ -309,7 +311,7 @@ export default function LoginScreen() {
                       { color: authMethod === "email" ? "#fff" : colors.foreground },
                     ]}
                   >
-                    Email
+                    {t.auth.emailTab}
                   </Text>
                 </Pressable>
               </View>
@@ -382,7 +384,7 @@ export default function LoginScreen() {
                         color: colors.foreground,
                       },
                     ]}
-                    placeholder="Phone number"
+                    placeholder={t.auth.phoneNumberPlaceholder}
                     placeholderTextColor={colors.mutedForeground}
                     keyboardType="phone-pad"
                     value={phone}
@@ -408,7 +410,7 @@ export default function LoginScreen() {
                         color: colors.foreground,
                       },
                     ]}
-                    placeholder="Email address"
+                    placeholder={t.auth.emailAddressPlaceholder}
                     placeholderTextColor={colors.mutedForeground}
                     keyboardType="email-address"
                     autoCapitalize="none"
@@ -433,7 +435,7 @@ export default function LoginScreen() {
                         color: colors.foreground,
                       },
                     ]}
-                    placeholder="Password"
+                    placeholder={t.auth.passwordPlaceholder}
                     placeholderTextColor={colors.mutedForeground}
                     secureTextEntry
                     value={password}
@@ -458,7 +460,7 @@ export default function LoginScreen() {
                           color: colors.foreground,
                         },
                       ]}
-                      placeholder="Your name"
+                      placeholder={t.auth.yourNamePlaceholder}
                       placeholderTextColor={colors.mutedForeground}
                       value={signupName}
                       onChangeText={(t) => {
@@ -500,10 +502,10 @@ export default function LoginScreen() {
                   <>
                     <Text style={styles.primaryBtnText}>
                       {authMethod === "phone"
-                        ? "Send Code"
+                        ? t.auth.sendCode
                         : emailMode === "signup"
-                        ? "Create Account"
-                        : "Sign In"}
+                        ? t.auth.createAccount
+                        : t.auth.signIn}
                     </Text>
                     <Feather
                       name={authMethod === "phone" ? "arrow-right" : emailMode === "signup" ? "user-plus" : "log-in"}
@@ -524,9 +526,9 @@ export default function LoginScreen() {
                   }}
                 >
                   <Text style={[styles.resendText, { color: colors.mutedForeground }]}>
-                    {emailMode === "login" ? "Don't have an account? " : "Already have an account? "}
+                    {emailMode === "login" ? t.auth.noAccountQuestion : t.auth.alreadyHaveAccountQuestion}
                     <Text style={{ color: "#FF6B00", fontWeight: "700" }}>
-                      {emailMode === "login" ? "Sign up" : "Sign in"}
+                      {emailMode === "login" ? t.auth.signUp : t.auth.signIn}
                     </Text>
                   </Text>
                 </Pressable>
@@ -534,10 +536,10 @@ export default function LoginScreen() {
             </>
           ) : (
             <>
-              <Text style={styles.eyebrow}>VERIFICATION</Text>
-              <Text style={[styles.title, { color: colors.foreground }]}>Check your phone</Text>
+              <Text style={styles.eyebrow}>{t.auth.verification.toUpperCase()}</Text>
+              <Text style={[styles.title, { color: colors.foreground }]}>{t.auth.checkYourPhone}</Text>
               <Text style={[styles.sub, { color: colors.mutedForeground }]}>
-                Enter the 6-digit code sent to{" "}
+                {t.auth.enterCodeSentTo}{" "}
                 <Text style={{ color: colors.foreground, fontWeight: "700" }}>
                   {country.phonePrefix} {phone}
                 </Text>
@@ -594,7 +596,7 @@ export default function LoginScreen() {
                     color: colors.foreground,
                   },
                 ]}
-                placeholder="Your name (optional)"
+                placeholder={t.auth.yourNameOptionalPlaceholder}
                 placeholderTextColor={colors.mutedForeground}
                 value={name}
                 onChangeText={setName}
@@ -623,7 +625,7 @@ export default function LoginScreen() {
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
                   <>
-                    <Text style={styles.primaryBtnText}>Verify</Text>
+                    <Text style={styles.primaryBtnText}>{t.auth.verify}</Text>
                     <Feather name="check" size={18} color="#fff" />
                   </>
                 )}
@@ -638,8 +640,8 @@ export default function LoginScreen() {
                 }}
               >
                 <Text style={[styles.resendText, { color: colors.mutedForeground }]}>
-                  Didn't receive it?{" "}
-                  <Text style={{ color: "#FF6B00", fontWeight: "700" }}>Resend</Text>
+                  {t.auth.didntReceiveQuestion}
+                  <Text style={{ color: "#FF6B00", fontWeight: "700" }}>{t.auth.resend}</Text>
                 </Text>
               </Pressable>
             </>
@@ -647,21 +649,21 @@ export default function LoginScreen() {
         </Animated.View>
 
         <Text style={[styles.legal, { color: colors.mutedForeground }]}>
-          By continuing you agree to our{" "}
+          {t.auth.legalIntro}{" "}
           <Text
             style={styles.legalLink}
             accessibilityRole="link"
             onPress={() => router.push("/legal/terms")}
           >
-            Terms of Service
+            {t.auth.termsOfService}
           </Text>{" "}
-          and{" "}
+          {t.auth.and}{" "}
           <Text
             style={styles.legalLink}
             accessibilityRole="link"
             onPress={() => router.push("/legal/privacy")}
           >
-            Privacy Policy
+            {t.auth.privacyPolicy}
           </Text>
           .
         </Text>
