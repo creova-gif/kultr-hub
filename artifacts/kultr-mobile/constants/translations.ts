@@ -506,6 +506,12 @@ export interface Translations {
     couldntLoad: string;
     noneYet: string;
   };
+  // 404 "not found" screen
+  notFound: {
+    title: string;
+    screenTitle: string;
+    goHome: string;
+  };
 }
 
 const en: Translations = {
@@ -989,6 +995,11 @@ const en: Translations = {
     subhead: "Dietary restrictions and accessibility needs attendees chose to share with you — for catering and venue accommodation planning. Only attendees who explicitly opted in appear here.",
     couldntLoad: "Couldn't load attendee needs. Please try again.",
     noneYet: "No attendees have shared dietary or accessibility needs yet.",
+  },
+  notFound: {
+    title: "This screen doesn't exist.",
+    screenTitle: "Oops!",
+    goHome: "Go to home screen!",
   },
 };
 
@@ -1474,6 +1485,11 @@ const fr: Translations = {
     couldntLoad: "Impossible de charger les besoins des participants. Veuillez réessayer.",
     noneYet: "Aucun participant n'a encore partagé de besoins alimentaires ou d'accessibilité.",
   },
+  notFound: {
+    title: "Cet écran n'existe pas.",
+    screenTitle: "Oups !",
+    goHome: "Aller à l'écran d'accueil !",
+  },
 };
 
 const sw: Translations = {
@@ -1958,6 +1974,11 @@ const sw: Translations = {
     couldntLoad: "Imeshindwa kupakia mahitaji ya wahudhuriaji. Tafadhali jaribu tena.",
     noneYet: "Bado hakuna mhudhuriaji aliyeshiriki mahitaji ya chakula au ufikivu.",
   },
+  notFound: {
+    title: "Skrini hii haipo.",
+    screenTitle: "Samahani!",
+    goHome: "Nenda kwenye skrini ya nyumbani!",
+  },
 };
 
 const ar: Translations = {
@@ -2441,6 +2462,11 @@ const ar: Translations = {
     subhead: "القيود الغذائية واحتياجات إمكانية الوصول التي اختار الحضور مشاركتها معك — لتخطيط الضيافة وتجهيزات المكان. لا يظهر هنا سوى الحضور الذين وافقوا صراحةً على المشاركة.",
     couldntLoad: "تعذّر تحميل احتياجات الحضور. يرجى المحاولة مرة أخرى.",
     noneYet: "لم يشارك أي حضور احتياجات غذائية أو متعلقة بإمكانية الوصول بعد.",
+  },
+  notFound: {
+    title: "هذه الشاشة غير موجودة.",
+    screenTitle: "عذراً!",
+    goHome: "الذهاب إلى الشاشة الرئيسية!",
   },
 };
 
