@@ -374,6 +374,43 @@ export interface Translations {
     shareEvent: string;
     goToDashboard: string;
   };
+  // Creator payouts screen
+  payoutsScreen: {
+    signInTitle: string;
+    signInSub: string;
+    availableBalance: string;
+    couldntLoadBalance: string;
+    noBalanceYet: string;
+    available: string;
+    request: string;
+    alreadyRequested: string;
+    requestAnyway: string;
+    requestPayout: string;
+    closeForm: string;
+    amountLabel: string;
+    currencyLabel: string;
+    destinationLabel: string;
+    destinationPlaceholder: string;
+    submitRequest: string;
+    payoutHistory: string;
+    couldntLoadHistory: string;
+    noPayoutsYet: string;
+    toDestination: string;
+    requested: string;
+    statusPending: string;
+    statusPaid: string;
+    statusFailed: string;
+    invalidAmountTitle: string;
+    invalidAmountMsg: string;
+    currencyRequiredTitle: string;
+    currencyRequiredMsg: string;
+    destinationRequiredTitle: string;
+    destinationRequiredMsg: string;
+    payoutRequestedTitle: string;
+    payoutRequestedMsg: string;
+    requestFailedTitle: string;
+    requestFailedFallback: string;
+  };
 }
 
 const en: Translations = {
@@ -730,6 +767,42 @@ const en: Translations = {
     publishedSub: "Your event is now live. Share it with the world.",
     shareEvent: "Share Event",
     goToDashboard: "Go to Dashboard",
+  },
+  payoutsScreen: {
+    signInTitle: "Sign in to view payouts",
+    signInSub: "See your balance and request a payout for your event revenue.",
+    availableBalance: "Available Balance",
+    couldntLoadBalance: "Couldn't load your balance. Pull to retry.",
+    noBalanceYet: "No confirmed ticket revenue yet — your balance will appear here once tickets sell.",
+    available: "Available",
+    request: "Request",
+    alreadyRequested: "Already requested",
+    requestAnyway: "Request a payout anyway",
+    requestPayout: "Request Payout",
+    closeForm: "Close form",
+    amountLabel: "Amount",
+    currencyLabel: "Currency",
+    destinationLabel: "Destination (phone or bank reference)",
+    destinationPlaceholder: "e.g. 0712 345 678",
+    submitRequest: "Submit Request",
+    payoutHistory: "Payout History",
+    couldntLoadHistory: "Couldn't load payout history.",
+    noPayoutsYet: "No payout requests yet.",
+    toDestination: "To",
+    requested: "Requested",
+    statusPending: "Pending",
+    statusPaid: "Paid",
+    statusFailed: "Failed",
+    invalidAmountTitle: "Invalid amount",
+    invalidAmountMsg: "Enter a positive amount to request.",
+    currencyRequiredTitle: "Currency required",
+    currencyRequiredMsg: "Enter a currency, e.g. KES.",
+    destinationRequiredTitle: "Destination required",
+    destinationRequiredMsg: "Enter a phone number or bank reference to pay out to.",
+    payoutRequestedTitle: "Payout requested",
+    payoutRequestedMsg: "Your request is pending review.",
+    requestFailedTitle: "Request failed",
+    requestFailedFallback: "Please try again.",
   },
 };
 
@@ -1088,6 +1161,42 @@ const fr: Translations = {
     shareEvent: "Partager l'événement",
     goToDashboard: "Aller au tableau de bord",
   },
+  payoutsScreen: {
+    signInTitle: "Connectez-vous pour voir les paiements",
+    signInSub: "Consultez votre solde et demandez un paiement pour vos revenus d'événements.",
+    availableBalance: "Solde disponible",
+    couldntLoadBalance: "Impossible de charger votre solde. Tirez pour réessayer.",
+    noBalanceYet: "Aucun revenu de billet confirmé pour l'instant — votre solde apparaîtra ici une fois les billets vendus.",
+    available: "Disponible",
+    request: "Demander",
+    alreadyRequested: "Déjà demandé",
+    requestAnyway: "Demander un paiement quand même",
+    requestPayout: "Demander un paiement",
+    closeForm: "Fermer le formulaire",
+    amountLabel: "Montant",
+    currencyLabel: "Devise",
+    destinationLabel: "Destination (téléphone ou référence bancaire)",
+    destinationPlaceholder: "ex. 0712 345 678",
+    submitRequest: "Envoyer la demande",
+    payoutHistory: "Historique des paiements",
+    couldntLoadHistory: "Impossible de charger l'historique des paiements.",
+    noPayoutsYet: "Aucune demande de paiement pour l'instant.",
+    toDestination: "Vers",
+    requested: "Demandé",
+    statusPending: "En attente",
+    statusPaid: "Payé",
+    statusFailed: "Échoué",
+    invalidAmountTitle: "Montant invalide",
+    invalidAmountMsg: "Saisissez un montant positif à demander.",
+    currencyRequiredTitle: "Devise requise",
+    currencyRequiredMsg: "Saisissez une devise, ex. KES.",
+    destinationRequiredTitle: "Destination requise",
+    destinationRequiredMsg: "Saisissez un numéro de téléphone ou une référence bancaire pour le paiement.",
+    payoutRequestedTitle: "Paiement demandé",
+    payoutRequestedMsg: "Votre demande est en attente de révision.",
+    requestFailedTitle: "Échec de la demande",
+    requestFailedFallback: "Veuillez réessayer.",
+  },
 };
 
 const sw: Translations = {
@@ -1445,6 +1554,42 @@ const sw: Translations = {
     shareEvent: "Shiriki Tukio",
     goToDashboard: "Nenda kwenye Dashibodi",
   },
+  payoutsScreen: {
+    signInTitle: "Ingia ili uone malipo",
+    signInSub: "Angalia salio lako na uombe malipo ya mapato ya matukio yako.",
+    availableBalance: "Salio Linalopatikana",
+    couldntLoadBalance: "Imeshindwa kupakia salio lako. Vuta ili ujaribu tena.",
+    noBalanceYet: "Bado hakuna mapato ya tikiti yaliyothibitishwa — salio lako litaonekana hapa mara tikiti zitakapouzwa.",
+    available: "Linalopatikana",
+    request: "Omba",
+    alreadyRequested: "Tayari imeombwa",
+    requestAnyway: "Omba malipo hata hivyo",
+    requestPayout: "Omba Malipo",
+    closeForm: "Funga fomu",
+    amountLabel: "Kiasi",
+    currencyLabel: "Sarafu",
+    destinationLabel: "Mahali pa Kutuma (simu au marejeleo ya benki)",
+    destinationPlaceholder: "mfano: 0712 345 678",
+    submitRequest: "Wasilisha Ombi",
+    payoutHistory: "Historia ya Malipo",
+    couldntLoadHistory: "Imeshindwa kupakia historia ya malipo.",
+    noPayoutsYet: "Bado hakuna maombi ya malipo.",
+    toDestination: "Kwenda",
+    requested: "Imeombwa",
+    statusPending: "Inasubiri",
+    statusPaid: "Imelipwa",
+    statusFailed: "Imeshindwa",
+    invalidAmountTitle: "Kiasi Batili",
+    invalidAmountMsg: "Ingiza kiasi chanya cha kuomba.",
+    currencyRequiredTitle: "Sarafu Inahitajika",
+    currencyRequiredMsg: "Ingiza sarafu, mfano: KES.",
+    destinationRequiredTitle: "Mahali pa Kutuma Panahitajika",
+    destinationRequiredMsg: "Ingiza nambari ya simu au marejeleo ya benki ya kutuma malipo.",
+    payoutRequestedTitle: "Malipo Yameombwa",
+    payoutRequestedMsg: "Ombi lako liko katika ukaguzi.",
+    requestFailedTitle: "Ombi Limeshindwa",
+    requestFailedFallback: "Tafadhali jaribu tena.",
+  },
 };
 
 const ar: Translations = {
@@ -1801,6 +1946,42 @@ const ar: Translations = {
     publishedSub: "فعاليتك الآن مباشرة. شاركها مع العالم.",
     shareEvent: "شارك الفعالية",
     goToDashboard: "الذهاب إلى لوحة التحكم",
+  },
+  payoutsScreen: {
+    signInTitle: "سجّل الدخول لعرض المدفوعات",
+    signInSub: "اطّلع على رصيدك واطلب دفعة من إيرادات فعالياتك.",
+    availableBalance: "الرصيد المتاح",
+    couldntLoadBalance: "تعذّر تحميل رصيدك. اسحب لإعادة المحاولة.",
+    noBalanceYet: "لا توجد إيرادات تذاكر مؤكدة بعد — سيظهر رصيدك هنا بمجرد بيع التذاكر.",
+    available: "متاح",
+    request: "طلب",
+    alreadyRequested: "تم طلبه بالفعل",
+    requestAnyway: "اطلب دفعة على أي حال",
+    requestPayout: "طلب دفعة",
+    closeForm: "إغلاق النموذج",
+    amountLabel: "المبلغ",
+    currencyLabel: "العملة",
+    destinationLabel: "الوجهة (رقم هاتف أو مرجع بنكي)",
+    destinationPlaceholder: "مثال: 0712 345 678",
+    submitRequest: "إرسال الطلب",
+    payoutHistory: "سجل المدفوعات",
+    couldntLoadHistory: "تعذّر تحميل سجل المدفوعات.",
+    noPayoutsYet: "لا توجد طلبات دفع بعد.",
+    toDestination: "إلى",
+    requested: "طُلب في",
+    statusPending: "قيد الانتظار",
+    statusPaid: "مدفوع",
+    statusFailed: "فشل",
+    invalidAmountTitle: "مبلغ غير صالح",
+    invalidAmountMsg: "أدخل مبلغاً موجباً للطلب.",
+    currencyRequiredTitle: "العملة مطلوبة",
+    currencyRequiredMsg: "أدخل عملة، مثل KES.",
+    destinationRequiredTitle: "الوجهة مطلوبة",
+    destinationRequiredMsg: "أدخل رقم هاتف أو مرجعاً بنكياً لصرف الدفعة إليه.",
+    payoutRequestedTitle: "تم طلب الدفعة",
+    payoutRequestedMsg: "طلبك قيد المراجعة.",
+    requestFailedTitle: "فشل الطلب",
+    requestFailedFallback: "يرجى المحاولة مرة أخرى.",
   },
 };
 
