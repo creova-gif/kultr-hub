@@ -223,6 +223,29 @@ export interface Translations {
     earlierLabel: string;
     settingsHint: string;
   };
+  // Quests screen
+  quests: {
+    title: string;
+    subtitle: string;
+    signInTitle: string;
+    signInSub: string;
+    couldntLoad: string;
+    checkConnection: string;
+    legendTitle: string;
+    journeyTitle: string;
+    allCompletedSub: string;
+    allQuestsTab: string;
+    inProgressTab: string;
+    completedTab: string;
+    noCompletedYet: string;
+    nothingHere: string;
+    done: string;
+    checkInToEarn: string;
+    checkIn: string;
+    culturalLegacy: string;
+    noCollectiblesYet: string;
+    spendRewards: string;
+  };
 }
 
 const en: Translations = {
@@ -433,6 +456,28 @@ const en: Translations = {
     newLabel: "New",
     earlierLabel: "Earlier",
     settingsHint: "Manage notification preferences in Settings",
+  },
+  quests: {
+    title: "Cultural Quests",
+    subtitle: "Explore. Experience. Earn rewards.",
+    signInTitle: "Sign in to start questing",
+    signInSub: "Track your cultural journey and earn collectibles.",
+    couldntLoad: "Couldn't load quests",
+    checkConnection: "Check your connection and try again.",
+    legendTitle: "🏆 Kultr Legend",
+    journeyTitle: "Your Quest Journey",
+    allCompletedSub: "All quests completed — you've built your cultural legacy.",
+    allQuestsTab: "All Quests",
+    inProgressTab: "In Progress",
+    completedTab: "Completed",
+    noCompletedYet: "No completed quests yet.",
+    nothingHere: "Nothing here right now.",
+    done: "Done",
+    checkInToEarn: "Check in to earn",
+    checkIn: "Check in",
+    culturalLegacy: "Cultural Legacy",
+    noCollectiblesYet: "Complete quests to earn collectible badges.",
+    spendRewards: "Spend your KULTROINS in Rewards",
   },
 };
 
@@ -645,6 +690,28 @@ const fr: Translations = {
     earlierLabel: "Plus tôt",
     settingsHint: "Gérez vos préférences de notification dans les Paramètres",
   },
+  quests: {
+    title: "Quêtes Culturelles",
+    subtitle: "Explorez. Vivez. Gagnez des récompenses.",
+    signInTitle: "Connectez-vous pour commencer",
+    signInSub: "Suivez votre parcours culturel et gagnez des objets de collection.",
+    couldntLoad: "Impossible de charger les quêtes",
+    checkConnection: "Vérifiez votre connexion et réessayez.",
+    legendTitle: "🏆 Légende Kultr",
+    journeyTitle: "Votre parcours de quêtes",
+    allCompletedSub: "Toutes les quêtes terminées — vous avez construit votre héritage culturel.",
+    allQuestsTab: "Toutes",
+    inProgressTab: "En cours",
+    completedTab: "Terminées",
+    noCompletedYet: "Aucune quête terminée pour l'instant.",
+    nothingHere: "Rien ici pour le moment.",
+    done: "Terminé",
+    checkInToEarn: "Enregistrez-vous pour gagner",
+    checkIn: "S'enregistrer",
+    culturalLegacy: "Héritage Culturel",
+    noCollectiblesYet: "Complétez des quêtes pour gagner des badges à collectionner.",
+    spendRewards: "Dépensez vos KULTROINS dans Récompenses",
+  },
 };
 
 const sw: Translations = {
@@ -856,6 +923,28 @@ const sw: Translations = {
     earlierLabel: "Awali",
     settingsHint: "Simamia mapendeleo ya arifa kwenye Mipangilio",
   },
+  quests: {
+    title: "Misheni za Kiutamaduni",
+    subtitle: "Gundua. Pitia. Pata zawadi.",
+    signInTitle: "Ingia ili uanze misheni",
+    signInSub: "Fuatilia safari yako ya kiutamaduni na upate vitu vya kukusanya.",
+    couldntLoad: "Imeshindwa kupakia misheni",
+    checkConnection: "Angalia muunganisho wako na ujaribu tena.",
+    legendTitle: "🏆 Hadithi ya Kultr",
+    journeyTitle: "Safari Yako ya Misheni",
+    allCompletedSub: "Misheni zote zimekamilika — umejenga urithi wako wa kiutamaduni.",
+    allQuestsTab: "Zote",
+    inProgressTab: "Zinaendelea",
+    completedTab: "Zilizokamilika",
+    noCompletedYet: "Hakuna misheni iliyokamilika bado.",
+    nothingHere: "Hakuna kitu hapa kwa sasa.",
+    done: "Imekamilika",
+    checkInToEarn: "Ingia ili upate",
+    checkIn: "Ingia",
+    culturalLegacy: "Urithi wa Kiutamaduni",
+    noCollectiblesYet: "Kamilisha misheni ili upate beji za kukusanya.",
+    spendRewards: "Tumia KULTROINS zako kwenye Zawadi",
+  },
 };
 
 const ar: Translations = {
@@ -1066,6 +1155,28 @@ const ar: Translations = {
     newLabel: "جديد",
     earlierLabel: "سابقاً",
     settingsHint: "أدر تفضيلات الإشعارات من الإعدادات",
+  },
+  quests: {
+    title: "المهام الثقافية",
+    subtitle: "استكشف. عِش التجربة. اكسب المكافآت.",
+    signInTitle: "سجّل الدخول لبدء المهام",
+    signInSub: "تابع رحلتك الثقافية واجمع القطع التذكارية.",
+    couldntLoad: "تعذّر تحميل المهام",
+    checkConnection: "تحقق من اتصالك وحاول مرة أخرى.",
+    legendTitle: "🏆 أسطورة كلتر",
+    journeyTitle: "رحلة مهامك",
+    allCompletedSub: "اكتملت جميع المهام — لقد بنيت إرثك الثقافي.",
+    allQuestsTab: "الكل",
+    inProgressTab: "قيد التنفيذ",
+    completedTab: "مكتملة",
+    noCompletedYet: "لا توجد مهام مكتملة بعد.",
+    nothingHere: "لا يوجد شيء هنا الآن.",
+    done: "منجزة",
+    checkInToEarn: "سجّل حضورك لتكسب",
+    checkIn: "تسجيل الحضور",
+    culturalLegacy: "الإرث الثقافي",
+    noCollectiblesYet: "أكمل المهام لتكسب شارات تذكارية.",
+    spendRewards: "أنفق KULTROINS في المكافآت",
   },
 };
 

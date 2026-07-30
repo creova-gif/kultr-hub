@@ -17,6 +17,7 @@ import { Alert } from "@/lib/alert";
 import { CheckinCelebration } from "@/components/CheckinCelebration";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
 import { useQuestProgress, useCheckIn, type QuestView } from "@/hooks/useQuests";
 
@@ -49,6 +50,7 @@ export default function QuestsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { authToken, tickets } = useApp();
+  const t = useTranslation();
   const { getEventById } = useEventCatalog();
   const { data, isLoading, isError } = useQuestProgress();
   const checkIn = useCheckIn();
@@ -126,7 +128,7 @@ export default function QuestsScreen() {
           >
             <Feather name="arrow-left" size={20} color={colors.foreground} />
           </Pressable>
-          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Cultural Quests</Text>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t.quests.title}</Text>
           <View
             style={[styles.coinPill, { backgroundColor: colors.muted }]}
             accessibilityLabel={`${data?.balance ?? 0} KULTROINS`}
@@ -138,7 +140,7 @@ export default function QuestsScreen() {
           </View>
         </View>
         <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-          Explore. Experience. Earn rewards.
+          {t.quests.subtitle}
         </Text>
 
         {!authToken ? (
@@ -146,12 +148,12 @@ export default function QuestsScreen() {
             <View style={[styles.emptyIcon, { backgroundColor: colors.muted }]}>
               <Feather name="compass" size={34} color={colors.mutedForeground} />
             </View>
-            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Sign in to start questing</Text>
+            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t.quests.signInTitle}</Text>
             <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              Track your cultural journey and earn collectibles.
+              {t.quests.signInSub}
             </Text>
             <Pressable style={styles.cta} onPress={() => router.push("/login")}>
-              <Text style={styles.ctaText}>Sign In</Text>
+              <Text style={styles.ctaText}>{t.auth.signIn}</Text>
             </Pressable>
           </View>
         ) : isLoading ? (
@@ -161,9 +163,9 @@ export default function QuestsScreen() {
         ) : isError || !data ? (
           <View style={styles.empty}>
             <Feather name="wifi-off" size={32} color={colors.mutedForeground} />
-            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Couldn't load quests</Text>
+            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t.quests.couldntLoad}</Text>
             <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              Check your connection and try again.
+              {t.quests.checkConnection}
             </Text>
           </View>
         ) : (
@@ -180,7 +182,7 @@ export default function QuestsScreen() {
             >
               <View style={styles.overallTop}>
                 <Text style={[styles.overallTitle, { color: colors.foreground }]}>
-                  {data.overall.allCompleted ? "🏆 Kultr Legend" : "Your Quest Journey"}
+                  {data.overall.allCompleted ? t.quests.legendTitle : t.quests.journeyTitle}
                 </Text>
                 <Text style={[styles.overallCount, { color: "#FF6B00" }]}>
                   {data.overall.completed}/{data.overall.total}
@@ -199,7 +201,7 @@ export default function QuestsScreen() {
               </View>
               <Text style={[styles.overallSub, { color: colors.mutedForeground }]}>
                 {data.overall.allCompleted
-                  ? "All quests completed — you've built your cultural legacy."
+                  ? t.quests.allCompletedSub
                   : `${data.overall.percent}% complete${data.pass.active ? ` · KULTR PASS ${data.pass.multiplier}× active` : ""}`}
               </Text>
             </View>
@@ -207,15 +209,15 @@ export default function QuestsScreen() {
             {/* Tabs */}
             <View style={styles.tabs}>
               {([
-                { id: "all", label: "All Quests" },
-                { id: "progress", label: "In Progress" },
-                { id: "completed", label: "Completed" },
-              ] as const).map((t) => {
-                const active = tab === t.id;
+                { id: "all", label: t.quests.allQuestsTab },
+                { id: "progress", label: t.quests.inProgressTab },
+                { id: "completed", label: t.quests.completedTab },
+              ] as const).map((tabItem) => {
+                const active = tab === tabItem.id;
                 return (
                   <Pressable
-                    key={t.id}
-                    onPress={() => { Haptics.selectionAsync(); setTab(t.id); }}
+                    key={tabItem.id}
+                    onPress={() => { Haptics.selectionAsync(); setTab(tabItem.id); }}
                     style={[
                       styles.tab,
                       {
@@ -227,7 +229,7 @@ export default function QuestsScreen() {
                     accessibilityState={{ selected: active }}
                   >
                     <Text style={[styles.tabText, { color: active ? "#fff" : colors.mutedForeground }]}>
-                      {t.label}
+                      {tabItem.label}
                     </Text>
                   </Pressable>
                 );
@@ -238,7 +240,7 @@ export default function QuestsScreen() {
             <View style={styles.section}>
               {filteredQuests.length === 0 ? (
                 <Text style={[styles.emptyText, { color: colors.mutedForeground, paddingVertical: 24 }]}>
-                  {tab === "completed" ? "No completed quests yet." : "Nothing here right now."}
+                  {tab === "completed" ? t.quests.noCompletedYet : t.quests.nothingHere}
                 </Text>
               ) : (
                 filteredQuests.map((q) => {
@@ -290,7 +292,7 @@ export default function QuestsScreen() {
                           {q.completed ? (
                             <View style={styles.doneRow}>
                               <Feather name="check-circle" size={14} color="#00C853" />
-                              <Text style={[styles.doneText, { color: "#00C853" }]}>Done</Text>
+                              <Text style={[styles.doneText, { color: "#00C853" }]}>{t.quests.done}</Text>
                             </View>
                           ) : (
                             <Text style={[styles.progressLabel, { color: colors.mutedForeground }]}>
@@ -308,7 +310,7 @@ export default function QuestsScreen() {
             {/* Check-in to a ticketed event */}
             {ticketedEvents.length > 0 && (
               <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Check in to earn</Text>
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t.quests.checkInToEarn}</Text>
                 {ticketedEvents.map((ev) => (
                   <View
                     key={ev.id}
@@ -323,7 +325,7 @@ export default function QuestsScreen() {
                       disabled={checkIn.isPending}
                       style={[styles.checkinBtn, { opacity: checkIn.isPending ? 0.6 : 1 }]}
                     >
-                      <Text style={styles.checkinBtnText}>Check in</Text>
+                      <Text style={styles.checkinBtnText}>{t.quests.checkIn}</Text>
                     </Pressable>
                   </View>
                 ))}
@@ -333,14 +335,14 @@ export default function QuestsScreen() {
             {/* Cultural Legacy — collectibles */}
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-                Cultural Legacy
+                {t.quests.culturalLegacy}
                 <Text style={{ color: colors.mutedForeground, fontWeight: "400" }}>
                   {"  "}({data.collectibles.length})
                 </Text>
               </Text>
               {data.collectibles.length === 0 ? (
                 <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-                  Complete quests to earn collectible badges.
+                  {t.quests.noCollectiblesYet}
                 </Text>
               ) : (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.legacyRow}>
@@ -368,7 +370,7 @@ export default function QuestsScreen() {
               onPress={() => router.push("/rewards")}
             >
               <Feather name="gift" size={16} color="#FF6B00" />
-              <Text style={styles.rewardsLinkText}>Spend your KULTROINS in Rewards</Text>
+              <Text style={styles.rewardsLinkText}>{t.quests.spendRewards}</Text>
               <Feather name="chevron-right" size={16} color="#FF6B00" />
             </Pressable>
           </>
