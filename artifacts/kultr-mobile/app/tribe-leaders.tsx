@@ -14,58 +14,51 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Alert } from "@/lib/alert";
+import { useTranslation } from "@/hooks/useTranslation";
+import type { Translations } from "@/constants/translations";
 
-const BENEFITS = [
-  {
-    icon: "star" as const,
-    title: "Exclusive Access",
-    body: "Early access to events, artist meet & greets, and backstage experiences before tickets go public.",
-  },
-  {
-    icon: "users" as const,
-    title: "Community of Change Makers",
-    body: "Join a curated network of East Africa's most influential cultural tastemakers and creators.",
-  },
-  {
-    icon: "trending-up" as const,
-    title: "Amplify Culture. Earn Rewards.",
-    body: "Share culture with your community and earn KULTROINS, exclusive perks, and performance bonuses.",
-  },
-  {
-    icon: "award" as const,
-    title: "VIP Experiences & Events",
-    body: "Invitations to exclusive Kultr events, brand activations, and industry networking evenings.",
-  },
-  {
-    icon: "zap" as const,
-    title: "Grow Your Influence",
-    body: "Co-create content with Kultr, get featured on our platforms, and build your personal brand.",
-  },
-];
+const BENEFIT_ICONS = ["star", "users", "trending-up", "award", "zap"] as const;
 
-const STEPS = [
-  { number: "01", title: "Apply", body: "Fill in the form — tell us who you are and the culture you carry." },
-  { number: "02", title: "Review", body: "Our team reviews applications within 7 business days." },
-  { number: "03", title: "Onboard", body: "Accepted leaders get a welcome kit, badge, and dedicated support." },
-  { number: "04", title: "Lead", body: "Start hosting, sharing, and shaping culture across East Africa." },
-];
+const STEP_NUMBERS = ["01", "02", "03", "04"] as const;
+
+function getBenefits(t: Translations) {
+  return [
+    { icon: BENEFIT_ICONS[0], title: t.tribeLeaders.benefit1Title, body: t.tribeLeaders.benefit1Body },
+    { icon: BENEFIT_ICONS[1], title: t.tribeLeaders.benefit2Title, body: t.tribeLeaders.benefit2Body },
+    { icon: BENEFIT_ICONS[2], title: t.tribeLeaders.benefit3Title, body: t.tribeLeaders.benefit3Body },
+    { icon: BENEFIT_ICONS[3], title: t.tribeLeaders.benefit4Title, body: t.tribeLeaders.benefit4Body },
+    { icon: BENEFIT_ICONS[4], title: t.tribeLeaders.benefit5Title, body: t.tribeLeaders.benefit5Body },
+  ];
+}
+
+function getSteps(t: Translations) {
+  return [
+    { number: STEP_NUMBERS[0], title: t.tribeLeaders.step1Title, body: t.tribeLeaders.step1Body },
+    { number: STEP_NUMBERS[1], title: t.tribeLeaders.step2Title, body: t.tribeLeaders.step2Body },
+    { number: STEP_NUMBERS[2], title: t.tribeLeaders.step3Title, body: t.tribeLeaders.step3Body },
+    { number: STEP_NUMBERS[3], title: t.tribeLeaders.step4Title, body: t.tribeLeaders.step4Body },
+  ];
+}
 
 export default function TribeLeadersScreen() {
   const insets = useSafeAreaInsets();
+  const t = useTranslation();
   const [applying, setApplying] = useState(false);
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
+  const BENEFITS = getBenefits(t);
+  const STEPS = getSteps(t);
 
   const handleApply = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setApplying(true);
     try {
       Alert.alert(
-        "Apply to Tribe Leaders",
-        "This will open the application form. Ready?",
+        t.tribeLeaders.applyAlertTitle,
+        t.tribeLeaders.applyAlertMsg,
         [
-          { text: "Cancel", style: "cancel" },
+          { text: t.actions.cancel, style: "cancel" },
           {
-            text: "Open Form",
+            text: t.tribeLeaders.openForm,
             onPress: () => {
               Linking.openURL("https://kultr.com/tribe-leaders");
             },
@@ -102,13 +95,13 @@ export default function TribeLeadersScreen() {
         >
           <View style={styles.heroContent}>
             <View style={styles.programBadge}>
-              <Text style={styles.programBadgeText}>AMBASSADOR PROGRAM</Text>
+              <Text style={styles.programBadgeText}>{t.tribeLeaders.badge.toUpperCase()}</Text>
             </View>
-            <Text style={styles.heroTitle}>KULTR{"\n"}TRIBE LEADERS</Text>
+            <Text style={styles.heroTitle}>{t.tribeLeaders.heroTitleLine1.toUpperCase()}{"\n"}{t.tribeLeaders.heroTitleLine2.toUpperCase()}</Text>
             <View style={styles.heroDivider} />
-            <Text style={styles.heroTagline}>LEAD THE TRIBE</Text>
+            <Text style={styles.heroTagline}>{t.tribeLeaders.heroTagline.toUpperCase()}</Text>
             <Text style={styles.heroSub}>
-              EMPOWERING EAST AFRICA'S{"\n"}CULTURAL TASTEMAKERS
+              {t.tribeLeaders.heroSubLine1.toUpperCase()}{"\n"}{t.tribeLeaders.heroSubLine2.toUpperCase()}
             </Text>
           </View>
 
@@ -128,7 +121,7 @@ export default function TribeLeadersScreen() {
 
         {/* Benefits */}
         <View style={styles.benefitsSection}>
-          <Text style={styles.sectionLabel}>WHAT YOU GET</Text>
+          <Text style={styles.sectionLabel}>{t.tribeLeaders.whatYouGet.toUpperCase()}</Text>
           {BENEFITS.map((b) => (
             <View key={b.title} style={styles.benefitCard}>
               <View style={styles.benefitIconWrap}>
@@ -148,16 +141,16 @@ export default function TribeLeadersScreen() {
           style={styles.movementSection}
         >
           <Text style={styles.movementTitle}>
-            THIS ISN'T JUST A PROGRAM.{"\n"}IT'S A MOVEMENT.
+            {t.tribeLeaders.movementTitleLine1.toUpperCase()}{"\n"}{t.tribeLeaders.movementTitleLine2.toUpperCase()}
           </Text>
           <Text style={styles.movementSub}>
-            Kultr Tribe Leaders are the bridge between world-class events and the communities that make culture worth celebrating. We're building the most passionate network of cultural champions across East Africa — and we want you in it.
+            {t.tribeLeaders.movementSub}
           </Text>
         </LinearGradient>
 
         {/* How it works */}
         <View style={styles.stepsSection}>
-          <Text style={styles.sectionLabel}>HOW IT WORKS</Text>
+          <Text style={styles.sectionLabel}>{t.tribeLeaders.howItWorks.toUpperCase()}</Text>
           {STEPS.map((step, i) => (
             <View key={step.number} style={styles.stepRow}>
               <View style={styles.stepNumberWrap}>
@@ -174,15 +167,15 @@ export default function TribeLeadersScreen() {
 
         {/* CTA */}
         <View style={styles.ctaSection}>
-          <Text style={styles.ctaHeadline}>APPLY NOW. REPRESENT KULTR.{"\n"}INSPIRE EAST AFRICA.</Text>
+          <Text style={styles.ctaHeadline}>{t.tribeLeaders.ctaHeadlineLine1.toUpperCase()}{"\n"}{t.tribeLeaders.ctaHeadlineLine2.toUpperCase()}</Text>
           <Pressable
             style={({ pressed }) => [styles.applyBtn, { opacity: pressed || applying ? 0.85 : 1 }]}
             onPress={handleApply}
             disabled={applying}
-            accessibilityLabel="Apply Now"
+            accessibilityLabel={t.tribeLeaders.applyNow}
             accessibilityRole="button"
           >
-            <Text style={styles.applyBtnText}>Apply Now</Text>
+            <Text style={styles.applyBtnText}>{t.tribeLeaders.applyNow}</Text>
             <Feather name="arrow-right" size={18} color="#fff" />
           </Pressable>
           <Text style={styles.kultrUrl}>KULTR.COM/TRIBE-LEADERS</Text>

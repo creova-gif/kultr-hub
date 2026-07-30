@@ -411,6 +411,44 @@ export interface Translations {
     requestFailedTitle: string;
     requestFailedFallback: string;
   };
+  // Tribe Leaders ambassador program landing screen
+  tribeLeaders: {
+    badge: string;
+    heroTitleLine1: string;
+    heroTitleLine2: string;
+    heroTagline: string;
+    heroSubLine1: string;
+    heroSubLine2: string;
+    whatYouGet: string;
+    benefit1Title: string;
+    benefit1Body: string;
+    benefit2Title: string;
+    benefit2Body: string;
+    benefit3Title: string;
+    benefit3Body: string;
+    benefit4Title: string;
+    benefit4Body: string;
+    benefit5Title: string;
+    benefit5Body: string;
+    movementTitleLine1: string;
+    movementTitleLine2: string;
+    movementSub: string;
+    howItWorks: string;
+    step1Title: string;
+    step1Body: string;
+    step2Title: string;
+    step2Body: string;
+    step3Title: string;
+    step3Body: string;
+    step4Title: string;
+    step4Body: string;
+    ctaHeadlineLine1: string;
+    ctaHeadlineLine2: string;
+    applyNow: string;
+    applyAlertTitle: string;
+    applyAlertMsg: string;
+    openForm: string;
+  };
 }
 
 const en: Translations = {
@@ -803,6 +841,43 @@ const en: Translations = {
     payoutRequestedMsg: "Your request is pending review.",
     requestFailedTitle: "Request failed",
     requestFailedFallback: "Please try again.",
+  },
+  tribeLeaders: {
+    badge: "Ambassador Program",
+    heroTitleLine1: "Kultr",
+    heroTitleLine2: "Tribe Leaders",
+    heroTagline: "Lead the Tribe",
+    heroSubLine1: "Empowering East Africa's",
+    heroSubLine2: "Cultural Tastemakers",
+    whatYouGet: "What You Get",
+    benefit1Title: "Exclusive Access",
+    benefit1Body: "Early access to events, artist meet & greets, and backstage experiences before tickets go public.",
+    benefit2Title: "Community of Change Makers",
+    benefit2Body: "Join a curated network of East Africa's most influential cultural tastemakers and creators.",
+    benefit3Title: "Amplify Culture. Earn Rewards.",
+    benefit3Body: "Share culture with your community and earn KULTROINS, exclusive perks, and performance bonuses.",
+    benefit4Title: "VIP Experiences & Events",
+    benefit4Body: "Invitations to exclusive Kultr events, brand activations, and industry networking evenings.",
+    benefit5Title: "Grow Your Influence",
+    benefit5Body: "Co-create content with Kultr, get featured on our platforms, and build your personal brand.",
+    movementTitleLine1: "This isn't just a program.",
+    movementTitleLine2: "It's a movement.",
+    movementSub: "Kultr Tribe Leaders are the bridge between world-class events and the communities that make culture worth celebrating. We're building the most passionate network of cultural champions across East Africa — and we want you in it.",
+    howItWorks: "How It Works",
+    step1Title: "Apply",
+    step1Body: "Fill in the form — tell us who you are and the culture you carry.",
+    step2Title: "Review",
+    step2Body: "Our team reviews applications within 7 business days.",
+    step3Title: "Onboard",
+    step3Body: "Accepted leaders get a welcome kit, badge, and dedicated support.",
+    step4Title: "Lead",
+    step4Body: "Start hosting, sharing, and shaping culture across East Africa.",
+    ctaHeadlineLine1: "Apply now. Represent Kultr.",
+    ctaHeadlineLine2: "Inspire East Africa.",
+    applyNow: "Apply Now",
+    applyAlertTitle: "Apply to Tribe Leaders",
+    applyAlertMsg: "This will open the application form. Ready?",
+    openForm: "Open Form",
   },
 };
 
@@ -1197,6 +1272,43 @@ const fr: Translations = {
     requestFailedTitle: "Échec de la demande",
     requestFailedFallback: "Veuillez réessayer.",
   },
+  tribeLeaders: {
+    badge: "Programme d'Ambassadeurs",
+    heroTitleLine1: "Kultr",
+    heroTitleLine2: "Tribe Leaders",
+    heroTagline: "Menez la Tribu",
+    heroSubLine1: "Au service des faiseurs de tendances",
+    heroSubLine2: "culturelles d'Afrique de l'Est",
+    whatYouGet: "Ce Que Vous Obtenez",
+    benefit1Title: "Accès exclusif",
+    benefit1Body: "Accès anticipé aux événements, rencontres avec des artistes et expériences en coulisses avant l'ouverture au public.",
+    benefit2Title: "Communauté d'acteurs du changement",
+    benefit2Body: "Rejoignez un réseau sélectionné des faiseurs de tendances culturelles et créateurs les plus influents d'Afrique de l'Est.",
+    benefit3Title: "Amplifiez la culture. Gagnez des récompenses.",
+    benefit3Body: "Partagez la culture avec votre communauté et gagnez des KULTROINS, des avantages exclusifs et des primes de performance.",
+    benefit4Title: "Expériences et événements VIP",
+    benefit4Body: "Invitations à des événements Kultr exclusifs, activations de marque et soirées de réseautage professionnel.",
+    benefit5Title: "Développez votre influence",
+    benefit5Body: "Co-créez du contenu avec Kultr, soyez mis en avant sur nos plateformes et développez votre marque personnelle.",
+    movementTitleLine1: "Ce n'est pas qu'un programme.",
+    movementTitleLine2: "C'est un mouvement.",
+    movementSub: "Les Kultr Tribe Leaders sont le pont entre des événements de classe mondiale et les communautés qui font vivre la culture. Nous construisons le réseau le plus passionné de champions culturels d'Afrique de l'Est — et nous vous voulons parmi eux.",
+    howItWorks: "Comment Ça Marche",
+    step1Title: "Postulez",
+    step1Body: "Remplissez le formulaire — dites-nous qui vous êtes et la culture que vous portez.",
+    step2Title: "Révision",
+    step2Body: "Notre équipe examine les candidatures sous 7 jours ouvrés.",
+    step3Title: "Intégration",
+    step3Body: "Les leaders acceptés reçoivent un kit de bienvenue, un badge et un accompagnement dédié.",
+    step4Title: "Menez",
+    step4Body: "Commencez à organiser, partager et façonner la culture à travers l'Afrique de l'Est.",
+    ctaHeadlineLine1: "Postulez maintenant. Représentez Kultr.",
+    ctaHeadlineLine2: "Inspirez l'Afrique de l'Est.",
+    applyNow: "Postuler Maintenant",
+    applyAlertTitle: "Postuler pour Tribe Leaders",
+    applyAlertMsg: "Cela ouvrira le formulaire de candidature. Prêt ?",
+    openForm: "Ouvrir le formulaire",
+  },
 };
 
 const sw: Translations = {
@@ -1590,6 +1702,43 @@ const sw: Translations = {
     requestFailedTitle: "Ombi Limeshindwa",
     requestFailedFallback: "Tafadhali jaribu tena.",
   },
+  tribeLeaders: {
+    badge: "Programu ya Ubalozi",
+    heroTitleLine1: "Kultr",
+    heroTitleLine2: "Tribe Leaders",
+    heroTagline: "Ongoza Kabila",
+    heroSubLine1: "Tunawawezesha Watengeneza Mitindo",
+    heroSubLine2: "ya Kiutamaduni wa Afrika Mashariki",
+    whatYouGet: "Unachopata",
+    benefit1Title: "Ufikiaji wa Kipekee",
+    benefit1Body: "Ufikiaji wa mapema wa matukio, mikutano na wasanii, na uzoefu wa nyuma ya jukwaa kabla tikiti hazijatolewa hadharani.",
+    benefit2Title: "Jamii ya Wabadilishaji",
+    benefit2Body: "Jiunge na mtandao uliochaguliwa wa watengeneza mitindo na waundaji wenye ushawishi mkubwa zaidi wa kiutamaduni Afrika Mashariki.",
+    benefit3Title: "Kuza Utamaduni. Pata Zawadi.",
+    benefit3Body: "Shiriki utamaduni na jamii yako na upate KULTROINS, manufaa ya kipekee, na zawadi za utendaji.",
+    benefit4Title: "Uzoefu na Matukio ya VIP",
+    benefit4Body: "Mialiko ya matukio ya kipekee ya Kultr, uzinduzi wa chapa, na jioni za mitandao ya kitaaluma.",
+    benefit5Title: "Kuza Ushawishi Wako",
+    benefit5Body: "Unda maudhui pamoja na Kultr, angaziwa kwenye majukwaa yetu, na jenga chapa yako binafsi.",
+    movementTitleLine1: "Hii si programu tu.",
+    movementTitleLine2: "Ni vuguvugu.",
+    movementSub: "Kultr Tribe Leaders ni daraja kati ya matukio ya kiwango cha kimataifa na jamii zinazofanya utamaduni kustahili kusherehekewa. Tunajenga mtandao wenye shauku zaidi wa mashujaa wa kiutamaduni Afrika Mashariki — na tunakutaka ndani yake.",
+    howItWorks: "Jinsi Inavyofanya Kazi",
+    step1Title: "Omba",
+    step1Body: "Jaza fomu — tuambie wewe ni nani na utamaduni unaobeba.",
+    step2Title: "Ukaguzi",
+    step2Body: "Timu yetu hukagua maombi ndani ya siku 7 za kazi.",
+    step3Title: "Kuingizwa",
+    step3Body: "Viongozi walioidhinishwa hupata kifurushi cha karibu, beji, na msaada maalum.",
+    step4Title: "Ongoza",
+    step4Body: "Anza kuandaa, kushiriki, na kuunda utamaduni kote Afrika Mashariki.",
+    ctaHeadlineLine1: "Omba sasa. Wakilisha Kultr.",
+    ctaHeadlineLine2: "Hamasisha Afrika Mashariki.",
+    applyNow: "Omba Sasa",
+    applyAlertTitle: "Omba kuwa Tribe Leader",
+    applyAlertMsg: "Hii itafungua fomu ya maombi. Uko tayari?",
+    openForm: "Fungua Fomu",
+  },
 };
 
 const ar: Translations = {
@@ -1982,6 +2131,43 @@ const ar: Translations = {
     payoutRequestedMsg: "طلبك قيد المراجعة.",
     requestFailedTitle: "فشل الطلب",
     requestFailedFallback: "يرجى المحاولة مرة أخرى.",
+  },
+  tribeLeaders: {
+    badge: "برنامج السفراء",
+    heroTitleLine1: "Kultr",
+    heroTitleLine2: "قادة القبيلة",
+    heroTagline: "قُد القبيلة",
+    heroSubLine1: "تمكين صانعي الذوق الثقافي",
+    heroSubLine2: "في شرق أفريقيا",
+    whatYouGet: "ما ستحصل عليه",
+    benefit1Title: "وصول حصري",
+    benefit1Body: "وصول مبكر إلى الفعاليات، لقاءات مع الفنانين، وتجارب خلف الكواليس قبل طرح التذاكر للعامة.",
+    benefit2Title: "مجتمع صنّاع التغيير",
+    benefit2Body: "انضم إلى شبكة منتقاة من أبرز صانعي الذوق الثقافي والمبدعين في شرق أفريقيا.",
+    benefit3Title: "ضاعف الثقافة. اكسب المكافآت.",
+    benefit3Body: "شارك الثقافة مع مجتمعك واكسب KULTROINS ومزايا حصرية ومكافآت أداء.",
+    benefit4Title: "تجارب وفعاليات VIP",
+    benefit4Body: "دعوات إلى فعاليات كلتر الحصرية، وأنشطة العلامة التجارية، وأمسيات التواصل المهني.",
+    benefit5Title: "نمِّ تأثيرك",
+    benefit5Body: "أنشئ محتوى مشتركاً مع كلتر، واحصل على تسليط ضوء على منصاتنا، وابنِ علامتك الشخصية.",
+    movementTitleLine1: "هذا ليس مجرد برنامج.",
+    movementTitleLine2: "إنها حركة.",
+    movementSub: "قادة قبيلة كلتر هم الجسر بين الفعاليات العالمية والمجتمعات التي تجعل الثقافة جديرة بالاحتفال. نحن نبني أكثر شبكة شغفاً من أبطال الثقافة في شرق أفريقيا — ونريدك ضمنها.",
+    howItWorks: "كيف تعمل",
+    step1Title: "قدّم الطلب",
+    step1Body: "املأ النموذج — أخبرنا من أنت والثقافة التي تحملها.",
+    step2Title: "المراجعة",
+    step2Body: "يراجع فريقنا الطلبات خلال 7 أيام عمل.",
+    step3Title: "الانضمام",
+    step3Body: "يحصل القادة المقبولون على حقيبة ترحيبية وشارة ودعم مخصص.",
+    step4Title: "قُد",
+    step4Body: "ابدأ في استضافة ومشاركة وتشكيل الثقافة عبر شرق أفريقيا.",
+    ctaHeadlineLine1: "قدّم الآن. مثّل كلتر.",
+    ctaHeadlineLine2: "ألهم شرق أفريقيا.",
+    applyNow: "قدّم الآن",
+    applyAlertTitle: "التقديم لبرنامج قادة القبيلة",
+    applyAlertMsg: "سيؤدي هذا إلى فتح نموذج التقديم. هل أنت مستعد؟",
+    openForm: "فتح النموذج",
   },
 };
 
