@@ -16,6 +16,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Alert } from "@/lib/alert";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "@/hooks/useTranslation";
+import { getCategoryLabel } from "@/constants/translations";
 import {
   useAdminReviewQueue,
   useSetEventStatus,
@@ -42,6 +44,7 @@ type Tab = "events" | "payouts" | "reports";
 export default function AdminScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const t = useTranslation();
   const { authToken } = useApp();
   const [tab, setTab] = useState<Tab>("events");
 
@@ -68,20 +71,20 @@ export default function AdminScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setStatus.mutate(event.id, "live", {
       onSuccess: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
-      onError: (e) => Alert.alert("Failed", e instanceof Error ? e.message : "Please try again."),
+      onError: (e) => Alert.alert(t.admin.failedTitle, e instanceof Error ? e.message : t.payoutsScreen.requestFailedFallback),
     });
   };
 
   const reject = (event: EventSummary) => {
-    Alert.alert("Reject event?", `Send "${event.title}" back to draft?`, [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t.admin.rejectEventTitle, `${t.admin.rejectEventMsgPrefix} "${event.title}" ${t.admin.rejectEventMsgSuffix}`, [
+      { text: t.actions.cancel, style: "cancel" },
       {
-        text: "Reject",
+        text: t.admin.reject,
         style: "destructive",
         onPress: () => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           setStatus.mutate(event.id, "draft", {
-            onError: (e) => Alert.alert("Failed", e instanceof Error ? e.message : "Please try again."),
+            onError: (e) => Alert.alert(t.admin.failedTitle, e instanceof Error ? e.message : t.payoutsScreen.requestFailedFallback),
           });
         },
       },
@@ -90,16 +93,16 @@ export default function AdminScreen() {
 
   const resolveAsPayout = (payout: PayoutView, status: "paid" | "failed") => {
     Alert.alert(
-      status === "paid" ? "Mark as paid?" : "Mark as failed?",
-      `${payout.currency} ${payout.amount.toLocaleString()} to ${payout.destination}`,
+      status === "paid" ? t.admin.markPaidQuestion : t.admin.markFailedQuestion,
+      `${payout.currency} ${payout.amount.toLocaleString()} ${t.payoutsScreen.toDestination} ${payout.destination}`,
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t.actions.cancel, style: "cancel" },
         {
-          text: "Confirm",
+          text: t.actions.confirm,
           onPress: () => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             resolvePayout.mutate(payout.id, status, {
-              onError: (e) => Alert.alert("Failed", e instanceof Error ? e.message : "Please try again."),
+              onError: (e) => Alert.alert(t.admin.failedTitle, e instanceof Error ? e.message : t.payoutsScreen.requestFailedFallback),
             });
           },
         },
@@ -110,7 +113,7 @@ export default function AdminScreen() {
   const resolveAsReport = (report: AdminEventReportView, status: "reviewed" | "dismissed") => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     resolveReport.mutate(report.id, status, {
-      onError: (e) => Alert.alert("Failed", e instanceof Error ? e.message : "Please try again."),
+      onError: (e) => Alert.alert(t.admin.failedTitle, e instanceof Error ? e.message : t.payoutsScreen.requestFailedFallback),
     });
   };
 
@@ -119,9 +122,9 @@ export default function AdminScreen() {
       <View style={[styles.root, { backgroundColor: colors.background }]}>
         <View style={styles.empty}>
           <Feather name="lock" size={40} color={colors.mutedForeground} />
-          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Sign in required</Text>
+          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t.admin.signInRequired}</Text>
           <Pressable style={styles.cta} onPress={() => router.push("/login")}>
-            <Text style={styles.ctaText}>Sign In</Text>
+            <Text style={styles.ctaText}>{t.auth.signIn}</Text>
           </Pressable>
         </View>
       </View>
@@ -133,12 +136,12 @@ export default function AdminScreen() {
       <View style={[styles.root, { backgroundColor: colors.background }]}>
         <View style={styles.empty}>
           <Feather name="shield-off" size={40} color={colors.mutedForeground} />
-          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Admins only</Text>
+          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t.admin.adminsOnly}</Text>
           <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-            This account doesn't have admin access.
+            {t.admin.noAdminAccess}
           </Text>
           <Pressable style={styles.cta} onPress={() => router.back()}>
-            <Text style={styles.ctaText}>Go Back</Text>
+            <Text style={styles.ctaText}>{t.admin.goBack}</Text>
           </Pressable>
         </View>
       </View>
@@ -154,33 +157,33 @@ export default function AdminScreen() {
         <View style={styles.header}>
           <Pressable
             onPress={() => router.back()}
-            accessibilityLabel="Go back"
+            accessibilityLabel={t.actions.back}
             style={[styles.backBtn, { backgroundColor: colors.muted }]}
           >
             <Feather name="arrow-left" size={20} color={colors.foreground} />
           </Pressable>
-          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Admin</Text>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t.admin.title}</Text>
           <View style={styles.backBtn} />
         </View>
 
         {/* Tabs */}
         <View style={styles.tabs}>
           {([
-            { id: "events", label: "Review Queue", count: reviewQueue.data?.events.length ?? 0 },
-            { id: "payouts", label: "Payouts", count: pendingPayouts.data?.payouts.length ?? 0 },
-            { id: "reports", label: "Reports", count: eventReports.data?.reports.filter((r) => r.status === "open").length ?? 0 },
-          ] as const).map((t) => {
-            const active = tab === t.id;
+            { id: "events", label: t.admin.tabReviewQueue, count: reviewQueue.data?.events.length ?? 0 },
+            { id: "payouts", label: t.creatorStudio.payouts, count: pendingPayouts.data?.payouts.length ?? 0 },
+            { id: "reports", label: t.admin.tabReports, count: eventReports.data?.reports.filter((r) => r.status === "open").length ?? 0 },
+          ] as const).map((tabItem) => {
+            const active = tab === tabItem.id;
             return (
               <Pressable
-                key={t.id}
-                onPress={() => { Haptics.selectionAsync(); setTab(t.id); }}
+                key={tabItem.id}
+                onPress={() => { Haptics.selectionAsync(); setTab(tabItem.id); }}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
                 style={[styles.tab, { backgroundColor: active ? "#FF6B00" : colors.muted, borderColor: active ? "#FF6B00" : colors.border }]}
               >
                 <Text style={[styles.tabText, { color: active ? colors.primaryForeground : colors.mutedForeground }]}>
-                  {t.label}{t.count > 0 ? ` (${t.count})` : ""}
+                  {tabItem.label}{tabItem.count > 0 ? ` (${tabItem.count})` : ""}
                 </Text>
               </Pressable>
             );
@@ -193,13 +196,13 @@ export default function AdminScreen() {
           <View style={styles.section}>
             {tab === "events" && (
               (reviewQueue.data?.events.length ?? 0) === 0 ? (
-                <Text style={[styles.emptyInline, { color: colors.mutedForeground }]}>Nothing pending review.</Text>
+                <Text style={[styles.emptyInline, { color: colors.mutedForeground }]}>{t.admin.nothingPendingReview}</Text>
               ) : (
                 reviewQueue.data!.events.map((ev) => (
                   <View key={ev.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
                     <Text style={[styles.cardTitle, { color: colors.foreground }]}>{ev.title}</Text>
                     <Text style={[styles.cardMeta, { color: colors.mutedForeground }]}>
-                      {ev.category} · {ev.city}, {ev.country} · {new Date(ev.eventDate).toLocaleDateString()}
+                      {getCategoryLabel(ev.category, t)} · {ev.city}, {ev.country} · {new Date(ev.eventDate).toLocaleDateString()}
                     </Text>
                     <View style={styles.cardActions}>
                       <Pressable
@@ -210,7 +213,7 @@ export default function AdminScreen() {
                         {/* #D32F2F on this 12%-opacity tint measured ~3.2-3.8:1, failing WCAG AA.
                             #FF6B60 is the same red family lightened for contrast on a dark tint. */}
                         <Feather name="x" size={13} color="#FF6B60" />
-                        <Text style={[styles.actionBtnText, { color: "#FF6B60" }]}>Reject</Text>
+                        <Text style={[styles.actionBtnText, { color: "#FF6B60" }]}>{t.admin.reject}</Text>
                       </Pressable>
                       <Pressable
                         onPress={() => approve(ev)}
@@ -218,7 +221,7 @@ export default function AdminScreen() {
                         style={[styles.actionBtn, { backgroundColor: "#FF6B00" }]}
                       >
                         <Feather name="check" size={13} color={colors.primaryForeground} />
-                        <Text style={[styles.actionBtnText, { color: colors.primaryForeground }]}>Approve</Text>
+                        <Text style={[styles.actionBtnText, { color: colors.primaryForeground }]}>{t.admin.approve}</Text>
                       </Pressable>
                     </View>
                   </View>
@@ -228,7 +231,7 @@ export default function AdminScreen() {
 
             {tab === "payouts" && (
               (pendingPayouts.data?.payouts.length ?? 0) === 0 ? (
-                <Text style={[styles.emptyInline, { color: colors.mutedForeground }]}>No pending payouts.</Text>
+                <Text style={[styles.emptyInline, { color: colors.mutedForeground }]}>{t.admin.noPendingPayouts}</Text>
               ) : (
                 pendingPayouts.data!.payouts.map((p) => (
                   <View key={p.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -236,10 +239,10 @@ export default function AdminScreen() {
                       {p.currency} {p.amount.toLocaleString()}
                     </Text>
                     <Text style={[styles.cardMeta, { color: colors.mutedForeground }]} numberOfLines={1}>
-                      To {p.destination}
+                      {t.payoutsScreen.toDestination} {p.destination}
                     </Text>
                     <Text style={[styles.cardMeta, { color: colors.mutedForeground }]}>
-                      Requested {new Date(p.requestedAt).toLocaleDateString()} · creator {p.creatorId?.slice(0, 8)}
+                      {t.payoutsScreen.requested} {new Date(p.requestedAt).toLocaleDateString()} · {t.admin.creatorWord} {p.creatorId?.slice(0, 8)}
                     </Text>
                     <View style={styles.cardActions}>
                       <Pressable
@@ -247,14 +250,14 @@ export default function AdminScreen() {
                         disabled={resolvePayout.isPending}
                         style={[styles.actionBtn, { backgroundColor: "rgba(211,47,47,0.12)" }]}
                       >
-                        <Text style={[styles.actionBtnText, { color: "#FF6B60" }]}>Mark Failed</Text>
+                        <Text style={[styles.actionBtnText, { color: "#FF6B60" }]}>{t.admin.markFailed}</Text>
                       </Pressable>
                       <Pressable
                         onPress={() => resolveAsPayout(p, "paid")}
                         disabled={resolvePayout.isPending}
                         style={[styles.actionBtn, { backgroundColor: "#00C853" }]}
                       >
-                        <Text style={[styles.actionBtnText, { color: colors.secondaryForeground }]}>Mark Paid</Text>
+                        <Text style={[styles.actionBtnText, { color: colors.secondaryForeground }]}>{t.admin.markPaid}</Text>
                       </Pressable>
                     </View>
                   </View>
@@ -264,7 +267,7 @@ export default function AdminScreen() {
 
             {tab === "reports" && (
               (eventReports.data?.reports.length ?? 0) === 0 ? (
-                <Text style={[styles.emptyInline, { color: colors.mutedForeground }]}>No reports filed.</Text>
+                <Text style={[styles.emptyInline, { color: colors.mutedForeground }]}>{t.admin.noReportsFiled}</Text>
               ) : (
                 eventReports.data!.reports.map((r) => (
                   <View key={r.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -285,7 +288,7 @@ export default function AdminScreen() {
                             { color: r.status === "open" ? "#FFA726" : r.status === "reviewed" ? "#00C853" : "#888" },
                           ]}
                         >
-                          {r.status}
+                          {r.status === "open" ? t.admin.statusOpen : r.status === "reviewed" ? t.admin.statusReviewed : t.admin.statusDismissed}
                         </Text>
                       </View>
                     </View>
@@ -293,13 +296,13 @@ export default function AdminScreen() {
                       <Text style={[styles.cardMeta, { color: colors.mutedForeground }]}>{r.details}</Text>
                     )}
                     <Text style={[styles.cardMeta, { color: colors.mutedForeground }]}>
-                      Event {r.eventId.slice(0, 8)} · filed {new Date(r.createdAt).toLocaleDateString()}
+                      {t.admin.eventPrefix} {r.eventId.slice(0, 8)} · {t.admin.filedPrefix} {new Date(r.createdAt).toLocaleDateString()}
                     </Text>
                     <Pressable
                       onPress={() => router.push(`/event/${r.eventId}` as any)}
                       style={[styles.viewEventBtn, { borderColor: colors.border }]}
                     >
-                      <Text style={[styles.viewEventText, { color: "#FF6B00" }]}>View reported event</Text>
+                      <Text style={[styles.viewEventText, { color: "#FF6B00" }]}>{t.admin.viewReportedEvent}</Text>
                     </Pressable>
                     {r.status === "open" && (
                       <View style={styles.cardActions}>
@@ -308,14 +311,14 @@ export default function AdminScreen() {
                           disabled={resolveReport.isPending}
                           style={[styles.actionBtn, { backgroundColor: colors.muted }]}
                         >
-                          <Text style={[styles.actionBtnText, { color: colors.mutedForeground }]}>Dismiss</Text>
+                          <Text style={[styles.actionBtnText, { color: colors.mutedForeground }]}>{t.admin.dismiss}</Text>
                         </Pressable>
                         <Pressable
                           onPress={() => resolveAsReport(r, "reviewed")}
                           disabled={resolveReport.isPending}
                           style={[styles.actionBtn, { backgroundColor: "#FF6B00" }]}
                         >
-                          <Text style={[styles.actionBtnText, { color: colors.primaryForeground }]}>Mark Reviewed</Text>
+                          <Text style={[styles.actionBtnText, { color: colors.primaryForeground }]}>{t.admin.markReviewed}</Text>
                         </Pressable>
                       </View>
                     )}

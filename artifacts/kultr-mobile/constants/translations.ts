@@ -605,6 +605,38 @@ export interface Translations {
     noCategoryEventsPrefix: string;
     noCategoryEventsSuffix: string;
   };
+  // Internal admin/moderation screen
+  admin: {
+    title: string;
+    signInRequired: string;
+    adminsOnly: string;
+    noAdminAccess: string;
+    goBack: string;
+    tabReviewQueue: string;
+    tabReports: string;
+    nothingPendingReview: string;
+    reject: string;
+    approve: string;
+    noPendingPayouts: string;
+    markFailed: string;
+    markPaid: string;
+    noReportsFiled: string;
+    eventPrefix: string;
+    filedPrefix: string;
+    viewReportedEvent: string;
+    dismiss: string;
+    markReviewed: string;
+    rejectEventTitle: string;
+    rejectEventMsgPrefix: string;
+    rejectEventMsgSuffix: string;
+    markPaidQuestion: string;
+    markFailedQuestion: string;
+    creatorWord: string;
+    failedTitle: string;
+    statusOpen: string;
+    statusReviewed: string;
+    statusDismissed: string;
+  };
 }
 
 const en: Translations = {
@@ -1183,6 +1215,37 @@ const en: Translations = {
     tomorrow: "Tomorrow",
     noCategoryEventsPrefix: "No",
     noCategoryEventsSuffix: "events yet",
+  },
+  admin: {
+    title: "Admin",
+    signInRequired: "Sign in required",
+    adminsOnly: "Admins only",
+    noAdminAccess: "This account doesn't have admin access.",
+    goBack: "Go Back",
+    tabReviewQueue: "Review Queue",
+    tabReports: "Reports",
+    nothingPendingReview: "Nothing pending review.",
+    reject: "Reject",
+    approve: "Approve",
+    noPendingPayouts: "No pending payouts.",
+    markFailed: "Mark Failed",
+    markPaid: "Mark Paid",
+    noReportsFiled: "No reports filed.",
+    eventPrefix: "Event",
+    filedPrefix: "filed",
+    viewReportedEvent: "View reported event",
+    dismiss: "Dismiss",
+    markReviewed: "Mark Reviewed",
+    rejectEventTitle: "Reject event?",
+    rejectEventMsgPrefix: "Send",
+    rejectEventMsgSuffix: "back to draft?",
+    markPaidQuestion: "Mark as paid?",
+    markFailedQuestion: "Mark as failed?",
+    creatorWord: "creator",
+    failedTitle: "Failed",
+    statusOpen: "open",
+    statusReviewed: "reviewed",
+    statusDismissed: "dismissed",
   },
 };
 
@@ -1763,6 +1826,37 @@ const fr: Translations = {
     noCategoryEventsPrefix: "Aucun événement",
     noCategoryEventsSuffix: "pour l'instant",
   },
+  admin: {
+    title: "Administration",
+    signInRequired: "Connexion requise",
+    adminsOnly: "Réservé aux administrateurs",
+    noAdminAccess: "Ce compte n'a pas d'accès administrateur.",
+    goBack: "Retour",
+    tabReviewQueue: "File de révision",
+    tabReports: "Signalements",
+    nothingPendingReview: "Rien en attente de révision.",
+    reject: "Rejeter",
+    approve: "Approuver",
+    noPendingPayouts: "Aucun paiement en attente.",
+    markFailed: "Marquer comme échoué",
+    markPaid: "Marquer comme payé",
+    noReportsFiled: "Aucun signalement déposé.",
+    eventPrefix: "Événement",
+    filedPrefix: "déposé",
+    viewReportedEvent: "Voir l'événement signalé",
+    dismiss: "Rejeter",
+    markReviewed: "Marquer comme révisé",
+    rejectEventTitle: "Rejeter l'événement ?",
+    rejectEventMsgPrefix: "Renvoyer",
+    rejectEventMsgSuffix: "en brouillon ?",
+    markPaidQuestion: "Marquer comme payé ?",
+    markFailedQuestion: "Marquer comme échoué ?",
+    creatorWord: "créateur",
+    failedTitle: "Échec",
+    statusOpen: "ouvert",
+    statusReviewed: "révisé",
+    statusDismissed: "rejeté",
+  },
 };
 
 const sw: Translations = {
@@ -2342,6 +2436,37 @@ const sw: Translations = {
     noCategoryEventsPrefix: "Hakuna matukio ya",
     noCategoryEventsSuffix: "bado",
   },
+  admin: {
+    title: "Usimamizi",
+    signInRequired: "Ingia inahitajika",
+    adminsOnly: "Wasimamizi tu",
+    noAdminAccess: "Akaunti hii haina ufikiaji wa usimamizi.",
+    goBack: "Rudi Nyuma",
+    tabReviewQueue: "Foleni ya Ukaguzi",
+    tabReports: "Ripoti",
+    nothingPendingReview: "Hakuna kinachosubiri ukaguzi.",
+    reject: "Kataa",
+    approve: "Idhinisha",
+    noPendingPayouts: "Hakuna malipo yanayosubiri.",
+    markFailed: "Weka Imeshindwa",
+    markPaid: "Weka Imelipwa",
+    noReportsFiled: "Hakuna ripoti zilizowasilishwa.",
+    eventPrefix: "Tukio",
+    filedPrefix: "liliwasilishwa",
+    viewReportedEvent: "Angalia tukio lililoripotiwa",
+    dismiss: "Ondoa",
+    markReviewed: "Weka Imekaguliwa",
+    rejectEventTitle: "Kataa tukio?",
+    rejectEventMsgPrefix: "Rudisha",
+    rejectEventMsgSuffix: "kwenye rasimu?",
+    markPaidQuestion: "Weka kama imelipwa?",
+    markFailedQuestion: "Weka kama imeshindwa?",
+    creatorWord: "muundaji",
+    failedTitle: "Imeshindwa",
+    statusOpen: "wazi",
+    statusReviewed: "imekaguliwa",
+    statusDismissed: "imeondolewa",
+  },
 };
 
 const ar: Translations = {
@@ -2920,6 +3045,37 @@ const ar: Translations = {
     tomorrow: "غداً",
     noCategoryEventsPrefix: "لا توجد فعاليات",
     noCategoryEventsSuffix: "بعد",
+  },
+  admin: {
+    title: "الإدارة",
+    signInRequired: "تسجيل الدخول مطلوب",
+    adminsOnly: "للمسؤولين فقط",
+    noAdminAccess: "لا يملك هذا الحساب صلاحية الوصول الإداري.",
+    goBack: "رجوع",
+    tabReviewQueue: "قائمة المراجعة",
+    tabReports: "البلاغات",
+    nothingPendingReview: "لا يوجد شيء بانتظار المراجعة.",
+    reject: "رفض",
+    approve: "موافقة",
+    noPendingPayouts: "لا توجد مدفوعات معلّقة.",
+    markFailed: "وضع علامة فاشل",
+    markPaid: "وضع علامة مدفوع",
+    noReportsFiled: "لم يتم تقديم أي بلاغات.",
+    eventPrefix: "الفعالية",
+    filedPrefix: "قُدّم في",
+    viewReportedEvent: "عرض الفعالية المُبلَّغ عنها",
+    dismiss: "تجاهل",
+    markReviewed: "وضع علامة تمت المراجعة",
+    rejectEventTitle: "رفض الفعالية؟",
+    rejectEventMsgPrefix: "إعادة",
+    rejectEventMsgSuffix: "إلى المسودة؟",
+    markPaidQuestion: "وضع علامة كمدفوع؟",
+    markFailedQuestion: "وضع علامة كفاشل؟",
+    creatorWord: "المنشئ",
+    failedTitle: "فشل",
+    statusOpen: "مفتوح",
+    statusReviewed: "تمت المراجعة",
+    statusDismissed: "تم التجاهل",
   },
 };
 
