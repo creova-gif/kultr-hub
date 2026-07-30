@@ -14,23 +14,25 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApp } from "@/context/AppContext";
 import { ConsentBanner } from "@/components/ConsentBanner";
+import { useTranslation } from "@/hooks/useTranslation";
 
 // "Home" routes to index.tsx — the richer category-browsing screen (Featured
 // carousel + category pills + bento grid). It previously routed to foryou.tsx,
 // which left the real home screen reachable only once, right after onboarding.
 // foryou.tsx keeps its own file/route, it's just no longer wired into the tab
-// bar's "Home" slot (see Tabs.Screen below).
+// bar's "Home" slot (see Tabs.Screen below). labelKey looks up nav.* in
+// constants/translations.ts — resolved inside TabBar, where hooks are usable.
 const LEFT_TABS = [
-  { name: "index",    label: "Home",     icon: "home"           },
-  { name: "discover", label: "Discover", icon: "compass"        },
+  { name: "index",    labelKey: "home" as const,     icon: "home"    },
+  { name: "discover", labelKey: "discover" as const, icon: "compass" },
 ] as const;
 
 // "Messages" (social.tsx) is deliberately not in the tab bar — it currently
 // renders fabricated friends/activity data with no real backend behind it.
 // Pulled from nav rather than shipped as a fake social feed on a primary tab.
 const RIGHT_TABS = [
-  { name: "tickets",  label: "Tickets",  icon: "tag"            },
-  { name: "profile",  label: "Profile",  icon: "user"           },
+  { name: "tickets", labelKey: "tickets" as const, icon: "tag"  },
+  { name: "profile", labelKey: "profile" as const, icon: "user" },
 ] as const;
 
 const BAR_HEIGHT = 64;
@@ -42,6 +44,7 @@ type TabBarProps = Parameters<NonNullable<React.ComponentProps<typeof Tabs>["tab
 function TabBar({ state, navigation }: TabBarProps) {
   const insets  = useSafeAreaInsets();
   const { isRTL } = useApp();
+  const t = useTranslation();
   const bottomPad = Platform.OS === "web" ? Math.max(insets.bottom, 20) : insets.bottom;
   const activeRoute = state.routes[state.index]?.name;
 
@@ -56,8 +59,9 @@ function TabBar({ state, navigation }: TabBarProps) {
     }
   };
 
-  const renderTab = (tab: { name: string; label: string; icon: string }) => {
+  const renderTab = (tab: { name: string; labelKey: keyof typeof t.nav; icon: string }) => {
     const focused = activeRoute === tab.name;
+    const label = t.nav[tab.labelKey];
     // Inactive-tab gray measured ~4.52:1 on the #0D0D0D tab bar — right at
     // the WCAG AA edge. #A0A0A0 (the app's mutedForeground token) clears it
     // comfortably at ~6.6:1.
@@ -67,12 +71,12 @@ function TabBar({ state, navigation }: TabBarProps) {
         key={tab.name}
         onPress={() => pressTab(tab.name)}
         style={styles.tabItem}
-        accessibilityLabel={tab.label}
+        accessibilityLabel={label}
         accessibilityRole="tab"
         accessibilityState={{ selected: focused }}
       >
         <Feather name={tab.icon as any} size={22} color={tint} />
-        <Text style={[styles.tabLabel, { color: tint }]}>{tab.label}</Text>
+        <Text style={[styles.tabLabel, { color: tint }]}>{label}</Text>
         {focused && <View style={styles.activeDot} />}
       </Pressable>
     );

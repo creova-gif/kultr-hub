@@ -17,12 +17,14 @@ import { useApp } from "@/context/AppContext";
 import { EVENT_IMAGES, formatDate, formatTime } from "@/constants/data";
 import { useColors } from "@/hooks/useColors";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function SavedEventsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { savedEvents, toggleSaved } = useApp();
   const { events } = useEventCatalog();
+  const t = useTranslation();
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
   const bottomPad = Platform.OS === "web" ? Math.max(insets.bottom, 34) : insets.bottom;
@@ -45,7 +47,7 @@ export default function SavedEventsScreen() {
           >
             <Feather name="arrow-left" size={20} color={colors.foreground} />
           </Pressable>
-          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Saved Events</Text>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t.profile.savedEvents}</Text>
           <View style={[styles.backBtn, { backgroundColor: "transparent" }]} />
         </View>
 
@@ -54,17 +56,17 @@ export default function SavedEventsScreen() {
             <View style={[styles.emptyIcon, { backgroundColor: colors.muted }]}>
               <Feather name="heart" size={36} color={colors.mutedForeground} />
             </View>
-            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Nothing saved yet</Text>
+            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t.empty.nothingSaved}</Text>
             <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              Tap the heart on any event to save it for later
+              {t.empty.nothingSavedSub}
             </Text>
             <Pressable
               style={styles.browseBtn}
               onPress={() => router.replace("/(tabs)/discover")}
-              accessibilityLabel="Discover Events"
+              accessibilityLabel={t.actions.browseEvents}
               accessibilityRole="button"
             >
-              <Text style={styles.browseBtnText}>Browse Events</Text>
+              <Text style={styles.browseBtnText}>{t.actions.browseEvents}</Text>
             </Pressable>
           </View>
         ) : (

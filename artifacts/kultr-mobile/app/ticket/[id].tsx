@@ -27,6 +27,7 @@ import { formatDate, formatTime } from "@/constants/data";
 import { useColors } from "@/hooks/useColors";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
 import { useCheckIn } from "@/hooks/useQuests";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useGetTicket, getGetTicketQueryKey, useUpdateTicketAccessibilityInfo } from "@workspace/api-client-react";
 import { POPIA_SECTION_26_NOTE } from "@/constants/consentCopy";
 
@@ -45,6 +46,7 @@ export default function TicketViewScreen() {
   const { tickets, authToken, userCountry } = useApp();
   const { getEventById } = useEventCatalog();
   const checkIn = useCheckIn();
+  const t = useTranslation();
 
   const ticket = tickets.find((t) => t.id === id);
   const resolvedEventId = ticket?.eventId ?? eventId ?? "";
@@ -155,7 +157,7 @@ export default function TicketViewScreen() {
             <Feather name="arrow-left" size={20} color={colors.foreground} />
           </Pressable>
           <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-            {newPurchase === "true" ? "Booking Confirmed!" : "Your Ticket"}
+            {newPurchase === "true" ? t.ticket.bookingConfirmed : "Your Ticket"}
           </Text>
           <Pressable
             onPress={() => {
@@ -178,7 +180,7 @@ export default function TicketViewScreen() {
           <View style={[styles.successBanner, { backgroundColor: "rgba(0,200,83,0.12)", borderColor: "#00C853" }]}>
             <Feather name="check-circle" size={18} color="#00C853" />
             <Text style={[styles.successText, { color: "#00C853" }]}>
-              Payment successful! Your ticket is ready.
+              {t.ticket.paymentSuccessful}
             </Text>
           </View>
         )}
@@ -224,7 +226,7 @@ export default function TicketViewScreen() {
           <View style={styles.qrSection}>
             <QRDisplay />
             <Text style={[styles.qrNote, { color: colors.mutedForeground }]}>
-              Present this QR code at the venue entrance
+              {t.ticket.presentQR}
             </Text>
             {!!authToken && (
               <Pressable
@@ -263,7 +265,7 @@ export default function TicketViewScreen() {
           <View style={[styles.authBadge, { backgroundColor: colors.muted, borderTopColor: colors.border }]}>
             <Feather name="shield" size={14} color="#00C853" />
             <Text style={[styles.authText, { color: colors.mutedForeground }]}>
-              AUTHENTIC TICKET · Do not share this ticket
+              {t.ticket.authentic}
             </Text>
           </View>
         </View>
@@ -272,20 +274,20 @@ export default function TicketViewScreen() {
         <View style={styles.actions}>
           <ActionBtn
             icon="download"
-            label="Save to Phone"
+            label={t.ticket.saveToPhone}
             colors={colors}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               Alert.alert(
-                "Save to Phone",
-                "Ticket saved to your device. Present this QR code at the venue entrance.",
+                t.ticket.saveToPhone,
+                `Ticket saved to your device. ${t.ticket.presentQR}.`,
                 [{ text: "Got it" }]
               );
             }}
           />
           <ActionBtn
             icon="share-2"
-            label="Share"
+            label={t.actions.share}
             colors={colors}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -297,7 +299,7 @@ export default function TicketViewScreen() {
           />
           <ActionBtn
             icon="map-pin"
-            label="Get Directions"
+            label={t.ticket.getDirections}
             colors={colors}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -373,7 +375,7 @@ export default function TicketViewScreen() {
             style={styles.homeBtn}
             onPress={() => router.replace("/(tabs)")}
           >
-            <Text style={styles.homeBtnText}>Discover More Events</Text>
+            <Text style={styles.homeBtnText}>{t.ticket.discoverMore}</Text>
           </Pressable>
         )}
       </ScrollView>

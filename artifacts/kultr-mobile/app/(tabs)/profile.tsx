@@ -17,25 +17,34 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Alert } from "@/lib/alert";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "@/hooks/useTranslation";
+import type { Translations } from "@/constants/translations";
 
 // Vibe Tribes is deliberately not linked here — it currently renders
 // invented member counts and locally-only join state with no real backend
 // (see app/vibe-tribes.tsx), which reads as real social proof but isn't.
-const MENU_ITEMS = [
+// labelKey looks up profile.* in constants/translations.ts when present —
+// items without one (no translated content yet) fall back to `label`.
+const MENU_ITEMS: Array<{
+  icon: string;
+  label: string;
+  labelKey?: keyof Translations["profile"];
+  route: string | null;
+}> = [
   { icon: "compass", label: "Cultural Quests", route: "/quests" },
   { icon: "activity", label: "Streaks & Badges", route: "/gamification" },
   { icon: "flag", label: "Tribe Leaders Program", route: "/tribe-leaders" },
   { icon: "gift", label: "Rewards", route: "/rewards" },
-  { icon: "heart", label: "Saved Events", route: "/saved" },
-  { icon: "tag", label: "My Tickets", route: "/(tabs)/tickets" },
-  { icon: "plus-circle", label: "Create Event", route: "/create-event" },
+  { icon: "heart", label: "Saved Events", labelKey: "savedEvents", route: "/saved" },
+  { icon: "tag", label: "My Tickets", labelKey: "myTickets", route: "/(tabs)/tickets" },
+  { icon: "plus-circle", label: "Create Event", labelKey: "createEvent", route: "/create-event" },
   { icon: "star", label: "My Reviews", route: null },
   { icon: "users", label: "Following", route: null },
-  { icon: "bell", label: "Notifications", route: "/notifications" },
+  { icon: "bell", label: "Notifications", labelKey: "notifications", route: "/notifications" },
   { icon: "shield", label: "Privacy & Data", route: "/privacy-data" },
-  { icon: "settings", label: "Settings", route: "/settings" },
+  { icon: "settings", label: "Settings", labelKey: "settings", route: "/settings" },
   { icon: "help-circle", label: "Help & Support", route: null },
-] as const;
+];
 
 // Mirrors the labeling in app/creator-studio.tsx so status is never shown as
 // just an ambiguous colored dot (draft/pending_review/cancelled all looked
@@ -67,13 +76,14 @@ export default function ProfileScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { tickets, savedEvents, createdEvents, authUser, authToken, setAuth, clearAuth } = useApp();
+  const t = useTranslation();
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
   const isCreator = createdEvents.length > 0;
 
-  const displayName = authUser?.displayName ?? "Kultr Member";
+  const displayName = authUser?.displayName ?? t.profile.member;
   const menuItems = authUser?.isAdmin
-    ? [...MENU_ITEMS, { icon: "shield", label: "Admin", route: "/admin" } as const]
+    ? [...MENU_ITEMS, { icon: "shield", label: "Admin", route: "/admin" }]
     : MENU_ITEMS;
   const initials = getInitials(displayName);
   const handle = authUser
@@ -111,7 +121,7 @@ export default function ProfileScreen() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: colors.foreground }]}>Profile</Text>
+        <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t.profile.title}</Text>
         <Pressable
           onPress={() => router.push("/notifications")}
           style={[styles.iconBtn, { backgroundColor: colors.muted }]}
@@ -138,7 +148,7 @@ export default function ProfileScreen() {
             <View style={styles.memberRow}>
               <Feather name="award" size={11} color="#FF6B00" />
               <Text style={[styles.memberText, { color: "#FF6B00" }]}>
-                {isCreator ? "Kultr Creator" : "Kultr Member"}
+                {isCreator ? t.profile.creator : t.profile.member}
               </Text>
             </View>
           </View>
@@ -152,7 +162,7 @@ export default function ProfileScreen() {
             accessibilityLabel="Edit profile"
             accessibilityRole="button"
           >
-            <Text style={[styles.editBtnText, { color: "#FF6B00" }]}>Edit</Text>
+            <Text style={[styles.editBtnText, { color: "#FF6B00" }]}>{t.profile.edit}</Text>
           </Pressable>
         </View>
 
@@ -311,7 +321,7 @@ export default function ProfileScreen() {
             <View style={[
               styles.menuIconWrapper,
               {
-                backgroundColor: item.label === "Create Event"
+                backgroundColor: item.route === "/create-event"
                   ? "rgba(255,107,0,0.12)"
                   : colors.muted,
               },
@@ -322,7 +332,9 @@ export default function ProfileScreen() {
                 color={item.route ? "#FF6B00" : colors.foreground}
               />
             </View>
-            <Text style={[styles.menuLabel, { color: colors.foreground }]}>{item.label}</Text>
+            <Text style={[styles.menuLabel, { color: colors.foreground }]}>
+              {item.labelKey ? t.profile[item.labelKey] : item.label}
+            </Text>
             <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
           </Pressable>
         ))}

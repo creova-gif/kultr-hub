@@ -30,6 +30,7 @@ import {
 const STRIPE_CURRENCIES = new Set(["USD", "GBP", "CAD", "EUR"]);
 import { useColors } from "@/hooks/useColors";
 import { useEventDetail } from "@/hooks/useEventDetail";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useGetFxRates } from "@workspace/api-client-react";
 
 export default function CheckoutScreen() {
@@ -40,6 +41,7 @@ export default function CheckoutScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { userCountry, setUserCountry, authToken } = useApp();
+  const t = useTranslation();
   const { event } = useEventDetail(eventId);
   const typeIdx = Number(ticketTypeIndex ?? "0");
   const ticketType = event?.ticketTypes[typeIdx] ?? event?.ticketTypes[0];
@@ -534,7 +536,7 @@ export default function CheckoutScreen() {
           >
             <Feather name="arrow-left" size={20} color={colors.foreground} />
           </Pressable>
-          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Checkout</Text>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t.checkout.title}</Text>
           <View style={{ width: 40 }} />
         </View>
 
@@ -587,7 +589,7 @@ export default function CheckoutScreen() {
 
         {/* Ticket Selection */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Ticket Details</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t.checkout.ticketDetails}</Text>
           <View style={[styles.ticketRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.ticketName, { color: colors.foreground }]}>{ticketType.name}</Text>
@@ -638,7 +640,7 @@ export default function CheckoutScreen() {
         {/* Payment Method */}
         <View style={styles.section}>
           <View style={styles.sectionTitleRow}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Payment Method</Text>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t.checkout.paymentMethod}</Text>
             <Text style={[styles.countryHint, { color: colors.mutedForeground }]}>
               {userCountry.flag} {userCountry.name}
             </Text>
@@ -647,10 +649,10 @@ export default function CheckoutScreen() {
             {paymentMethods.map((method) => {
               const active = (selectedMethodId || paymentMethods[0]?.id) === method.id;
               const typeLabel =
-                method.type === "mobile_money" ? "Mobile Money" :
-                method.type === "bank" ? "Bank Transfer" :
-                method.type === "ussd" ? "USSD" :
-                method.type === "wallet" ? "Wallet" : "Card";
+                method.type === "mobile_money" ? t.payments.mobileMoney :
+                method.type === "bank" ? t.payments.bankTransfer :
+                method.type === "ussd" ? t.payments.ussd :
+                method.type === "wallet" ? "Wallet" : t.payments.card;
               const initial = method.label.charAt(0).toUpperCase();
               return (
                 <Pressable
@@ -758,7 +760,7 @@ export default function CheckoutScreen() {
               <Text style={[styles.cardHintText, { color: colors.mutedForeground }]}>
                 {activeMethod.type === "wallet"
                   ? "You will be redirected to PayPal to complete payment securely"
-                  : "You will be redirected to a secure 3D-secured payment page"}
+                  : t.payments.redirectSecure}
               </Text>
             </View>
           )}
@@ -768,7 +770,7 @@ export default function CheckoutScreen() {
             <View style={[styles.cardHint, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Feather name="info" size={13} color="#FF6B00" />
               <Text style={[styles.cardHintText, { color: colors.mutedForeground }]}>
-                Bank account details will be sent to your email after confirming
+                {t.payments.bankDetails}
               </Text>
             </View>
           )}
@@ -792,7 +794,7 @@ export default function CheckoutScreen() {
 
         {/* Order Summary */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Order Summary</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t.checkout.orderSummary}</Text>
           <View style={[styles.orderCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <OrderRow
               label={`${ticketType.name} × ${quantity}`}
@@ -808,14 +810,14 @@ export default function CheckoutScreen() {
               />
             )}
             <OrderRow
-              label="Service fee (5%)"
+              label={t.checkout.serviceFee}
               value={`${userCountry.currencySymbol} ${fee.toLocaleString()}`}
               colors={colors}
               muted
             />
             <View style={[styles.orderDivider, { backgroundColor: colors.border }]} />
             <OrderRow
-              label="Total"
+              label={t.checkout.total}
               value={`${userCountry.currencySymbol} ${grandTotal.toLocaleString()}`}
               colors={colors}
               bold
@@ -837,7 +839,7 @@ export default function CheckoutScreen() {
         <View style={styles.securityNote}>
           <Feather name="shield" size={13} color="#00C853" />
           <Text style={[styles.securityText, { color: colors.mutedForeground }]}>
-            Your payment is secured with 256-bit encryption
+            {t.checkout.securePayment}
           </Text>
         </View>
       </ScrollView>
@@ -863,11 +865,11 @@ export default function CheckoutScreen() {
           disabled={loading}
         >
           {loading ? (
-            <Text style={styles.ctaBtnText}>Processing payment...</Text>
+            <Text style={styles.ctaBtnText}>{t.checkout.processing}</Text>
           ) : (
             <>
               <Text style={styles.ctaBtnText}>
-                Pay {userCountry.currencySymbol} {grandTotal.toLocaleString()}
+                {t.checkout.pay} {userCountry.currencySymbol} {grandTotal.toLocaleString()}
               </Text>
               <Feather name="arrow-right" size={18} color="#fff" />
             </>

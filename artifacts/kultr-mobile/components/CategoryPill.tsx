@@ -3,6 +3,8 @@ import React from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "@/hooks/useTranslation";
+import { getCategoryLabel } from "@/constants/translations";
 
 interface Props {
   categories: readonly string[];
@@ -12,6 +14,7 @@ interface Props {
 
 export function CategoryPills({ categories, selected, onSelect }: Props) {
   const colors = useColors();
+  const t = useTranslation();
   return (
     <ScrollView
       horizontal
@@ -38,7 +41,7 @@ export function CategoryPills({ categories, selected, onSelect }: Props) {
             ]}
           >
             <Text style={[styles.text, { color: active ? colors.primaryForeground : colors.mutedForeground }]}>
-              {cat}
+              {getCategoryLabel(cat, t)}
             </Text>
           </Pressable>
         );

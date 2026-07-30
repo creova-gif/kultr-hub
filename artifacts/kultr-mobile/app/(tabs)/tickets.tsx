@@ -18,6 +18,7 @@ import { getCountryByCurrency } from "@/constants/currencies";
 import type { PurchasedTicket } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useListMyTickets, getListMyTicketsQueryKey, type TicketDetail } from "@workspace/api-client-react";
 
 function adaptApiTicket(t: TicketDetail): PurchasedTicket {
@@ -40,6 +41,7 @@ export default function TicketsScreen() {
   const insets = useSafeAreaInsets();
   const { tickets: localTickets, authToken } = useApp();
   const { getEventById } = useEventCatalog();
+  const t = useTranslation();
 
   const { data: apiData } = useListMyTickets({
     query: { queryKey: getListMyTicketsQueryKey(), enabled: !!authToken },
@@ -79,17 +81,17 @@ export default function TicketsScreen() {
           <View style={[styles.emptyIcon, { backgroundColor: colors.muted }]}>
             <Feather name="tag" size={36} color={colors.mutedForeground} />
           </View>
-          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No tickets yet</Text>
+          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t.ticket.noTickets}</Text>
           <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-            Discover and book events to see your tickets here
+            {t.ticket.noTicketsSub}
           </Text>
           <Pressable
             style={styles.discoverBtn}
             onPress={() => router.push("/(tabs)/discover" as any)}
-            accessibilityLabel="Browse Events"
+            accessibilityLabel={t.actions.browseEvents}
             accessibilityRole="button"
           >
-            <Text style={styles.discoverBtnText}>Browse Events</Text>
+            <Text style={styles.discoverBtnText}>{t.actions.browseEvents}</Text>
           </Pressable>
         </View>
       ) : (
@@ -104,7 +106,7 @@ export default function TicketsScreen() {
               <Pressable
                 key={ticket.id}
                 onPress={() => router.push(`/ticket/${ticket.id}`)}
-                accessibilityLabel={`${event.title}, ${isUpcoming ? "Upcoming" : "Past event"}, ticket number ${ticket.ticketNumber}`}
+                accessibilityLabel={`${event.title}, ${isUpcoming ? t.ticket.upcoming : t.ticket.past}, ticket number ${ticket.ticketNumber}`}
                 accessibilityRole="button"
                 style={({ pressed }) => [
                   styles.ticketCard,
@@ -143,7 +145,7 @@ export default function TicketsScreen() {
                           { color: isUpcoming ? "#00C853" : "#A0A0A0" },
                         ]}
                       >
-                        {isUpcoming ? "Upcoming" : "Past"}
+                        {isUpcoming ? t.ticket.upcoming : t.ticket.past}
                       </Text>
                     </View>
                     <View style={[styles.ticketNumBadge, { backgroundColor: "rgba(0,0,0,0.5)" }]}>

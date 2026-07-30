@@ -33,6 +33,7 @@ import { useColors } from "@/hooks/useColors";
 import { useCheckIn } from "@/hooks/useQuests";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
 import { useEventDetail } from "@/hooks/useEventDetail";
+import { useTranslation } from "@/hooks/useTranslation";
 import { usePublicUser, useReportEvent } from "@/hooks/useReports";
 
 const REPORT_REASONS: { key: string; label: string }[] = [
@@ -123,6 +124,7 @@ export default function EventDetailScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { isSaved, toggleSaved, tickets, authToken, userCountry } = useApp();
+  const t = useTranslation();
   const [selectedTicketType, setSelectedTicketType] = useState(0);
   const { event, isLoading } = useEventDetail(id);
   const { events } = useEventCatalog();
@@ -380,13 +382,13 @@ export default function EventDetailScreen() {
               { backgroundColor: colors.card, borderColor: colors.border },
             ]}
           >
-            <InfoItem icon="calendar" label="Date" value={formatDate(event.date)} />
+            <InfoItem icon="calendar" label={t.event.date} value={formatDate(event.date)} />
             <View style={[styles.infoDivider, { backgroundColor: colors.border }]} />
-            <InfoItem icon="clock" label="Time" value={formatTime(event.time)} sub={viewerTimeHint} />
+            <InfoItem icon="clock" label={t.event.time} value={formatTime(event.time)} sub={viewerTimeHint} />
             <View style={[styles.infoDivider, { backgroundColor: colors.border }]} />
             <InfoItem
               icon="map-pin"
-              label="Venue"
+              label={t.event.venue}
               value={`${event.venue}, ${event.city}`}
             />
           </View>
@@ -500,7 +502,7 @@ export default function EventDetailScreen() {
           {/* Description */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-              About this Event
+              {t.event.about}
             </Text>
             <Text style={[styles.description, { color: colors.mutedForeground }]}>
               {event.description}
@@ -511,7 +513,7 @@ export default function EventDetailScreen() {
           {event.lineup && event.lineup.length > 0 && (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-                Lineup
+                {t.event.lineup}
               </Text>
               <View style={styles.lineupList}>
                 {event.lineup.map((artist, i) => (
@@ -610,7 +612,7 @@ export default function EventDetailScreen() {
           {/* Ticket Types */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-              Tickets
+              {t.event.tickets}
             </Text>
             <View style={styles.ticketTypes}>
               {event.ticketTypes.map((type, i) => {
@@ -657,7 +659,7 @@ export default function EventDetailScreen() {
                       )}
                       {soldOut && (
                         <Text style={[styles.soldOut, { color: "#D32F2F" }]}>
-                          Sold out
+                          {t.event.soldOut}
                         </Text>
                       )}
                     </View>
@@ -674,7 +676,7 @@ export default function EventDetailScreen() {
                             { color: colors.mutedForeground },
                           ]}
                         >
-                          {type.available} left
+                          {type.available} {t.event.available}
                         </Text>
                       )}
                     </View>
@@ -735,7 +737,7 @@ export default function EventDetailScreen() {
           {relatedEvents.length > 0 && (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-                You Might Also Like
+                {t.event.relatedEvents}
               </Text>
               <FlatList
                 horizontal
@@ -786,10 +788,10 @@ export default function EventDetailScreen() {
               `/checkout/${event.id}?ticketTypeIndex=${selectedTicketType}`
             );
           }}
-          accessibilityLabel={(event.ticketTypes[selectedTicketType]?.available ?? 1) === 0 ? "Sold out" : "Get tickets"}
+          accessibilityLabel={(event.ticketTypes[selectedTicketType]?.available ?? 1) === 0 ? t.event.soldOut : t.actions.getTickets}
         >
           <Text style={styles.ctaBtnText}>
-            {(event.ticketTypes[selectedTicketType]?.available ?? 1) === 0 ? "Sold Out" : "Get Tickets"}
+            {(event.ticketTypes[selectedTicketType]?.available ?? 1) === 0 ? t.event.soldOut : t.actions.getTickets}
           </Text>
           {(event.ticketTypes[selectedTicketType]?.available ?? 1) > 0 && <Feather name="arrow-right" size={16} color="#fff" />}
         </Pressable>

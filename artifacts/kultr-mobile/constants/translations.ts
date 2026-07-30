@@ -591,3 +591,23 @@ const ar: Translations = {
 };
 
 export const TRANSLATIONS: Record<Language, Translations> = { en, fr, sw, ar };
+
+// Maps a canonical English category value (see CATEGORIES in constants/data.ts,
+// also used as the filter/comparison key and the API's event.category value)
+// to its translated display label. The canonical value itself is never
+// translated — only what's shown for it.
+const CATEGORY_KEYS: Record<string, keyof Translations["categories"]> = {
+  "For You": "forYou",
+  Music: "music",
+  Art: "art",
+  Food: "food",
+  Heritage: "heritage",
+  Comedy: "comedy",
+  Sports: "sports",
+  Nightlife: "nightlife",
+};
+
+export function getCategoryLabel(category: string, t: Translations): string {
+  const key = CATEGORY_KEYS[category];
+  return key ? t.categories[key] : category;
+}
