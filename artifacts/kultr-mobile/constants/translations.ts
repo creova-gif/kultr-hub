@@ -582,6 +582,29 @@ export interface Translations {
     vibeConnected: string;
     vibeVibrant: string;
   };
+  // Home tab screen
+  home: {
+    greetingNight: string;
+    greetingMorning: string;
+    greetingAfternoon: string;
+    greetingEvening: string;
+    greetingLine1: string;
+    greetingVibeWord: string;
+    greetingLine2: string;
+    featuredLabel: string;
+    featuredAccent: string;
+    happeningSoonLabel: string;
+    happeningSoonAccent: string;
+    nearNairobiLabel: string;
+    acrossAfricaLabel: string;
+    trendingDiasporaLabel: string;
+    trendingDiasporaAccent: string;
+    seeAll: string;
+    today: string;
+    tomorrow: string;
+    noCategoryEventsPrefix: string;
+    noCategoryEventsSuffix: string;
+  };
 }
 
 const en: Translations = {
@@ -1138,6 +1161,28 @@ const en: Translations = {
     vibeCalm: "Calm",
     vibeConnected: "Connected",
     vibeVibrant: "Vibrant",
+  },
+  home: {
+    greetingNight: "Good night",
+    greetingMorning: "Good morning",
+    greetingAfternoon: "Good afternoon",
+    greetingEvening: "Good evening",
+    greetingLine1: "What's your",
+    greetingVibeWord: "vibe",
+    greetingLine2: "tonight?",
+    featuredLabel: "Featured",
+    featuredAccent: "On Stage",
+    happeningSoonLabel: "Happening Soon",
+    happeningSoonAccent: "Next 60 days",
+    nearNairobiLabel: "Near Nairobi",
+    acrossAfricaLabel: "Across Africa",
+    trendingDiasporaLabel: "Trending in the Diaspora",
+    trendingDiasporaAccent: "✈️ Global",
+    seeAll: "See all",
+    today: "Today",
+    tomorrow: "Tomorrow",
+    noCategoryEventsPrefix: "No",
+    noCategoryEventsSuffix: "events yet",
   },
 };
 
@@ -1696,6 +1741,28 @@ const fr: Translations = {
     vibeConnected: "Connecté",
     vibeVibrant: "Vibrant",
   },
+  home: {
+    greetingNight: "Bonne nuit",
+    greetingMorning: "Bonjour",
+    greetingAfternoon: "Bon après-midi",
+    greetingEvening: "Bonsoir",
+    greetingLine1: "Quelle est votre",
+    greetingVibeWord: "vibe",
+    greetingLine2: "ce soir ?",
+    featuredLabel: "En Vedette",
+    featuredAccent: "Sur Scène",
+    happeningSoonLabel: "Bientôt",
+    happeningSoonAccent: "Dans les 60 prochains jours",
+    nearNairobiLabel: "Près de Nairobi",
+    acrossAfricaLabel: "À Travers l'Afrique",
+    trendingDiasporaLabel: "Tendance dans la Diaspora",
+    trendingDiasporaAccent: "✈️ Mondial",
+    seeAll: "Tout voir",
+    today: "Aujourd'hui",
+    tomorrow: "Demain",
+    noCategoryEventsPrefix: "Aucun événement",
+    noCategoryEventsSuffix: "pour l'instant",
+  },
 };
 
 const sw: Translations = {
@@ -2253,6 +2320,28 @@ const sw: Translations = {
     vibeConnected: "Iliyounganika",
     vibeVibrant: "Yenye Uchangamfu",
   },
+  home: {
+    greetingNight: "Usiku Mwema",
+    greetingMorning: "Habari za Asubuhi",
+    greetingAfternoon: "Habari za Mchana",
+    greetingEvening: "Habari za Jioni",
+    greetingLine1: "Hali yako ni",
+    greetingVibeWord: "gani",
+    greetingLine2: "usiku wa leo?",
+    featuredLabel: "Yaliyoangaziwa",
+    featuredAccent: "Jukwaani",
+    happeningSoonLabel: "Yanakuja Hivi Karibuni",
+    happeningSoonAccent: "Siku 60 zijazo",
+    nearNairobiLabel: "Karibu na Nairobi",
+    acrossAfricaLabel: "Kote Afrika",
+    trendingDiasporaLabel: "Yanayovuma Ughaibuni",
+    trendingDiasporaAccent: "✈️ Kimataifa",
+    seeAll: "Angalia yote",
+    today: "Leo",
+    tomorrow: "Kesho",
+    noCategoryEventsPrefix: "Hakuna matukio ya",
+    noCategoryEventsSuffix: "bado",
+  },
 };
 
 const ar: Translations = {
@@ -2809,6 +2898,28 @@ const ar: Translations = {
     vibeCalm: "هادئ",
     vibeConnected: "متصل",
     vibeVibrant: "نابض بالحياة",
+  },
+  home: {
+    greetingNight: "طابت ليلتك",
+    greetingMorning: "صباح الخير",
+    greetingAfternoon: "طاب مساؤك",
+    greetingEvening: "مساء الخير",
+    greetingLine1: "ما هي",
+    greetingVibeWord: "أجواؤك",
+    greetingLine2: "الليلة؟",
+    featuredLabel: "مميزة",
+    featuredAccent: "على المسرح",
+    happeningSoonLabel: "قريباً",
+    happeningSoonAccent: "خلال 60 يوماً القادمة",
+    nearNairobiLabel: "بالقرب من نيروبي",
+    acrossAfricaLabel: "عبر أفريقيا",
+    trendingDiasporaLabel: "رائج في الشتات",
+    trendingDiasporaAccent: "✈️ عالمي",
+    seeAll: "عرض الكل",
+    today: "اليوم",
+    tomorrow: "غداً",
+    noCategoryEventsPrefix: "لا توجد فعاليات",
+    noCategoryEventsSuffix: "بعد",
   },
 };
 

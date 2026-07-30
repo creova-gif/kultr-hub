@@ -22,13 +22,15 @@ import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
 import { useMyNotifications } from "@/hooks/useNotifications";
+import { useTranslation } from "@/hooks/useTranslation";
+import { getCategoryLabel, Translations } from "@/constants/translations";
 
-function getTimeGreeting(): string {
+function getTimeGreeting(t: Translations): string {
   const hour = new Date().getHours();
-  if (hour < 5) return "Good night";
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  return "Good evening";
+  if (hour < 5) return t.home.greetingNight;
+  if (hour < 12) return t.home.greetingMorning;
+  if (hour < 17) return t.home.greetingAfternoon;
+  return t.home.greetingEvening;
 }
 
 const { width } = Dimensions.get("window");
@@ -70,6 +72,7 @@ const COUNTRY_FLAGS: Record<string, string> = {
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const t = useTranslation();
   const [selectedCategory, setSelectedCategory] = useState("For You");
   const { events, isLoading } = useEventCatalog();
   const { authUser, userCountry } = useApp();
@@ -126,7 +129,7 @@ export default function HomeScreen() {
             <Pressable
               onPress={() => router.push("/notifications")}
               style={styles.navBtn}
-              accessibilityLabel="Notifications"
+              accessibilityLabel={t.profile.notifications}
               accessibilityRole="button"
             >
               <Feather name="bell" size={17} color="#ccc" />
@@ -135,7 +138,7 @@ export default function HomeScreen() {
             <Pressable
               onPress={() => router.push("/(tabs)/profile")}
               style={styles.avatar}
-              accessibilityLabel="Profile"
+              accessibilityLabel={t.profile.title}
               accessibilityRole="button"
             >
               {avatarInitial ? (
@@ -149,11 +152,11 @@ export default function HomeScreen() {
 
         {/* Big greeting */}
         <View style={styles.greetingBlock}>
-          <Text style={styles.greetingSmall}>{getTimeGreeting()} — {userCountry.name}</Text>
+          <Text style={styles.greetingSmall}>{getTimeGreeting(t)} — {userCountry.name}</Text>
           <Text style={styles.greetingBig} numberOfLines={2}>
-            {"What's your\n"}
-            <Text style={{ color: "#FF6B00", fontStyle: "italic" }}>vibe</Text>
-            {" tonight?"}
+            {t.home.greetingLine1}{"\n"}
+            <Text style={{ color: "#FF6B00", fontStyle: "italic" }}>{t.home.greetingVibeWord}</Text>
+            {" "}{t.home.greetingLine2}
           </Text>
         </View>
 
@@ -183,7 +186,7 @@ export default function HomeScreen() {
               >
                 <Feather name={icon as any} size={12} color={active ? "#fff" : "#666"} />
                 <Text style={[styles.categoryLabel, { color: active ? "#fff" : "#888" }]}>
-                  {cat}
+                  {getCategoryLabel(cat, t)}
                 </Text>
               </Pressable>
             );
@@ -199,13 +202,15 @@ export default function HomeScreen() {
       ) : selectedCategory !== "For You" ? (
         <View style={styles.filteredSection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionLabel}>{selectedCategory}</Text>
+            <Text style={styles.sectionLabel}>{getCategoryLabel(selectedCategory, t)}</Text>
             <Text style={{ color: "#888", fontSize: 13 }}>{displayed.length} events</Text>
           </View>
           {displayed.length === 0 ? (
             <View style={styles.emptyState}>
               <Feather name="calendar" size={36} color="#333" />
-              <Text style={{ color: "#888", fontSize: 15 }}>No {selectedCategory} events yet</Text>
+              <Text style={{ color: "#888", fontSize: 15 }}>
+                {t.home.noCategoryEventsPrefix} {getCategoryLabel(selectedCategory, t)} {t.home.noCategoryEventsSuffix}
+              </Text>
             </View>
           ) : (
             displayed.map((event) => (
@@ -219,7 +224,7 @@ export default function HomeScreen() {
         <>
           {/* ── FEATURED ── */}
           <View style={styles.featuredSection}>
-            <SectionTitle label="FEATURED" accent="On Stage" />
+            <SectionTitle label={t.home.featuredLabel.toUpperCase()} accent={t.home.featuredAccent} />
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -236,7 +241,7 @@ export default function HomeScreen() {
           {/* ── HAPPENING SOON bento grid ── */}
           {thisWeekend.length > 0 && (
             <View style={styles.section}>
-              <SectionTitle label="HAPPENING SOON" accent="Next 60 days" />
+              <SectionTitle label={t.home.happeningSoonLabel.toUpperCase()} accent={t.home.happeningSoonAccent} />
               <View style={styles.bentoGrid}>
                 {thisWeekend.map((event, i) => {
                   const daysUntil = getDaysUntil(event.date);
@@ -263,12 +268,12 @@ export default function HomeScreen() {
                       />
                       <View style={styles.dayBadge}>
                         <Text style={styles.dayNum}>
-                          {daysUntil === 0 ? "TODAY" : daysUntil === 1 ? "TMRW" : `${daysUntil}d`}
+                          {daysUntil === 0 ? t.home.today.toUpperCase() : daysUntil === 1 ? t.home.tomorrow.toUpperCase() : `${daysUntil}d`}
                         </Text>
                       </View>
                       <View style={styles.bentoContent}>
                         <View style={styles.bentoCat}>
-                          <Text style={styles.bentoCatText}>{event.category.toUpperCase()}</Text>
+                          <Text style={styles.bentoCatText}>{getCategoryLabel(event.category, t).toUpperCase()}</Text>
                         </View>
                         <Text
                           style={[styles.bentoTitle, isBig ? styles.bentoTitleLg : styles.bentoTitleSm]}
@@ -295,7 +300,7 @@ export default function HomeScreen() {
           {/* ── NEAR NAIROBI ── */}
           {nearNairobi.length > 0 && (
             <View style={styles.section}>
-              <SectionTitle label="NEAR NAIROBI" onSeeAll={() => router.push("/(tabs)/discover" as any)} />
+              <SectionTitle label={t.home.nearNairobiLabel.toUpperCase()} onSeeAll={() => router.push("/(tabs)/discover" as any)} />
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -311,7 +316,7 @@ export default function HomeScreen() {
           {/* ── ACROSS AFRICA ── */}
           {acrossAfrica.length > 0 && (
             <View style={styles.section}>
-              <SectionTitle label="ACROSS AFRICA" onSeeAll={() => router.push("/(tabs)/discover" as any)} />
+              <SectionTitle label={t.home.acrossAfricaLabel.toUpperCase()} onSeeAll={() => router.push("/(tabs)/discover" as any)} />
               <View style={styles.africaGrid}>
                 {acrossAfrica.map((event) => {
                   const image = EVENT_IMAGES[event.imageKey];
@@ -353,7 +358,7 @@ export default function HomeScreen() {
           {/* ── TRENDING IN THE DIASPORA ── */}
           {diaspora.length > 0 && (
             <View style={styles.section}>
-              <SectionTitle label="TRENDING IN THE DIASPORA" accent="✈️ Global" onSeeAll={() => router.push("/(tabs)/discover" as any)} />
+              <SectionTitle label={t.home.trendingDiasporaLabel.toUpperCase()} accent={t.home.trendingDiasporaAccent} onSeeAll={() => router.push("/(tabs)/discover" as any)} />
               {diaspora.map((event) => (
                 <EventCardCompact key={event.id} event={event} horizontal />
               ))}
@@ -374,6 +379,7 @@ function SectionTitle({
   accent?: string;
   onSeeAll?: () => void;
 }) {
+  const t = useTranslation();
   return (
     <View style={styles.sectionHeaderRow}>
       <View>
@@ -382,7 +388,7 @@ function SectionTitle({
       </View>
       {onSeeAll && (
         <Pressable onPress={onSeeAll} style={styles.seeAllBtn}>
-          <Text style={styles.seeAllText}>See all</Text>
+          <Text style={styles.seeAllText}>{t.home.seeAll}</Text>
           <Feather name="arrow-right" size={12} color="#FF6B00" />
         </Pressable>
       )}
