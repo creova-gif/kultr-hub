@@ -306,6 +306,31 @@ export interface Translations {
     badgeCommunityBuilder: string;
     badgeCommunityBuilderDesc: string;
   };
+  // Creator Studio dashboard
+  creatorStudio: {
+    title: string;
+    welcomeBack: string;
+    welcomeSub: string;
+    payouts: string;
+    payoutsSub: string;
+    overview: string;
+    last8Weeks: string;
+    activeEvents: string;
+    avgTicketPrice: string;
+    ticketSalesOverTime: string;
+    salesByCity: string;
+    ticketsSoldPerCity: string;
+    revenueByEvent: string;
+    ticketsSoldPerEvent: string;
+    recentEvents: string;
+    noEventsYet: string;
+    noEventsYetSub: string;
+    statusDraft: string;
+    statusInReview: string;
+    statusLive: string;
+    statusEnded: string;
+    statusCancelled: string;
+  };
 }
 
 const en: Translations = {
@@ -596,6 +621,30 @@ const en: Translations = {
     badgeEventKingDesc: "Attended 10+ events",
     badgeCommunityBuilder: "Community Builder",
     badgeCommunityBuilderDesc: "Attended 5+ events",
+  },
+  creatorStudio: {
+    title: "Creator Studio",
+    welcomeBack: "Welcome back,",
+    welcomeSub: "Here's what's happening with your events",
+    payouts: "Payouts",
+    payoutsSub: "View your balance and request a payout",
+    overview: "Overview",
+    last8Weeks: "Last 8 weeks",
+    activeEvents: "Active Events",
+    avgTicketPrice: "Avg. Ticket Price",
+    ticketSalesOverTime: "Ticket Sales Over Time",
+    salesByCity: "Sales by City",
+    ticketsSoldPerCity: "Tickets sold per city",
+    revenueByEvent: "Revenue by Event",
+    ticketsSoldPerEvent: "Tickets sold per event",
+    recentEvents: "Recent Events",
+    noEventsYet: "No events yet",
+    noEventsYetSub: "Create your first event to see it and its sales here.",
+    statusDraft: "Draft",
+    statusInReview: "In Review",
+    statusLive: "Live",
+    statusEnded: "Ended",
+    statusCancelled: "Cancelled",
   },
 };
 
@@ -888,6 +937,30 @@ const fr: Translations = {
     badgeCommunityBuilder: "Bâtisseur de communauté",
     badgeCommunityBuilderDesc: "5+ événements suivis",
   },
+  creatorStudio: {
+    title: "Espace Créateur",
+    welcomeBack: "Content de vous revoir,",
+    welcomeSub: "Voici ce qui se passe avec vos événements",
+    payouts: "Paiements",
+    payoutsSub: "Consultez votre solde et demandez un paiement",
+    overview: "Aperçu",
+    last8Weeks: "8 dernières semaines",
+    activeEvents: "Événements actifs",
+    avgTicketPrice: "Prix moyen du billet",
+    ticketSalesOverTime: "Ventes de billets dans le temps",
+    salesByCity: "Ventes par ville",
+    ticketsSoldPerCity: "Billets vendus par ville",
+    revenueByEvent: "Revenus par événement",
+    ticketsSoldPerEvent: "Billets vendus par événement",
+    recentEvents: "Événements récents",
+    noEventsYet: "Aucun événement pour l'instant",
+    noEventsYetSub: "Créez votre premier événement pour le voir ainsi que ses ventes ici.",
+    statusDraft: "Brouillon",
+    statusInReview: "En révision",
+    statusLive: "En direct",
+    statusEnded: "Terminé",
+    statusCancelled: "Annulé",
+  },
 };
 
 const sw: Translations = {
@@ -1179,6 +1252,30 @@ const sw: Translations = {
     badgeCommunityBuilder: "Mjenzi wa Jamii",
     badgeCommunityBuilderDesc: "Umehudhuria matukio 5+",
   },
+  creatorStudio: {
+    title: "Studio ya Muundaji",
+    welcomeBack: "Karibu tena,",
+    welcomeSub: "Haya ndiyo yanayoendelea na matukio yako",
+    payouts: "Malipo",
+    payoutsSub: "Angalia salio lako na uombe malipo",
+    overview: "Muhtasari",
+    last8Weeks: "Wiki 8 zilizopita",
+    activeEvents: "Matukio Yanayoendelea",
+    avgTicketPrice: "Wastani wa Bei ya Tikiti",
+    ticketSalesOverTime: "Mauzo ya Tikiti kwa Muda",
+    salesByCity: "Mauzo kwa Mji",
+    ticketsSoldPerCity: "Tikiti zilizouzwa kwa mji",
+    revenueByEvent: "Mapato kwa Tukio",
+    ticketsSoldPerEvent: "Tikiti zilizouzwa kwa tukio",
+    recentEvents: "Matukio ya Hivi Karibuni",
+    noEventsYet: "Bado hakuna matukio",
+    noEventsYetSub: "Unda tukio lako la kwanza ili kuliona pamoja na mauzo yake hapa.",
+    statusDraft: "Rasimu",
+    statusInReview: "Inakaguliwa",
+    statusLive: "Inaendelea",
+    statusEnded: "Imeisha",
+    statusCancelled: "Imeghairiwa",
+  },
 };
 
 const ar: Translations = {
@@ -1469,6 +1566,30 @@ const ar: Translations = {
     badgeEventKingDesc: "حضور أكثر من 10 فعاليات",
     badgeCommunityBuilder: "باني المجتمع",
     badgeCommunityBuilderDesc: "حضور أكثر من 5 فعاليات",
+  },
+  creatorStudio: {
+    title: "استوديو المنشئ",
+    welcomeBack: "مرحباً بعودتك،",
+    welcomeSub: "إليك آخر مستجدات فعالياتك",
+    payouts: "المدفوعات",
+    payoutsSub: "اطّلع على رصيدك واطلب دفعة",
+    overview: "نظرة عامة",
+    last8Weeks: "آخر 8 أسابيع",
+    activeEvents: "الفعاليات النشطة",
+    avgTicketPrice: "متوسط سعر التذكرة",
+    ticketSalesOverTime: "مبيعات التذاكر عبر الزمن",
+    salesByCity: "المبيعات حسب المدينة",
+    ticketsSoldPerCity: "التذاكر المباعة لكل مدينة",
+    revenueByEvent: "الإيرادات حسب الفعالية",
+    ticketsSoldPerEvent: "التذاكر المباعة لكل فعالية",
+    recentEvents: "الفعاليات الأخيرة",
+    noEventsYet: "لا توجد فعاليات بعد",
+    noEventsYetSub: "أنشئ فعاليتك الأولى لتراها مع مبيعاتها هنا.",
+    statusDraft: "مسودة",
+    statusInReview: "قيد المراجعة",
+    statusLive: "مباشر",
+    statusEnded: "منتهية",
+    statusCancelled: "ملغاة",
   },
 };
 

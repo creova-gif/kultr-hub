@@ -18,6 +18,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { useMyNotifications } from "@/hooks/useNotifications";
+import { useTranslation } from "@/hooks/useTranslation";
+import { Translations } from "@/constants/translations";
 import { EVENT_IMAGES } from "@/constants/data";
 import { useGetCreatorAnalytics, getGetCreatorAnalyticsQueryKey } from "@workspace/api-client-react";
 
@@ -27,12 +29,15 @@ const CHART_H = 160;
 
 // ── Chart helpers ────────────────────────────────────────────────────────────
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: "Draft",
-  pending_review: "In Review",
-  live: "Live",
-  ended: "Ended",
-  cancelled: "Cancelled",
+// Maps the canonical (English, API-facing) event status to its translation key.
+// The status values themselves are stable identifiers used for logic elsewhere
+// (e.g. dot color) — only the displayed label is translated.
+const STATUS_LABEL_KEYS: Record<string, keyof Translations["creatorStudio"]> = {
+  draft: "statusDraft",
+  pending_review: "statusInReview",
+  live: "statusLive",
+  ended: "statusEnded",
+  cancelled: "statusCancelled",
 };
 
 function normalise(data: number[]): number[] {
@@ -171,6 +176,7 @@ const statStyles = StyleSheet.create({
 export default function CreatorStudioScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const t = useTranslation();
   const { authUser, authToken, createdEvents, userCountry } = useApp();
 
   const { data: analytics } = useGetCreatorAnalytics({
@@ -236,7 +242,7 @@ export default function CreatorStudioScreen() {
           <Feather name="arrow-left" size={20} color={colors.foreground} />
         </Pressable>
         <View style={styles.headerCenter}>
-          <Text style={[styles.headerStudio, { color: "#FF6B00" }]}>CREATOR STUDIO</Text>
+          <Text style={[styles.headerStudio, { color: "#FF6B00" }]}>{t.creatorStudio.title.toUpperCase()}</Text>
         </View>
         <Pressable
           onPress={() => router.push("/notifications")}
@@ -253,10 +259,10 @@ export default function CreatorStudioScreen() {
       <View style={styles.welcomeRow}>
         <View style={styles.welcomeText}>
           <Text style={[styles.welcomeTitle, { color: colors.foreground }]}>
-            Welcome back, {firstName}
+            {t.creatorStudio.welcomeBack} {firstName}
           </Text>
           <Text style={[styles.welcomeSub, { color: colors.mutedForeground }]}>
-            Here's what's happening with your events
+            {t.creatorStudio.welcomeSub}
           </Text>
         </View>
         <Pressable
@@ -267,7 +273,7 @@ export default function CreatorStudioScreen() {
           }}
         >
           <Feather name="plus" size={16} color="#fff" />
-          <Text style={styles.createBtnText}>Create Event</Text>
+          <Text style={styles.createBtnText}>{t.actions.createEvent}</Text>
         </Pressable>
       </View>
 
@@ -278,16 +284,16 @@ export default function CreatorStudioScreen() {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           router.push("/payouts" as any);
         }}
-        accessibilityLabel="View balance and request a payout"
+        accessibilityLabel={t.creatorStudio.payoutsSub}
         accessibilityRole="button"
       >
         <View style={[styles.payoutsIcon, { backgroundColor: "rgba(255,107,0,0.12)" }]}>
           <Feather name="dollar-sign" size={18} color="#FF6B00" />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.payoutsTitle, { color: colors.foreground }]}>Payouts</Text>
+          <Text style={[styles.payoutsTitle, { color: colors.foreground }]}>{t.creatorStudio.payouts}</Text>
           <Text style={[styles.payoutsSub, { color: colors.mutedForeground }]}>
-            View your balance and request a payout
+            {t.creatorStudio.payoutsSub}
           </Text>
         </View>
         <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
@@ -296,17 +302,17 @@ export default function CreatorStudioScreen() {
       {/* ── Overview ── */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Overview</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t.creatorStudio.overview}</Text>
           <View style={[styles.datePill, { backgroundColor: colors.muted, borderColor: colors.border }]}>
             <Feather name="calendar" size={12} color={colors.mutedForeground} />
-            <Text style={[styles.datePillText, { color: colors.mutedForeground }]}>Last 8 weeks</Text>
+            <Text style={[styles.datePillText, { color: colors.mutedForeground }]}>{t.creatorStudio.last8Weeks}</Text>
             <Feather name="chevron-down" size={12} color={colors.mutedForeground} />
           </View>
         </View>
 
         <View style={styles.statsGrid}>
           <StatCard
-            label="Tickets Sold"
+            label={t.profile.ticketsSold}
             value={totalSold.toLocaleString()}
             trend="—"
             trendUp
@@ -314,7 +320,7 @@ export default function CreatorStudioScreen() {
             colors={colors}
           />
           <StatCard
-            label="Revenue"
+            label={t.profile.totalRevenue}
             value={formatRevenue(totalRevenue)}
             trend="—"
             trendUp
@@ -322,7 +328,7 @@ export default function CreatorStudioScreen() {
             colors={colors}
           />
           <StatCard
-            label="Active Events"
+            label={t.creatorStudio.activeEvents}
             value={String(liveCount)}
             trend={`+${liveCount}`}
             trendUp={liveCount > 0}
@@ -330,7 +336,7 @@ export default function CreatorStudioScreen() {
             colors={colors}
           />
           <StatCard
-            label="Avg. Ticket Price"
+            label={t.creatorStudio.avgTicketPrice}
             value={totalSold > 0 ? formatRevenue(Math.round(totalRevenue / totalSold)) : formatRevenue(0)}
             trend="—"
             trendUp
@@ -343,9 +349,9 @@ export default function CreatorStudioScreen() {
       {/* ── Line Chart ── */}
       <View style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.chartHeader}>
-          <Text style={[styles.chartTitle, { color: colors.foreground }]}>Ticket Sales Over Time</Text>
+          <Text style={[styles.chartTitle, { color: colors.foreground }]}>{t.creatorStudio.ticketSalesOverTime}</Text>
           <View style={[styles.datePill, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-            <Text style={[styles.datePillText, { color: colors.mutedForeground }]}>Tickets Sold</Text>
+            <Text style={[styles.datePillText, { color: colors.mutedForeground }]}>{t.profile.ticketsSold}</Text>
             <Feather name="chevron-down" size={11} color={colors.mutedForeground} />
           </View>
         </View>
@@ -400,7 +406,7 @@ export default function CreatorStudioScreen() {
       {salesByCity.length > 0 && (
         <View style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.chartHeader}>
-            <Text style={[styles.chartTitle, { color: colors.foreground }]}>Sales by City</Text>
+            <Text style={[styles.chartTitle, { color: colors.foreground }]}>{t.creatorStudio.salesByCity}</Text>
           </View>
           <BarChart
             data={salesByCity.map((c) => ({ label: c.city.slice(0, 8), value: c.ticketsSold }))}
@@ -408,7 +414,7 @@ export default function CreatorStudioScreen() {
           />
           <View style={styles.chartLegend}>
             <View style={[styles.chartLegendDot, { backgroundColor: "#FF6B00" }]} />
-            <Text style={[styles.chartLegendText, { color: colors.mutedForeground }]}>Tickets sold per city</Text>
+            <Text style={[styles.chartLegendText, { color: colors.mutedForeground }]}>{t.creatorStudio.ticketsSoldPerCity}</Text>
           </View>
         </View>
       )}
@@ -417,9 +423,9 @@ export default function CreatorStudioScreen() {
       {createdEvents.length > 0 && (
         <View style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.chartHeader}>
-            <Text style={[styles.chartTitle, { color: colors.foreground }]}>Revenue by Event</Text>
+            <Text style={[styles.chartTitle, { color: colors.foreground }]}>{t.creatorStudio.revenueByEvent}</Text>
             <View style={[styles.chartBadge, { backgroundColor: "rgba(255,107,0,0.12)" }]}>
-              <Text style={{ color: "#FF6B00", fontSize: 10, fontWeight: "700" }}>LIVE</Text>
+              <Text style={{ color: "#FF6B00", fontSize: 10, fontWeight: "700" }}>{t.creatorStudio.statusLive.toUpperCase()}</Text>
             </View>
           </View>
           <BarChart
@@ -432,7 +438,7 @@ export default function CreatorStudioScreen() {
           <View style={styles.chartLegend}>
             <View style={[styles.chartLegendDot, { backgroundColor: "#FF6B00" }]} />
             <Text style={[styles.chartLegendText, { color: colors.mutedForeground }]}>
-              Revenue ({createdEvents[0]?.currency ?? "KES"})
+              {t.profile.totalRevenue} ({createdEvents[0]?.currency ?? "KES"})
             </Text>
           </View>
         </View>
@@ -442,7 +448,7 @@ export default function CreatorStudioScreen() {
       {createdEvents.length > 0 && (
         <View style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.chartHeader}>
-            <Text style={[styles.chartTitle, { color: colors.foreground }]}>Tickets Sold</Text>
+            <Text style={[styles.chartTitle, { color: colors.foreground }]}>{t.profile.ticketsSold}</Text>
           </View>
           <BarChart
             data={createdEvents.slice(0, 6).map((e) => ({
@@ -454,7 +460,7 @@ export default function CreatorStudioScreen() {
           />
           <View style={styles.chartLegend}>
             <View style={[styles.chartLegendDot, { backgroundColor: "#7B61FF" }]} />
-            <Text style={[styles.chartLegendText, { color: colors.mutedForeground }]}>Tickets sold per event</Text>
+            <Text style={[styles.chartLegendText, { color: colors.mutedForeground }]}>{t.creatorStudio.ticketsSoldPerEvent}</Text>
           </View>
         </View>
       )}
@@ -462,9 +468,9 @@ export default function CreatorStudioScreen() {
       {/* ── Recent Events ── */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Recent Events</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t.creatorStudio.recentEvents}</Text>
           <View>
-            <Text style={styles.viewAllText}>All Events</Text>
+            <Text style={styles.viewAllText}>{t.discover.allEvents}</Text>
           </View>
         </View>
 
@@ -473,17 +479,17 @@ export default function CreatorStudioScreen() {
             <View style={[styles.creatorEmptyIcon, { backgroundColor: colors.muted }]}>
               <Feather name="calendar" size={32} color={colors.mutedForeground} />
             </View>
-            <Text style={[styles.creatorEmptyTitle, { color: colors.foreground }]}>No events yet</Text>
+            <Text style={[styles.creatorEmptyTitle, { color: colors.foreground }]}>{t.creatorStudio.noEventsYet}</Text>
             <Text style={[styles.creatorEmptyText, { color: colors.mutedForeground }]}>
-              Create your first event to see it and its sales here.
+              {t.creatorStudio.noEventsYetSub}
             </Text>
             <Pressable
               style={styles.creatorEmptyBtn}
               onPress={() => router.push("/create-event" as any)}
-              accessibilityLabel="Create an event"
+              accessibilityLabel={t.actions.createEvent}
               accessibilityRole="button"
             >
-              <Text style={styles.creatorEmptyBtnText}>Create Event</Text>
+              <Text style={styles.creatorEmptyBtnText}>{t.actions.createEvent}</Text>
             </Pressable>
           </View>
         ) : (
@@ -526,7 +532,7 @@ export default function CreatorStudioScreen() {
                         },
                       ]}
                     >
-                      {STATUS_LABELS[ev.status] ?? ev.status}
+                      {STATUS_LABEL_KEYS[ev.status] ? t.creatorStudio[STATUS_LABEL_KEYS[ev.status]] : ev.status}
                     </Text>
                   </View>
                 </View>
