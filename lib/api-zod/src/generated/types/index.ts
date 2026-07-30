@@ -78,6 +78,8 @@ export * from "./payoutCurrencyBalance";
 export * from "./payoutListResponse";
 export * from "./payoutStatus";
 export * from "./payoutView";
+export * from "./payPalInitRequest";
+export * from "./payPalInitResponse";
 export * from "./perkListResponse";
 export * from "./perkView";
 export * from "./publicUserProfile";

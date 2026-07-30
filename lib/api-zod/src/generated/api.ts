@@ -1047,6 +1047,40 @@ export const StripeVerifyBody = zod.object({
 });
 
 /**
+ * A second diaspora payment option alongside Stripe. Same server-side FX conversion and pending-payment-backed verification pattern as POST /payments/stripe/init.
+ * @summary Create a PayPal order for a ticket purchase (diaspora card/wallet payments)
+ */
+export const paypalInitBodyQuantityDefault = 1;
+
+export const PaypalInitBody = zod.object({
+  eventId: zod.string(),
+  ticketTypeId: zod.string(),
+  quantity: zod.number().default(paypalInitBodyQuantityDefault),
+  currency: zod
+    .string()
+    .optional()
+    .describe(
+      "Settlement currency for the charge. One of: USD, GBP, CAD, EUR. Defaults to USD.",
+    ),
+});
+
+export const PaypalInitResponse = zod.object({
+  reference: zod.string(),
+  approveUrl: zod.string().nullable(),
+  simulated: zod.boolean(),
+  totalAmount: zod.number(),
+  currency: zod.string(),
+});
+
+/**
+ * Quantity, converted unit price, and currency are read from the pending-payment row written at init time, never re-supplied by the caller.
+ * @summary Capture a previously-approved PayPal order; issues the ticket once confirmed
+ */
+export const PaypalVerifyBody = zod.object({
+  reference: zod.string(),
+});
+
+/**
  * The ticket price is converted server-side from the event's native currency into TZS, mirroring POST /payments/stripe/init.
  * @summary Push a Selcom USSD payment prompt (Tanzania mobile money — M-Pesa TZ, Tigo Pesa, Airtel Money TZ)
  */

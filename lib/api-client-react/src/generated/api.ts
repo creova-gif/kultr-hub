@@ -60,6 +60,8 @@ import type {
   PassActivateResponse,
   PassPaymentInitResponse,
   PassPaymentVerifyResponse,
+  PayPalInitRequest,
+  PayPalInitResponse,
   PaymentPendingResponse,
   PayoutBalanceResponse,
   PayoutListResponse,
@@ -3786,6 +3788,180 @@ export const useStripeVerify = <
   TContext
 > => {
   return useMutation(getStripeVerifyMutationOptions(options));
+};
+
+/**
+ * A second diaspora payment option alongside Stripe. Same server-side FX conversion and pending-payment-backed verification pattern as POST /payments/stripe/init.
+ * @summary Create a PayPal order for a ticket purchase (diaspora card/wallet payments)
+ */
+export const getPaypalInitUrl = () => {
+  return `/api/payments/paypal/init`;
+};
+
+export const paypalInit = async (
+  payPalInitRequest: PayPalInitRequest,
+  options?: RequestInit,
+): Promise<PayPalInitResponse> => {
+  return customFetch<PayPalInitResponse>(getPaypalInitUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(payPalInitRequest),
+  });
+};
+
+export const getPaypalInitMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof paypalInit>>,
+    TError,
+    { data: BodyType<PayPalInitRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof paypalInit>>,
+  TError,
+  { data: BodyType<PayPalInitRequest> },
+  TContext
+> => {
+  const mutationKey = ["paypalInit"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof paypalInit>>,
+    { data: BodyType<PayPalInitRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return paypalInit(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PaypalInitMutationResult = NonNullable<
+  Awaited<ReturnType<typeof paypalInit>>
+>;
+export type PaypalInitMutationBody = BodyType<PayPalInitRequest>;
+export type PaypalInitMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Create a PayPal order for a ticket purchase (diaspora card/wallet payments)
+ */
+export const usePaypalInit = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof paypalInit>>,
+    TError,
+    { data: BodyType<PayPalInitRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof paypalInit>>,
+  TError,
+  { data: BodyType<PayPalInitRequest> },
+  TContext
+> => {
+  return useMutation(getPaypalInitMutationOptions(options));
+};
+
+/**
+ * Quantity, converted unit price, and currency are read from the pending-payment row written at init time, never re-supplied by the caller.
+ * @summary Capture a previously-approved PayPal order; issues the ticket once confirmed
+ */
+export const getPaypalVerifyUrl = () => {
+  return `/api/payments/paypal/verify`;
+};
+
+export const paypalVerify = async (
+  referenceOnlyRequest: ReferenceOnlyRequest,
+  options?: RequestInit,
+): Promise<TicketIssueResponse> => {
+  return customFetch<TicketIssueResponse>(getPaypalVerifyUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(referenceOnlyRequest),
+  });
+};
+
+export const getPaypalVerifyMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof paypalVerify>>,
+    TError,
+    { data: BodyType<ReferenceOnlyRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof paypalVerify>>,
+  TError,
+  { data: BodyType<ReferenceOnlyRequest> },
+  TContext
+> => {
+  const mutationKey = ["paypalVerify"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof paypalVerify>>,
+    { data: BodyType<ReferenceOnlyRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return paypalVerify(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PaypalVerifyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof paypalVerify>>
+>;
+export type PaypalVerifyMutationBody = BodyType<ReferenceOnlyRequest>;
+export type PaypalVerifyMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Capture a previously-approved PayPal order; issues the ticket once confirmed
+ */
+export const usePaypalVerify = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof paypalVerify>>,
+    TError,
+    { data: BodyType<ReferenceOnlyRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof paypalVerify>>,
+  TError,
+  { data: BodyType<ReferenceOnlyRequest> },
+  TContext
+> => {
+  return useMutation(getPaypalVerifyMutationOptions(options));
 };
 
 /**

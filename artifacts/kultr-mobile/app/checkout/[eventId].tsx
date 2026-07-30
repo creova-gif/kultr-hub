@@ -378,6 +378,67 @@ export default function CheckoutScreen() {
         return;
       }
 
+      if (gateway === "paypal") {
+        const paypalCurrency = STRIPE_CURRENCIES.has(userCountry.currencyCode) ? userCountry.currencyCode : "USD";
+        const initRes = await fetch(`${apiBase}/api/payments/paypal/init`, {
+          method: "POST",
+          headers: authHeader,
+          body: JSON.stringify({ eventId: event.id, ticketTypeId: ticketType.id, quantity, currency: paypalCurrency }),
+        });
+
+        if (!initRes.ok) {
+          setCheckoutError(await readError(initRes, "Could not start PayPal payment. Please try again."));
+          setLoading(false);
+          return;
+        }
+
+        const initData = await initRes.json() as {
+          reference: string;
+          approveUrl: string | null;
+          simulated: boolean;
+        };
+
+        const finishPayPal = async () => {
+          const verifyRes = await fetch(`${apiBase}/api/payments/paypal/verify`, {
+            method: "POST",
+            headers: authHeader,
+            body: JSON.stringify({ reference: initData.reference }),
+          });
+
+          if (!verifyRes.ok) {
+            setCheckoutError(await readError(verifyRes, "Payment could not be confirmed. Please try again."));
+            setLoading(false);
+            return;
+          }
+
+          const verifyData = await verifyRes.json() as { ticketId: string; ticketNumber: string };
+          if (typeof verifyData.ticketId !== "string") throw new Error("Invalid verify response");
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          setLoading(false);
+          router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}`);
+        };
+
+        if (initData.approveUrl) {
+          const browserResult = await WebBrowser.openBrowserAsync(initData.approveUrl);
+          if (browserResult.type !== "opened") {
+            await finishPayPal();
+            return;
+          }
+          // Browser closed without completing checkout — not an error, just stop.
+          setLoading(false);
+          return;
+        }
+
+        if (initData.simulated) {
+          await finishPayPal();
+          return;
+        }
+
+        setCheckoutError("PayPal payment could not be started. Please try again.");
+        setLoading(false);
+        return;
+      }
+
       // Paystack path for card / bank / ussd
       const initRes = await fetch(`${apiBase}/api/payments/init`, {
         method: "POST",
@@ -588,7 +649,8 @@ export default function CheckoutScreen() {
               const typeLabel =
                 method.type === "mobile_money" ? "Mobile Money" :
                 method.type === "bank" ? "Bank Transfer" :
-                method.type === "ussd" ? "USSD" : "Card";
+                method.type === "ussd" ? "USSD" :
+                method.type === "wallet" ? "Wallet" : "Card";
               const initial = method.label.charAt(0).toUpperCase();
               return (
                 <Pressable
@@ -689,12 +751,14 @@ export default function CheckoutScreen() {
             </>
           )}
 
-          {/* Card hint */}
-          {activeMethod?.type === "card" && (
+          {/* Card / wallet hint */}
+          {(activeMethod?.type === "card" || activeMethod?.type === "wallet") && (
             <View style={[styles.cardHint, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Feather name="lock" size={13} color="#00C853" />
               <Text style={[styles.cardHintText, { color: colors.mutedForeground }]}>
-                You will be redirected to a secure 3D-secured payment page
+                {activeMethod.type === "wallet"
+                  ? "You will be redirected to PayPal to complete payment securely"
+                  : "You will be redirected to a secure 3D-secured payment page"}
               </Text>
             </View>
           )}

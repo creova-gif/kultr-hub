@@ -11,7 +11,7 @@ export interface EACountry {
   paymentMethods: PaymentMethod[];
 }
 
-export type PaymentMethodType = "mobile_money" | "card" | "bank" | "ussd";
+export type PaymentMethodType = "mobile_money" | "card" | "bank" | "ussd" | "wallet";
 
 /**
  * Which backend integration actually processes this method. "card"/"bank"/
@@ -19,12 +19,15 @@ export type PaymentMethodType = "mobile_money" | "card" | "bank" | "ussd";
  * settles KES/GHS/NGN/ZAR/USD, so every other market's card method is
  * explicitly routed to "stripe" instead. Tanzania's three mobile-money
  * operators are explicitly routed to "selcom", the only rail in this app
- * that reaches TZS mobile money. Methods with no real backend integration
- * (Monzo, Wise, CashApp, Zelle, Interac, NCB Lynk, Bitt, SnapScan, Ozow,
- * InstaPay, and the non-Vodacom/Tigo/Airtel-TZ mobile money operators) are
- * left unset and surface as "not available yet" at checkout.
+ * that reaches TZS mobile money. "wallet" methods (id: "paypal") route to
+ * "paypal" — a second diaspora option alongside Stripe, offered in markets
+ * with strong PayPal adoption (UK/US/Canada/Jamaica/Trinidad/Barbados).
+ * Methods with no real backend integration (Monzo, Wise, CashApp, Zelle,
+ * Interac, NCB Lynk, Bitt, SnapScan, Ozow, InstaPay, and the
+ * non-Vodacom/Tigo/Airtel-TZ mobile money operators) are left unset and
+ * surface as "not available yet" at checkout.
  */
-export type PaymentGateway = "paystack" | "stripe" | "selcom";
+export type PaymentGateway = "paystack" | "stripe" | "selcom" | "paypal";
 
 export interface PaymentMethod {
   id: string;
@@ -678,6 +681,15 @@ export const EA_COUNTRIES: EACountry[] = [
         color: "#FF6B00",
         gateway: "stripe",
       },
+      {
+        id: "paypal",
+        label: "PayPal",
+        sub: "Pay with your PayPal balance or linked card",
+        icon: "credit-card",
+        type: "wallet",
+        color: "#003087",
+        gateway: "paypal",
+      },
     ],
   },
   {
@@ -714,6 +726,15 @@ export const EA_COUNTRIES: EACountry[] = [
         type: "card",
         color: "#FF6B00",
         gateway: "stripe",
+      },
+      {
+        id: "paypal",
+        label: "PayPal",
+        sub: "Pay with your PayPal balance or linked card",
+        icon: "credit-card",
+        type: "wallet",
+        color: "#003087",
+        gateway: "paypal",
       },
     ],
   },
@@ -752,6 +773,15 @@ export const EA_COUNTRIES: EACountry[] = [
         color: "#FF6B00",
         gateway: "stripe",
       },
+      {
+        id: "paypal",
+        label: "PayPal",
+        sub: "Pay with your PayPal balance or linked card",
+        icon: "credit-card",
+        type: "wallet",
+        color: "#003087",
+        gateway: "paypal",
+      },
     ],
   },
   {
@@ -788,6 +818,15 @@ export const EA_COUNTRIES: EACountry[] = [
         type: "card",
         color: "#FF6B00",
         gateway: "stripe",
+      },
+      {
+        id: "paypal",
+        label: "PayPal",
+        sub: "Pay with your PayPal balance or linked card",
+        icon: "credit-card",
+        type: "wallet",
+        color: "#003087",
+        gateway: "paypal",
       },
     ],
   },
@@ -826,6 +865,15 @@ export const EA_COUNTRIES: EACountry[] = [
         color: "#FF6B00",
         gateway: "stripe",
       },
+      {
+        id: "paypal",
+        label: "PayPal",
+        sub: "Pay with your PayPal balance or linked card",
+        icon: "credit-card",
+        type: "wallet",
+        color: "#003087",
+        gateway: "paypal",
+      },
     ],
   },
   {
@@ -862,6 +910,15 @@ export const EA_COUNTRIES: EACountry[] = [
         type: "card",
         color: "#FF6B00",
         gateway: "stripe",
+      },
+      {
+        id: "paypal",
+        label: "PayPal",
+        sub: "Pay with your PayPal balance or linked card",
+        icon: "credit-card",
+        type: "wallet",
+        color: "#003087",
+        gateway: "paypal",
       },
     ],
   },

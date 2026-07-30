@@ -1,5 +1,5 @@
 /**
- * Reconciliation worker for M-Pesa / MTN MoMo payments (R6).
+ * Reconciliation worker for M-Pesa / MTN MoMo / Selcom / PayPal payments (R6).
  *
  * The normal flow issues a ticket when the CLIENT calls /verify after the
  * user approves the STK/MoMo prompt. If the app is closed, crashes, or loses
@@ -19,6 +19,7 @@ import { db, pendingPaymentsTable, ticketsTable } from "@workspace/db";
 import { queryStkPush } from "../lib/mpesa.js";
 import { getMoMoPaymentStatus } from "../lib/mtn-momo.js";
 import { getSelcomOrderStatus } from "../lib/selcom.js";
+import { captureOrder as capturePayPalOrder } from "../lib/paypal.js";
 import { issueTicket, TicketIssueError } from "../lib/issue.js";
 import { logger } from "../lib/logger.js";
 
@@ -70,6 +71,13 @@ async function reconcileOne(pending: Awaited<ReturnType<typeof findUnreconciled>
   } else if (pending.provider === "selcom") {
     const status = await getSelcomOrderStatus(handle);
     paid = status?.status === "COMPLETED";
+  } else if (pending.provider === "paypal") {
+    // Unlike Stripe/Paystack, an approved-but-uncaptured PayPal order isn't
+    // reliably queryable indefinitely — capturing here is exactly what
+    // /paypal/verify itself does, so this is a safe, idempotent retry of
+    // the same action rather than a distinct "check status" call.
+    const capture = await capturePayPalOrder(handle);
+    paid = capture?.success ?? false;
   } else {
     // Stripe references stay queryable indefinitely (like Paystack), so a
     // client that never calls /stripe/verify can still complete the

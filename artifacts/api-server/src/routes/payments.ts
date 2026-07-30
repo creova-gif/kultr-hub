@@ -7,6 +7,7 @@ import { initializePayment, verifyPayment, isPaystackConfigured } from "../lib/p
 import { initiateStkPush, queryStkPush, isMpesaConfigured } from "../lib/mpesa.js";
 import { initiateMoMoRequest, getMoMoPaymentStatus, isMoMoConfigured } from "../lib/mtn-momo.js";
 import { createCheckoutSession, retrieveCheckoutSession, isStripeConfigured } from "../lib/stripe.js";
+import { createOrder as createPayPalOrder, captureOrder as capturePayPalOrder, isPayPalConfigured } from "../lib/paypal.js";
 import { createSelcomOrder, getSelcomOrderStatus, isSelcomConfigured } from "../lib/selcom.js";
 import { getRates } from "../lib/fx.js";
 import { normalizeMsisdn } from "../lib/phone.js";
@@ -27,6 +28,10 @@ function toCurrencyKobo(amount: number, currency: string): number {
 // client-supplied code, since it flows straight into an FX conversion and a
 // real charge amount.
 const STRIPE_SUPPORTED_CURRENCIES = new Set(["USD", "GBP", "CAD", "EUR"]);
+// Same allowlist, kept as its own constant rather than shared with Stripe's —
+// the two providers' supported-currency lists aren't contractually linked,
+// even though they happen to match today.
+const PAYPAL_SUPPORTED_CURRENCIES = new Set(["USD", "GBP", "CAD", "EUR"]);
 
 function generatePaymentRef(): string {
   return `kultr_${nanoid(16)}`;
@@ -993,6 +998,183 @@ router.post("/stripe/verify", requireAuth, async (req: Request, res: Response) =
       currency: pending.currency,
       paymentReference: reference,
       paymentProvider: allowSimulation ? "stripe_simulated" : "stripe",
+    });
+    res.status(201).json({
+      ticketId: ticket.id,
+      ticketNumber: ticket.ticketNumber,
+      status: ticket.status,
+      totalAmount,
+      currency: pending.currency,
+    });
+  } catch (err) {
+    if (handleIssueError(err, res)) return;
+    throw err;
+  }
+});
+
+/**
+ * POST /api/payments/paypal/init
+ * Create a PayPal order for a ticket purchase — a second diaspora card/
+ * wallet option alongside Stripe. Same server-side FX conversion and
+ * pending_payments-backed verification pattern as /stripe/init.
+ */
+router.post("/paypal/init", requireAuth, async (req: Request, res: Response) => {
+  const authed = req as AuthedRequest;
+  const { eventId, ticketTypeId, currency: targetCurrencyRaw } = req.body as {
+    eventId: string;
+    ticketTypeId: string;
+    currency?: string;
+  };
+
+  if (!eventId || !ticketTypeId) {
+    res.status(400).json({ message: "eventId and ticketTypeId are required" });
+    return;
+  }
+
+  let quantity: number;
+  try {
+    quantity = validateQuantity((req.body as { quantity?: unknown }).quantity ?? 1);
+  } catch (err) {
+    if (handleIssueError(err, res)) return;
+    throw err;
+  }
+
+  const targetCurrency = (targetCurrencyRaw ?? "USD").toUpperCase();
+  if (!PAYPAL_SUPPORTED_CURRENCIES.has(targetCurrency)) {
+    res.status(400).json({ message: `Unsupported card payment currency: ${targetCurrency}` });
+    return;
+  }
+
+  const [[user], [event], [ticketType]] = await Promise.all([
+    db.select().from(usersTable).where(eq(usersTable.id, authed.userId)).limit(1),
+    db.select().from(eventsTable).where(eq(eventsTable.id, eventId)).limit(1),
+    db.select().from(ticketTypesTable).where(eq(ticketTypesTable.id, ticketTypeId)).limit(1),
+  ]);
+
+  if (!event) { res.status(404).json({ message: "Event not found" }); return; }
+  if (!ticketType) { res.status(404).json({ message: "Ticket type not found" }); return; }
+
+  const available = ticketType.totalQuantity - ticketType.soldQuantity;
+  if (available < quantity) {
+    res.status(400).json({ message: `Only ${available} ticket(s) remaining` });
+    return;
+  }
+
+  const unitPrice = Number(ticketType.price);
+  const isSameCurrency = ticketType.currency === targetCurrency;
+  let unitPriceInTarget = unitPrice;
+  if (!isSameCurrency) {
+    const { rates } = await getRates(ticketType.currency);
+    const rate = rates[targetCurrency];
+    if (!rate) {
+      res.status(502).json({ message: "Currency conversion unavailable right now. Please try again shortly." });
+      return;
+    }
+    unitPriceInTarget = unitPrice * rate;
+  }
+
+  const reference = generatePaymentRef();
+  const appCallback = process.env.APP_CALLBACK_URL ?? "kultr://payment";
+
+  try {
+    const order = await createPayPalOrder({
+      unitAmountMinor: Math.round(unitPriceInTarget * 100),
+      quantity,
+      currency: targetCurrency,
+      description: `${event.title} — ${ticketType.name}`,
+      reference,
+      returnUrl: `${appCallback}?status=success&ref=${reference}`,
+      cancelUrl: `${appCallback}?status=cancelled&ref=${reference}`,
+    });
+
+    await db.insert(pendingPaymentsTable).values({
+      reference,
+      userId: authed.userId,
+      eventId,
+      ticketTypeId,
+      quantity,
+      unitPrice: String(unitPriceInTarget),
+      currency: targetCurrency,
+      provider: "paypal",
+      providerHandle: order ? order.orderId : `sim_${reference}`,
+    });
+
+    const totalAmount = unitPriceInTarget * quantity;
+
+    if (!order) {
+      res.json({ reference, approveUrl: null, simulated: true, totalAmount, currency: targetCurrency });
+      return;
+    }
+
+    res.json({ reference, approveUrl: order.approveUrl, simulated: false, totalAmount, currency: targetCurrency });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Could not start PayPal payment";
+    res.status(502).json({ message });
+  }
+});
+
+/**
+ * POST /api/payments/paypal/verify
+ * Capture and confirm a previously-approved PayPal order. Quantity,
+ * converted unit price and currency are read from the pending-payment
+ * record written at init time, never from the client.
+ */
+router.post("/paypal/verify", requireAuth, async (req: Request, res: Response) => {
+  const authed = req as AuthedRequest;
+  const { reference } = req.body as { reference: string };
+
+  if (!reference) {
+    res.status(400).json({ message: "reference is required" });
+    return;
+  }
+
+  const [pending] = await db.select().from(pendingPaymentsTable)
+    .where(eq(pendingPaymentsTable.reference, reference)).limit(1);
+
+  if (!pending || pending.provider !== "paypal" || !pending.providerHandle) {
+    res.status(400).json({ message: "Unknown or expired payment reference" });
+    return;
+  }
+  if (pending.userId !== authed.userId) {
+    res.status(403).json({ message: "This payment belongs to a different account." });
+    return;
+  }
+
+  const allowSimulation = simulationAllowed(isPayPalConfigured());
+  let paid = allowSimulation;
+
+  if (!paid) {
+    const capture = await capturePayPalOrder(pending.providerHandle);
+    if (!capture) {
+      res.status(402).json({ message: "Payment could not be verified" });
+      return;
+    }
+    const expectedMinor = Math.round(Number(pending.unitPrice) * pending.quantity * 100);
+    if (capture.success && (capture.amountTotalMinor !== expectedMinor || capture.currency !== pending.currency)) {
+      res.status(400).json({ message: "Payment amount does not match the requested ticket." });
+      return;
+    }
+    paid = capture.success;
+  }
+
+  if (!paid) {
+    res.status(402).json({ message: "Card payment could not be confirmed. Please try again." });
+    return;
+  }
+
+  const unitPrice = Number(pending.unitPrice);
+  const totalAmount = unitPrice * pending.quantity;
+
+  try {
+    const { ticket } = await issueTicket({
+      userId: authed.userId,
+      eventId: pending.eventId,
+      ticketTypeId: pending.ticketTypeId,
+      quantity: pending.quantity,
+      unitPrice,
+      currency: pending.currency,
+      paymentReference: reference,
+      paymentProvider: allowSimulation ? "paypal_simulated" : "paypal",
     });
     res.status(201).json({
       ticketId: ticket.id,

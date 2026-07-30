@@ -1397,6 +1397,92 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /payments/paypal/init:
+    post:
+      operationId: paypalInit
+      tags: [payments]
+      summary: Create a PayPal order for a ticket purchase (diaspora card/wallet payments)
+      description: >-
+        A second diaspora payment option alongside Stripe. Same server-side
+        FX conversion and pending-payment-backed verification pattern as
+        POST /payments/stripe/init.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PayPalInitRequest"
+      responses:
+        "200":
+          description: Order created — simulated:true (no approveUrl) when PayPal isn't configured outside production
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayPalInitResponse"
+        "400":
+          description: Missing fields, unsupported currency, or not enough tickets remaining
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Event or ticket type not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: PayPal rejected the request, or live FX rates are unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /payments/paypal/verify:
+    post:
+      operationId: paypalVerify
+      tags: [payments]
+      summary: Capture a previously-approved PayPal order; issues the ticket once confirmed
+      description: >-
+        Quantity, converted unit price, and currency are read from the
+        pending-payment row written at init time, never re-supplied by the
+        caller.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReferenceOnlyRequest"
+      responses:
+        "201":
+          description: Ticket issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketIssueResponse"
+        "400":
+          description: Unknown or expired payment reference, or amount mismatch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "402":
+          description: Card payment could not be confirmed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: This payment reference belongs to a different account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /payments/selcom/request:
     post:
       operationId: selcomRequest
@@ -3087,6 +3173,37 @@ components:
         reference:
           type: string
         checkoutUrl:
+          type: string
+          nullable: true
+        simulated:
+          type: boolean
+        totalAmount:
+          type: number
+        currency:
+          type: string
+
+    PayPalInitRequest:
+      type: object
+      required: [eventId, ticketTypeId]
+      properties:
+        eventId:
+          type: string
+        ticketTypeId:
+          type: string
+        quantity:
+          type: integer
+          default: 1
+        currency:
+          type: string
+          description: 'Settlement currency for the charge. One of: USD, GBP, CAD, EUR. Defaults to USD.'
+
+    PayPalInitResponse:
+      type: object
+      required: [reference, approveUrl, simulated, totalAmount, currency]
+      properties:
+        reference:
+          type: string
+        approveUrl:
           type: string
           nullable: true
         simulated:

@@ -727,6 +727,22 @@ export interface StripeCheckoutResponse {
   currency: string;
 }
 
+export interface PayPalInitRequest {
+  eventId: string;
+  ticketTypeId: string;
+  quantity?: number;
+  /** Settlement currency for the charge. One of: USD, GBP, CAD, EUR. Defaults to USD. */
+  currency?: string;
+}
+
+export interface PayPalInitResponse {
+  reference: string;
+  approveUrl: string | null;
+  simulated: boolean;
+  totalAmount: number;
+  currency: string;
+}
+
 export interface SelcomRequestRequest {
   eventId: string;
   ticketTypeId: string;
