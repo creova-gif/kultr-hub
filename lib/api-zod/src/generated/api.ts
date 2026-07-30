@@ -575,6 +575,27 @@ export const GetEventResponse = zod
   );
 
 /**
+ * Only returns tickets whose buyer actually opted in — never a full attendee roster, just the subset who chose to share something.
+ * @summary Decrypted dietary/accessibility submissions for this event's attendees (creator/admin only)
+ */
+export const GetEventAttendeeNeedsParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetEventAttendeeNeedsResponse = zod.object({
+  attendeeNeeds: zod.array(
+    zod.object({
+      ticketId: zod.string(),
+      ticketNumber: zod.string(),
+      buyerName: zod.string(),
+      accessibilityInfo: zod.string(),
+      submittedAt: zod.coerce.date().nullable(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
  * @summary List tickets purchased by the current user
  */
 export const ListMyTicketsResponse = zod.object({
@@ -591,6 +612,13 @@ export const ListMyTicketsResponse = zod.object({
       currency: zod.string(),
       status: zod.string(),
       purchasedAt: zod.coerce.date(),
+      accessibilityInfo: zod
+        .string()
+        .nullable()
+        .describe(
+          "Decrypted for the ticket owner only. POPIA §26 special-category data.",
+        ),
+      accessibilityConsentAt: zod.coerce.date().nullable(),
       event: zod.object({
         id: zod.string(),
         title: zod.string(),
@@ -644,6 +672,13 @@ export const GetTicketResponse = zod.object({
   currency: zod.string(),
   status: zod.string(),
   purchasedAt: zod.coerce.date(),
+  accessibilityInfo: zod
+    .string()
+    .nullable()
+    .describe(
+      "Decrypted for the ticket owner only. POPIA §26 special-category data.",
+    ),
+  accessibilityConsentAt: zod.coerce.date().nullable(),
   event: zod.object({
     id: zod.string(),
     title: zod.string(),
@@ -662,6 +697,28 @@ export const GetTicketResponse = zod.object({
     currency: zod.string(),
     status: zod.string(),
   }),
+});
+
+/**
+ * Explicit, standalone opt-in — POPIA §26 special-category data. Deliberately separate from ticket purchase; encrypted at rest. Pass `info: null` (or an empty string) to withdraw a previous submission.
+ * @summary Submit, edit, or withdraw dietary/accessibility needs for this ticket
+ */
+export const UpdateTicketAccessibilityInfoParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UpdateTicketAccessibilityInfoBody = zod.object({
+  info: zod
+    .string()
+    .nullable()
+    .describe(
+      "The dietary\/accessibility text, or null to withdraw a previous submission.",
+    ),
+});
+
+export const UpdateTicketAccessibilityInfoResponse = zod.object({
+  accessibilityInfo: zod.string().nullable(),
+  accessibilityConsentAt: zod.coerce.date().nullable(),
 });
 
 /**

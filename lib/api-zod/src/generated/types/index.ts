@@ -6,7 +6,11 @@
  * OpenAPI spec version: 0.2.0
  */
 
+export * from "./accessibilityInfoRecord";
+export * from "./accessibilityInfoUpdateRequest";
 export * from "./adminEventReportView";
+export * from "./attendeeNeed";
+export * from "./attendeeNeedsResponse";
 export * from "./authResponse";
 export * from "./badgeView";
 export * from "./checkinRequest";

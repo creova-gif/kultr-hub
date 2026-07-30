@@ -5,6 +5,7 @@ import { requireAuth, requireAdmin, type AuthedRequest } from "../middleware/aut
 import { notify } from "../lib/notify.js";
 import { CreateEventBody } from "@workspace/api-zod";
 import { validateUuidParam } from "../middleware/validateUuidParam.js";
+import { decryptSpecialCategoryData } from "../lib/specialCategoryEncryption.js";
 import type { Request, Response } from "express";
 
 const router = Router();
@@ -512,6 +513,61 @@ router.patch("/:id/status", requireAuth, async (req: Request, res: Response) => 
   }
 
   res.json({ id: updated.id, status: updated.status });
+});
+
+/**
+ * GET /api/events/:id/attendee-needs
+ * Creator-only (or admin): decrypted dietary/accessibility submissions for
+ * this event's attendees, for catering/venue-accommodation planning. Only
+ * tickets where the buyer actually opted in are returned — this is never a
+ * full attendee roster, just the subset who chose to share something.
+ */
+router.get("/:id/attendee-needs", requireAuth, async (req: Request, res: Response) => {
+  const authed = req as AuthedRequest;
+  const id = String(req.params.id);
+
+  const [event] = await db.select().from(eventsTable).where(eq(eventsTable.id, id)).limit(1);
+  if (!event) { res.status(404).json({ message: "Event not found" }); return; }
+
+  if (event.creatorId !== authed.userId) {
+    const [actor] = await db.select({ isAdmin: usersTable.isAdmin }).from(usersTable).where(eq(usersTable.id, authed.userId)).limit(1);
+    if (!actor?.isAdmin) {
+      res.status(403).json({ message: "You do not have permission to view this event's attendee needs." });
+      return;
+    }
+  }
+
+  const rows = await db
+    .select({
+      ticketId: ticketsTable.id,
+      ticketNumber: ticketsTable.ticketNumber,
+      accessibilityInfo: ticketsTable.accessibilityInfo,
+      accessibilityConsentAt: ticketsTable.accessibilityConsentAt,
+      buyerName: usersTable.displayName,
+    })
+    .from(ticketsTable)
+    .innerJoin(usersTable, eq(usersTable.id, ticketsTable.userId))
+    .where(and(eq(ticketsTable.eventId, id), sql`${ticketsTable.accessibilityInfo} is not null`));
+
+  const attendeeNeeds = rows
+    .map((row) => {
+      try {
+        return {
+          ticketId: row.ticketId,
+          ticketNumber: row.ticketNumber,
+          buyerName: row.buyerName,
+          accessibilityInfo: decryptSpecialCategoryData(row.accessibilityInfo!),
+          submittedAt: row.accessibilityConsentAt,
+        };
+      } catch {
+        // Undecryptable (e.g. encryption key was rotated after this was
+        // written) — omit rather than surface ciphertext or crash the list.
+        return null;
+      }
+    })
+    .filter((row): row is NonNullable<typeof row> => row !== null);
+
+  res.json({ attendeeNeeds, total: attendeeNeeds.length });
 });
 
 export default router;

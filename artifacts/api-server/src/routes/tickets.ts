@@ -5,10 +5,29 @@ import { db, ticketsTable, ticketTypesTable, eventsTable } from "@workspace/db";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { issueTicket, validateQuantity, TicketIssueError } from "../lib/issue.js";
 import { validateUuidParam } from "../middleware/validateUuidParam.js";
+import {
+  encryptSpecialCategoryData,
+  decryptSpecialCategoryData,
+  isSpecialCategoryEncryptionConfigured,
+} from "../lib/specialCategoryEncryption.js";
 import type { Request, Response } from "express";
 
 const router = Router();
 router.param("id", validateUuidParam);
+
+const MAX_ACCESSIBILITY_INFO_LENGTH = 500;
+
+/** Decrypts, or returns null on failure (e.g. an encryption key rotation
+ *  made an older value undecryptable) rather than crashing the whole
+ *  response the value is embedded in. */
+function tryDecryptAccessibilityInfo(ciphertext: string | null): string | null {
+  if (!ciphertext) return null;
+  try {
+    return decryptSpecialCategoryData(ciphertext);
+  } catch {
+    return null;
+  }
+}
 
 async function buildTicketDetail(ticket: typeof ticketsTable.$inferSelect) {
   const [ticketType] = await db.select().from(ticketTypesTable).where(eq(ticketTypesTable.id, ticket.ticketTypeId)).limit(1);
@@ -30,6 +49,11 @@ async function buildTicketDetail(ticket: typeof ticketsTable.$inferSelect) {
     currency: ticket.currency,
     status: ticket.status,
     purchasedAt: ticket.purchasedAt,
+    // Decrypted here because this is always the ticket owner viewing their
+    // own submission (GET /tickets, GET /tickets/:id are both scoped to
+    // authed.userId) — never exposed to anyone else this way.
+    accessibilityInfo: tryDecryptAccessibilityInfo(ticket.accessibilityInfo),
+    accessibilityConsentAt: ticket.accessibilityConsentAt,
     event: {
       id: event.id,
       title: event.title,
@@ -140,6 +164,57 @@ router.get("/:id", requireAuth, async (req: Request, res: Response) => {
 
   const detail = await buildTicketDetail(ticket);
   res.json(detail);
+});
+
+/**
+ * PATCH /api/tickets/:id/accessibility-info
+ * Explicit, standalone opt-in for dietary/accessibility needs — POPIA §26
+ * special-category data. Deliberately never bundled into ticket purchase:
+ * the buyer submits, edits, or withdraws (info: null) this at any time,
+ * independent of payment, and it's encrypted before it ever touches the
+ * database (see lib/specialCategoryEncryption.ts).
+ */
+router.patch("/:id/accessibility-info", requireAuth, async (req: Request, res: Response) => {
+  const authed = req as AuthedRequest;
+  const id = String(req.params.id);
+  const { info } = req.body as { info?: string | null };
+
+  const [ticket] = await db.select().from(ticketsTable).where(eq(ticketsTable.id, id)).limit(1);
+  if (!ticket || ticket.userId !== authed.userId) {
+    res.status(404).json({ message: "Ticket not found" });
+    return;
+  }
+
+  if (info === undefined) {
+    res.status(400).json({ message: "info is required — a string, or null to withdraw a previous submission" });
+    return;
+  }
+
+  // Withdrawing: null or an emptied-out field both clear the stored value entirely.
+  if (info === null || info === "") {
+    await db.update(ticketsTable)
+      .set({ accessibilityInfo: null, accessibilityConsentAt: null })
+      .where(eq(ticketsTable.id, id));
+    res.json({ accessibilityInfo: null, accessibilityConsentAt: null });
+    return;
+  }
+
+  if (typeof info !== "string" || info.length > MAX_ACCESSIBILITY_INFO_LENGTH) {
+    res.status(400).json({ message: `info must be a string of at most ${MAX_ACCESSIBILITY_INFO_LENGTH} characters` });
+    return;
+  }
+
+  if (!isSpecialCategoryEncryptionConfigured()) {
+    res.status(503).json({ message: "Accessibility/dietary info submission isn't available right now. Please try again later." });
+    return;
+  }
+
+  const now = new Date();
+  await db.update(ticketsTable)
+    .set({ accessibilityInfo: encryptSpecialCategoryData(info), accessibilityConsentAt: now })
+    .where(eq(ticketsTable.id, id));
+
+  res.json({ accessibilityInfo: info, accessibilityConsentAt: now });
 });
 
 export default router;

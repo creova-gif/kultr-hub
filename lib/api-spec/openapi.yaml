@@ -693,6 +693,42 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /events/{id}/attendee-needs:
+    get:
+      operationId: getEventAttendeeNeeds
+      tags: [events]
+      summary: Decrypted dietary/accessibility submissions for this event's attendees (creator/admin only)
+      description: >-
+        Only returns tickets whose buyer actually opted in — never a full
+        attendee roster, just the subset who chose to share something.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Attendee needs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendeeNeedsResponse"
+        "403":
+          description: Not this event's creator (and not an admin)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   # ── TICKETS ───────────────────────────────────────────────────────────────
   /tickets:
     get:
@@ -757,6 +793,56 @@ paths:
                 $ref: "#/components/schemas/TicketDetail"
         "404":
           description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /tickets/{id}/accessibility-info:
+    patch:
+      operationId: updateTicketAccessibilityInfo
+      tags: [tickets]
+      summary: Submit, edit, or withdraw dietary/accessibility needs for this ticket
+      description: >-
+        Explicit, standalone opt-in — POPIA §26 special-category data.
+        Deliberately separate from ticket purchase; encrypted at rest.
+        Pass `info: null` (or an empty string) to withdraw a previous
+        submission.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccessibilityInfoUpdateRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessibilityInfoRecord"
+        "400":
+          description: Missing/invalid info field
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Special-category encryption is not configured on the server
           content:
             application/json:
               schema:
@@ -2086,6 +2172,14 @@ components:
         purchasedAt:
           type: string
           format: date-time
+        accessibilityInfo:
+          type: string
+          nullable: true
+          description: Decrypted for the ticket owner only. POPIA §26 special-category data.
+        accessibilityConsentAt:
+          type: string
+          format: date-time
+          nullable: true
         event:
           $ref: "#/components/schemas/EventSummary"
       required:
@@ -2100,7 +2194,58 @@ components:
         - currency
         - status
         - purchasedAt
+        - accessibilityInfo
+        - accessibilityConsentAt
         - event
+
+    AccessibilityInfoUpdateRequest:
+      type: object
+      required: [info]
+      properties:
+        info:
+          type: string
+          nullable: true
+          description: The dietary/accessibility text, or null to withdraw a previous submission.
+
+    AccessibilityInfoRecord:
+      type: object
+      required: [accessibilityInfo, accessibilityConsentAt]
+      properties:
+        accessibilityInfo:
+          type: string
+          nullable: true
+        accessibilityConsentAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    AttendeeNeed:
+      type: object
+      required: [ticketId, ticketNumber, buyerName, accessibilityInfo, submittedAt]
+      properties:
+        ticketId:
+          type: string
+        ticketNumber:
+          type: string
+        buyerName:
+          type: string
+        accessibilityInfo:
+          type: string
+        submittedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    AttendeeNeedsResponse:
+      type: object
+      required: [attendeeNeeds, total]
+      properties:
+        attendeeNeeds:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttendeeNeed"
+        total:
+          type: integer
 
     TicketListResponse:
       type: object

@@ -46,6 +46,13 @@ export const ticketsTable = pgTable(
     paymentReference: text("payment_reference").unique(),
     paymentProvider: text("payment_provider"),
     purchasedAt: timestamp("purchased_at", { withTimezone: true }).notNull().defaultNow(),
+    // ── POPIA §26 special-category data (health/dietary/accessibility) ──
+    // Encrypted at rest (see lib/specialCategoryEncryption.ts) — never
+    // stored or logged as plaintext. Entirely separate opt-in from ticket
+    // purchase itself: null/not-set means the buyer was never asked to
+    // decide, and a purchase never requires filling this in.
+    accessibilityInfo: text("accessibility_info"),
+    accessibilityConsentAt: timestamp("accessibility_consent_at", { withTimezone: true }),
   },
   (table) => [
     // GET /api/tickets is a per-user lookup ordered by purchase date — the hottest ticket read.

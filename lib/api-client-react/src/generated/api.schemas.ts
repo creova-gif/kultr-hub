@@ -215,7 +215,33 @@ export interface TicketDetail {
   currency: string;
   status: string;
   purchasedAt: string;
+  /** Decrypted for the ticket owner only. POPIA §26 special-category data. */
+  accessibilityInfo: string | null;
+  accessibilityConsentAt: string | null;
   event: EventSummary;
+}
+
+export interface AccessibilityInfoUpdateRequest {
+  /** The dietary/accessibility text, or null to withdraw a previous submission. */
+  info: string | null;
+}
+
+export interface AccessibilityInfoRecord {
+  accessibilityInfo: string | null;
+  accessibilityConsentAt: string | null;
+}
+
+export interface AttendeeNeed {
+  ticketId: string;
+  ticketNumber: string;
+  buyerName: string;
+  accessibilityInfo: string;
+  submittedAt: string | null;
+}
+
+export interface AttendeeNeedsResponse {
+  attendeeNeeds: AttendeeNeed[];
+  total: number;
 }
 
 export interface TicketListResponse {

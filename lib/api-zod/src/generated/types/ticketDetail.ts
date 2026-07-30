@@ -19,5 +19,8 @@ export interface TicketDetail {
   currency: string;
   status: string;
   purchasedAt: Date;
+  /** Decrypted for the ticket owner only. POPIA §26 special-category data. */
+  accessibilityInfo: string | null;
+  accessibilityConsentAt: Date | null;
   event: EventSummary;
 }

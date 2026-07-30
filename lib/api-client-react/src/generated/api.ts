@@ -17,6 +17,9 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AccessibilityInfoRecord,
+  AccessibilityInfoUpdateRequest,
+  AttendeeNeedsResponse,
   AuthResponse,
   CheckinRequest,
   CheckinResult,
@@ -2018,6 +2021,95 @@ export function useGetEvent<
 }
 
 /**
+ * Only returns tickets whose buyer actually opted in — never a full attendee roster, just the subset who chose to share something.
+ * @summary Decrypted dietary/accessibility submissions for this event's attendees (creator/admin only)
+ */
+export const getGetEventAttendeeNeedsUrl = (id: string) => {
+  return `/api/events/${id}/attendee-needs`;
+};
+
+export const getEventAttendeeNeeds = async (
+  id: string,
+  options?: RequestInit,
+): Promise<AttendeeNeedsResponse> => {
+  return customFetch<AttendeeNeedsResponse>(getGetEventAttendeeNeedsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetEventAttendeeNeedsQueryKey = (id: string) => {
+  return [`/api/events/${id}/attendee-needs`] as const;
+};
+
+export const getGetEventAttendeeNeedsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getEventAttendeeNeeds>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getEventAttendeeNeeds>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetEventAttendeeNeedsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getEventAttendeeNeeds>>
+  > = ({ signal }) => getEventAttendeeNeeds(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getEventAttendeeNeeds>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetEventAttendeeNeedsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getEventAttendeeNeeds>>
+>;
+export type GetEventAttendeeNeedsQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Decrypted dietary/accessibility submissions for this event's attendees (creator/admin only)
+ */
+
+export function useGetEventAttendeeNeeds<
+  TData = Awaited<ReturnType<typeof getEventAttendeeNeeds>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getEventAttendeeNeeds>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetEventAttendeeNeedsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary List tickets purchased by the current user
  */
 export const getListMyTicketsUrl = () => {
@@ -2262,6 +2354,99 @@ export function useGetTicket<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * Explicit, standalone opt-in — POPIA §26 special-category data. Deliberately separate from ticket purchase; encrypted at rest. Pass `info: null` (or an empty string) to withdraw a previous submission.
+ * @summary Submit, edit, or withdraw dietary/accessibility needs for this ticket
+ */
+export const getUpdateTicketAccessibilityInfoUrl = (id: string) => {
+  return `/api/tickets/${id}/accessibility-info`;
+};
+
+export const updateTicketAccessibilityInfo = async (
+  id: string,
+  accessibilityInfoUpdateRequest: AccessibilityInfoUpdateRequest,
+  options?: RequestInit,
+): Promise<AccessibilityInfoRecord> => {
+  return customFetch<AccessibilityInfoRecord>(
+    getUpdateTicketAccessibilityInfoUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(accessibilityInfoUpdateRequest),
+    },
+  );
+};
+
+export const getUpdateTicketAccessibilityInfoMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateTicketAccessibilityInfo>>,
+    TError,
+    { id: string; data: BodyType<AccessibilityInfoUpdateRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateTicketAccessibilityInfo>>,
+  TError,
+  { id: string; data: BodyType<AccessibilityInfoUpdateRequest> },
+  TContext
+> => {
+  const mutationKey = ["updateTicketAccessibilityInfo"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateTicketAccessibilityInfo>>,
+    { id: string; data: BodyType<AccessibilityInfoUpdateRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateTicketAccessibilityInfo(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateTicketAccessibilityInfoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateTicketAccessibilityInfo>>
+>;
+export type UpdateTicketAccessibilityInfoMutationBody =
+  BodyType<AccessibilityInfoUpdateRequest>;
+export type UpdateTicketAccessibilityInfoMutationError =
+  ErrorType<ErrorResponse>;
+
+/**
+ * @summary Submit, edit, or withdraw dietary/accessibility needs for this ticket
+ */
+export const useUpdateTicketAccessibilityInfo = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateTicketAccessibilityInfo>>,
+    TError,
+    { id: string; data: BodyType<AccessibilityInfoUpdateRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateTicketAccessibilityInfo>>,
+  TError,
+  { id: string; data: BodyType<AccessibilityInfoUpdateRequest> },
+  TContext
+> => {
+  return useMutation(getUpdateTicketAccessibilityInfoMutationOptions(options));
+};
 
 /**
  * @summary Get exchange rates rebased to a currency
