@@ -449,6 +449,37 @@ export interface Translations {
     applyAlertMsg: string;
     openForm: string;
   };
+  // Vibe Tribes community screen
+  vibeTribes: {
+    headerTitle: string;
+    subtitle: string;
+    searchPlaceholder: string;
+    yourTribes: string;
+    discoverMore: string;
+    discoverTribes: string;
+    allJoined: string;
+    joined: string;
+    join: string;
+    createTribeTitle: string;
+    createTribeMsg: string;
+    createYourTribe: string;
+    tribeAfrobeatsName: string;
+    tribeAfrobeatsTagline: string;
+    tribeAmapianoName: string;
+    tribeAmapianoTagline: string;
+    tribeFoodiesName: string;
+    tribeFoodiesTagline: string;
+    tribeArtName: string;
+    tribeArtTagline: string;
+    tribeFashionName: string;
+    tribeFashionTagline: string;
+    tribeFilmName: string;
+    tribeFilmTagline: string;
+    tribeTechName: string;
+    tribeTechTagline: string;
+    tribeDanceName: string;
+    tribeDanceTagline: string;
+  };
 }
 
 const en: Translations = {
@@ -878,6 +909,36 @@ const en: Translations = {
     applyAlertTitle: "Apply to Tribe Leaders",
     applyAlertMsg: "This will open the application form. Ready?",
     openForm: "Open Form",
+  },
+  vibeTribes: {
+    headerTitle: "Vibe Tribes",
+    subtitle: "Find your people. Move with the culture.",
+    searchPlaceholder: "Search tribes...",
+    yourTribes: "Your Tribes",
+    discoverMore: "Discover More",
+    discoverTribes: "Discover Tribes",
+    allJoined: "You've joined every tribe. Legend. 🔥",
+    joined: "Joined",
+    join: "Join",
+    createTribeTitle: "Create a Tribe",
+    createTribeMsg: "Tribe creation is coming soon. Stay tuned!",
+    createYourTribe: "Create Your Tribe",
+    tribeAfrobeatsName: "Afrobeats Nation",
+    tribeAfrobeatsTagline: "Where the rhythm never stops.",
+    tribeAmapianoName: "Amapiano Movement",
+    tribeAmapianoTagline: "Log drums & late nights.",
+    tribeFoodiesName: "Nyama & Spice",
+    tribeFoodiesTagline: "Chasing flavour across the continent.",
+    tribeArtName: "Canvas Collective",
+    tribeArtTagline: "Galleries, graffiti & everything between.",
+    tribeFashionName: "Threads of Africa",
+    tribeFashionTagline: "Heritage meets the runway.",
+    tribeFilmName: "Screen Culture",
+    tribeFilmTagline: "Nollywood to the new wave.",
+    tribeTechName: "Silicon Savannah",
+    tribeTechTagline: "Builders shaping the future.",
+    tribeDanceName: "Step & Sway",
+    tribeDanceTagline: "If it moves you, it's home.",
   },
 };
 
@@ -1309,6 +1370,36 @@ const fr: Translations = {
     applyAlertMsg: "Cela ouvrira le formulaire de candidature. Prêt ?",
     openForm: "Ouvrir le formulaire",
   },
+  vibeTribes: {
+    headerTitle: "Tribus de Vibe",
+    subtitle: "Trouvez les vôtres. Vibrez avec la culture.",
+    searchPlaceholder: "Rechercher des tribus...",
+    yourTribes: "Vos Tribus",
+    discoverMore: "Découvrir Plus",
+    discoverTribes: "Découvrir des Tribus",
+    allJoined: "Vous avez rejoint toutes les tribus. Légende. 🔥",
+    joined: "Rejoint",
+    join: "Rejoindre",
+    createTribeTitle: "Créer une Tribu",
+    createTribeMsg: "La création de tribus arrive bientôt. Restez à l'écoute !",
+    createYourTribe: "Créez Votre Tribu",
+    tribeAfrobeatsName: "Afrobeats Nation",
+    tribeAfrobeatsTagline: "Là où le rythme ne s'arrête jamais.",
+    tribeAmapianoName: "Amapiano Movement",
+    tribeAmapianoTagline: "Log drums et nuits blanches.",
+    tribeFoodiesName: "Nyama & Spice",
+    tribeFoodiesTagline: "À la poursuite de la saveur à travers le continent.",
+    tribeArtName: "Canvas Collective",
+    tribeArtTagline: "Galeries, graffitis et tout ce qu'il y a entre les deux.",
+    tribeFashionName: "Threads of Africa",
+    tribeFashionTagline: "L'héritage rencontre le podium.",
+    tribeFilmName: "Screen Culture",
+    tribeFilmTagline: "De Nollywood à la nouvelle vague.",
+    tribeTechName: "Silicon Savannah",
+    tribeTechTagline: "Des bâtisseurs qui façonnent l'avenir.",
+    tribeDanceName: "Step & Sway",
+    tribeDanceTagline: "Si ça vous fait bouger, c'est chez vous.",
+  },
 };
 
 const sw: Translations = {
@@ -1739,6 +1830,36 @@ const sw: Translations = {
     applyAlertMsg: "Hii itafungua fomu ya maombi. Uko tayari?",
     openForm: "Fungua Fomu",
   },
+  vibeTribes: {
+    headerTitle: "Makabila ya Hisia",
+    subtitle: "Pata watu wako. Songa na utamaduni.",
+    searchPlaceholder: "Tafuta makabila...",
+    yourTribes: "Makabila Yako",
+    discoverMore: "Gundua Zaidi",
+    discoverTribes: "Gundua Makabila",
+    allJoined: "Umejiunga na kila kabila. Hadithi. 🔥",
+    joined: "Umejiunga",
+    join: "Jiunge",
+    createTribeTitle: "Unda Kabila",
+    createTribeMsg: "Uundaji wa makabila unakuja hivi karibuni. Endelea kufuatilia!",
+    createYourTribe: "Unda Kabila Lako",
+    tribeAfrobeatsName: "Afrobeats Nation",
+    tribeAfrobeatsTagline: "Mahali ambapo mdundo haukomi kamwe.",
+    tribeAmapianoName: "Amapiano Movement",
+    tribeAmapianoTagline: "Log drums na usiku wa kuchelewa.",
+    tribeFoodiesName: "Nyama & Spice",
+    tribeFoodiesTagline: "Tukifuatilia ladha kote barani.",
+    tribeArtName: "Canvas Collective",
+    tribeArtTagline: "Maghala ya sanaa, graffiti na kila kitu katikati.",
+    tribeFashionName: "Threads of Africa",
+    tribeFashionTagline: "Urithi unakutana na barabara ya mitindo.",
+    tribeFilmName: "Screen Culture",
+    tribeFilmTagline: "Kutoka Nollywood hadi wimbi jipya.",
+    tribeTechName: "Silicon Savannah",
+    tribeTechTagline: "Wajenzi wanaounda mustakabali.",
+    tribeDanceName: "Step & Sway",
+    tribeDanceTagline: "Ikikusogeza, ni nyumbani.",
+  },
 };
 
 const ar: Translations = {
@@ -2168,6 +2289,36 @@ const ar: Translations = {
     applyAlertTitle: "التقديم لبرنامج قادة القبيلة",
     applyAlertMsg: "سيؤدي هذا إلى فتح نموذج التقديم. هل أنت مستعد؟",
     openForm: "فتح النموذج",
+  },
+  vibeTribes: {
+    headerTitle: "قبائل الأجواء",
+    subtitle: "اعثر على قبيلتك. تحرّك مع الثقافة.",
+    searchPlaceholder: "ابحث عن قبائل...",
+    yourTribes: "قبائلك",
+    discoverMore: "اكتشف المزيد",
+    discoverTribes: "اكتشف القبائل",
+    allJoined: "لقد انضممت إلى كل قبيلة. أسطورة. 🔥",
+    joined: "منضم",
+    join: "انضمام",
+    createTribeTitle: "إنشاء قبيلة",
+    createTribeMsg: "إنشاء القبائل قادم قريباً. ترقّبوا!",
+    createYourTribe: "أنشئ قبيلتك",
+    tribeAfrobeatsName: "Afrobeats Nation",
+    tribeAfrobeatsTagline: "حيث لا يتوقف الإيقاع أبداً.",
+    tribeAmapianoName: "Amapiano Movement",
+    tribeAmapianoTagline: "طبول اللوغ وليالٍ سهرانة.",
+    tribeFoodiesName: "Nyama & Spice",
+    tribeFoodiesTagline: "مطاردة النكهة عبر القارة.",
+    tribeArtName: "Canvas Collective",
+    tribeArtTagline: "معارض، جرافيتي، وكل ما بينهما.",
+    tribeFashionName: "Threads of Africa",
+    tribeFashionTagline: "حيث يلتقي التراث بمنصة الأزياء.",
+    tribeFilmName: "Screen Culture",
+    tribeFilmTagline: "من نوليوود إلى الموجة الجديدة.",
+    tribeTechName: "Silicon Savannah",
+    tribeTechTagline: "بناة يشكّلون المستقبل.",
+    tribeDanceName: "Step & Sway",
+    tribeDanceTagline: "إن حرّكك، فهو وطنك.",
   },
 };
 

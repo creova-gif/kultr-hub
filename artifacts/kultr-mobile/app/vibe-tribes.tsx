@@ -16,26 +16,32 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Alert } from "@/lib/alert";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "@/hooks/useTranslation";
+import type { Translations } from "@/constants/translations";
 
 interface Tribe {
   id: string;
-  name: string;
+  nameKey: keyof Translations["vibeTribes"];
   emoji: string;
-  tagline: string;
+  taglineKey: keyof Translations["vibeTribes"];
   members: number;
   color: string;
+  // Canonical English category — a stable identifier used only for this
+  // screen's local search filter, never compared elsewhere.
   category: string;
 }
 
+// `category` values map to existing translated category labels — Music/Food/Art
+// via t.categories, Fashion/Film/Tech/Dance via t.onboarding (see categoryLabel below).
 const TRIBES: Tribe[] = [
-  { id: "afrobeats", name: "Afrobeats Nation", emoji: "🎶", tagline: "Where the rhythm never stops.", members: 12480, color: "#FF6B00", category: "Music" },
-  { id: "amapiano", name: "Amapiano Movement", emoji: "🎹", tagline: "Log drums & late nights.", members: 8932, color: "#7B61FF", category: "Music" },
-  { id: "foodies", name: "Nyama & Spice", emoji: "🍖", tagline: "Chasing flavour across the continent.", members: 6201, color: "#00C853", category: "Food" },
-  { id: "art", name: "Canvas Collective", emoji: "🎨", tagline: "Galleries, graffiti & everything between.", members: 4517, color: "#E1306C", category: "Art" },
-  { id: "fashion", name: "Threads of Africa", emoji: "👗", tagline: "Heritage meets the runway.", members: 5874, color: "#4F9DFF", category: "Fashion" },
-  { id: "film", name: "Screen Culture", emoji: "🎬", tagline: "Nollywood to the new wave.", members: 3340, color: "#FFB400", category: "Film" },
-  { id: "tech", name: "Silicon Savannah", emoji: "💡", tagline: "Builders shaping the future.", members: 7129, color: "#00BFA5", category: "Tech" },
-  { id: "dance", name: "Step & Sway", emoji: "💃", tagline: "If it moves you, it's home.", members: 4988, color: "#FF4081", category: "Dance" },
+  { id: "afrobeats", nameKey: "tribeAfrobeatsName", emoji: "🎶", taglineKey: "tribeAfrobeatsTagline", members: 12480, color: "#FF6B00", category: "Music" },
+  { id: "amapiano", nameKey: "tribeAmapianoName", emoji: "🎹", taglineKey: "tribeAmapianoTagline", members: 8932, color: "#7B61FF", category: "Music" },
+  { id: "foodies", nameKey: "tribeFoodiesName", emoji: "🍖", taglineKey: "tribeFoodiesTagline", members: 6201, color: "#00C853", category: "Food" },
+  { id: "art", nameKey: "tribeArtName", emoji: "🎨", taglineKey: "tribeArtTagline", members: 4517, color: "#E1306C", category: "Art" },
+  { id: "fashion", nameKey: "tribeFashionName", emoji: "👗", taglineKey: "tribeFashionTagline", members: 5874, color: "#4F9DFF", category: "Fashion" },
+  { id: "film", nameKey: "tribeFilmName", emoji: "🎬", taglineKey: "tribeFilmTagline", members: 3340, color: "#FFB400", category: "Film" },
+  { id: "tech", nameKey: "tribeTechName", emoji: "💡", taglineKey: "tribeTechTagline", members: 7129, color: "#00BFA5", category: "Tech" },
+  { id: "dance", nameKey: "tribeDanceName", emoji: "💃", taglineKey: "tribeDanceTagline", members: 4988, color: "#FF4081", category: "Dance" },
 ];
 
 const AVATAR_COLORS = ["#FF6B00", "#7B61FF", "#00C853", "#E1306C", "#4F9DFF", "#FFB400"];
@@ -45,9 +51,31 @@ function formatMembers(n: number): string {
   return `${n}`;
 }
 
+function categoryLabel(category: string, t: Translations): string {
+  switch (category) {
+    case "Music":
+      return t.categories.music;
+    case "Food":
+      return t.categories.food;
+    case "Art":
+      return t.categories.art;
+    case "Fashion":
+      return t.onboarding.fashion;
+    case "Film":
+      return t.onboarding.film;
+    case "Tech":
+      return t.onboarding.tech;
+    case "Dance":
+      return t.onboarding.dance;
+    default:
+      return category;
+  }
+}
+
 export default function VibeTribesScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const t = useTranslation();
   const { authToken } = useApp();
   const [joined, setJoined] = useState<string[]>(["afrobeats"]);
   const [query, setQuery] = useState("");
@@ -67,16 +95,16 @@ export default function VibeTribesScreen() {
   const { myTribes, discoverTribes } = useMemo(() => {
     const filtered = query.trim()
       ? TRIBES.filter(
-          (t) =>
-            t.name.toLowerCase().includes(query.toLowerCase()) ||
-            t.category.toLowerCase().includes(query.toLowerCase())
+          (tribe) =>
+            t.vibeTribes[tribe.nameKey].toLowerCase().includes(query.toLowerCase()) ||
+            categoryLabel(tribe.category, t).toLowerCase().includes(query.toLowerCase())
         )
       : TRIBES;
     return {
-      myTribes: filtered.filter((t) => joined.includes(t.id)),
-      discoverTribes: filtered.filter((t) => !joined.includes(t.id)),
+      myTribes: filtered.filter((tribe) => joined.includes(tribe.id)),
+      discoverTribes: filtered.filter((tribe) => !joined.includes(tribe.id)),
     };
-  }, [joined, query]);
+  }, [joined, query, t]);
 
   const renderTribe = (tribe: Tribe) => {
     const isJoined = joined.includes(tribe.id);
@@ -86,6 +114,7 @@ export default function VibeTribesScreen() {
       AVATAR_COLORS[(seed + 1) % 6],
       AVATAR_COLORS[(seed + 2) % 6],
     ];
+    const tribeName = t.vibeTribes[tribe.nameKey];
     return (
       <View
         key={tribe.id}
@@ -95,9 +124,9 @@ export default function VibeTribesScreen() {
           <Text style={styles.tribeEmoji}>{tribe.emoji}</Text>
         </View>
         <View style={styles.tribeInfo}>
-          <Text style={[styles.tribeName, { color: colors.foreground }]}>{tribe.name}</Text>
+          <Text style={[styles.tribeName, { color: colors.foreground }]}>{tribeName}</Text>
           <Text style={[styles.tribeTagline, { color: colors.mutedForeground }]} numberOfLines={1}>
-            {tribe.tagline}
+            {t.vibeTribes[tribe.taglineKey]}
           </Text>
           <View style={styles.tribeMetaRow}>
             <Feather name="users" size={11} color={tribe.color} />
@@ -105,7 +134,7 @@ export default function VibeTribesScreen() {
               {formatMembers(tribe.members)} members
             </Text>
             <Text style={[styles.tribeCategory, { color: colors.mutedForeground }]}>
-              · {tribe.category}
+              · {categoryLabel(tribe.category, t)}
             </Text>
           </View>
           {/* Member avatar stack */}
@@ -130,15 +159,15 @@ export default function VibeTribesScreen() {
               : { backgroundColor: tribe.color, borderColor: tribe.color, borderWidth: 1 },
           ]}
           accessibilityRole="button"
-          accessibilityLabel={isJoined ? `Leave ${tribe.name}` : `Join ${tribe.name}`}
+          accessibilityLabel={`${isJoined ? t.vibeTribes.joined : t.vibeTribes.join} ${tribeName}`}
         >
           {isJoined ? (
             <>
               <Feather name="check" size={13} color={colors.foreground} />
-              <Text style={[styles.joinBtnText, { color: colors.foreground }]}>Joined</Text>
+              <Text style={[styles.joinBtnText, { color: colors.foreground }]}>{t.vibeTribes.joined}</Text>
             </>
           ) : (
-            <Text style={[styles.joinBtnText, { color: "#fff" }]}>Join</Text>
+            <Text style={[styles.joinBtnText, { color: "#fff" }]}>{t.vibeTribes.join}</Text>
           )}
         </Pressable>
       </View>
@@ -161,11 +190,11 @@ export default function VibeTribesScreen() {
           >
             <Feather name="arrow-left" size={20} color={colors.foreground} />
           </Pressable>
-          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Vibe Tribes</Text>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t.vibeTribes.headerTitle}</Text>
           <View style={styles.backBtn} />
         </View>
         <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-          Find your people. Move with the culture.
+          {t.vibeTribes.subtitle}
         </Text>
 
         {/* Search bar */}
@@ -174,7 +203,7 @@ export default function VibeTribesScreen() {
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search tribes..."
+            placeholder={t.vibeTribes.searchPlaceholder}
             placeholderTextColor="#666"
             style={styles.searchInput}
           />
@@ -183,7 +212,7 @@ export default function VibeTribesScreen() {
         {/* My Tribes */}
         {myTribes.length > 0 && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Your Tribes</Text>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t.vibeTribes.yourTribes}</Text>
             {myTribes.map(renderTribe)}
           </View>
         )}
@@ -191,11 +220,11 @@ export default function VibeTribesScreen() {
         {/* Discover */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            {myTribes.length > 0 ? "Discover More" : "Discover Tribes"}
+            {myTribes.length > 0 ? t.vibeTribes.discoverMore : t.vibeTribes.discoverTribes}
           </Text>
           {discoverTribes.length === 0 ? (
             <Text style={[styles.allJoined, { color: colors.mutedForeground }]}>
-              You've joined every tribe. Legend. 🔥
+              {t.vibeTribes.allJoined}
             </Text>
           ) : (
             discoverTribes.map(renderTribe)
@@ -206,11 +235,11 @@ export default function VibeTribesScreen() {
         <Pressable
           style={styles.createTribeBtn}
           onPress={() =>
-            Alert.alert("Create a Tribe", "Tribe creation is coming soon. Stay tuned!")
+            Alert.alert(t.vibeTribes.createTribeTitle, t.vibeTribes.createTribeMsg)
           }
         >
           <Feather name="plus-circle" size={18} color="#FF6B00" />
-          <Text style={styles.createTribeBtnText}>Create Your Tribe</Text>
+          <Text style={styles.createTribeBtnText}>{t.vibeTribes.createYourTribe}</Text>
         </Pressable>
       </ScrollView>
     </View>
