@@ -499,6 +499,13 @@ export interface Translations {
     noEventsMatch: string;
     moreCategory: string;
   };
+  // Creator's attendee accessibility/dietary needs screen
+  attendeeNeeds: {
+    fallbackTitle: string;
+    subhead: string;
+    couldntLoad: string;
+    noneYet: string;
+  };
 }
 
 const en: Translations = {
@@ -976,6 +983,12 @@ const en: Translations = {
     clearFiltersA11y: "Clear date and price filters",
     noEventsMatch: "No events match your filters",
     moreCategory: "More",
+  },
+  attendeeNeeds: {
+    fallbackTitle: "Attendee Needs",
+    subhead: "Dietary restrictions and accessibility needs attendees chose to share with you — for catering and venue accommodation planning. Only attendees who explicitly opted in appear here.",
+    couldntLoad: "Couldn't load attendee needs. Please try again.",
+    noneYet: "No attendees have shared dietary or accessibility needs yet.",
   },
 };
 
@@ -1455,6 +1468,12 @@ const fr: Translations = {
     noEventsMatch: "Aucun événement ne correspond à vos filtres",
     moreCategory: "Plus",
   },
+  attendeeNeeds: {
+    fallbackTitle: "Besoins des participants",
+    subhead: "Restrictions alimentaires et besoins d'accessibilité que les participants ont choisi de partager avec vous — pour la planification de la restauration et de l'accessibilité du lieu. Seuls les participants ayant explicitement accepté apparaissent ici.",
+    couldntLoad: "Impossible de charger les besoins des participants. Veuillez réessayer.",
+    noneYet: "Aucun participant n'a encore partagé de besoins alimentaires ou d'accessibilité.",
+  },
 };
 
 const sw: Translations = {
@@ -1933,6 +1952,12 @@ const sw: Translations = {
     noEventsMatch: "Hakuna matukio yanayolingana na vichujio vyako",
     moreCategory: "Zaidi",
   },
+  attendeeNeeds: {
+    fallbackTitle: "Mahitaji ya Wahudhuriaji",
+    subhead: "Vizuizi vya chakula na mahitaji ya ufikivu ambayo wahudhuriaji wamechagua kushiriki nawe — kwa mipango ya upishi na malazi ya ukumbi. Ni wahudhuriaji waliokubali waziwazi tu ndio wanaonekana hapa.",
+    couldntLoad: "Imeshindwa kupakia mahitaji ya wahudhuriaji. Tafadhali jaribu tena.",
+    noneYet: "Bado hakuna mhudhuriaji aliyeshiriki mahitaji ya chakula au ufikivu.",
+  },
 };
 
 const ar: Translations = {
@@ -2410,6 +2435,12 @@ const ar: Translations = {
     clearFiltersA11y: "مسح فلاتر التاريخ والسعر",
     noEventsMatch: "لا توجد فعاليات تطابق فلاترك",
     moreCategory: "المزيد",
+  },
+  attendeeNeeds: {
+    fallbackTitle: "احتياجات الحضور",
+    subhead: "القيود الغذائية واحتياجات إمكانية الوصول التي اختار الحضور مشاركتها معك — لتخطيط الضيافة وتجهيزات المكان. لا يظهر هنا سوى الحضور الذين وافقوا صراحةً على المشاركة.",
+    couldntLoad: "تعذّر تحميل احتياجات الحضور. يرجى المحاولة مرة أخرى.",
+    noneYet: "لم يشارك أي حضور احتياجات غذائية أو متعلقة بإمكانية الوصول بعد.",
   },
 };
 

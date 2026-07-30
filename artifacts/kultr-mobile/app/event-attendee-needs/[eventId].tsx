@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
+import { useTranslation } from "@/hooks/useTranslation";
 import {
   useGetEventAttendeeNeeds,
   getGetEventAttendeeNeedsQueryKey,
@@ -21,6 +22,7 @@ export default function EventAttendeeNeedsScreen() {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const t = useTranslation();
   const { authToken } = useApp();
   const { getEventById } = useEventCatalog();
   const event = getEventById(eventId ?? "");
@@ -37,20 +39,19 @@ export default function EventAttendeeNeedsScreen() {
         <Pressable
           onPress={() => (router.canGoBack() ? router.back() : router.replace("/creator-studio" as any))}
           style={[styles.backBtn, { backgroundColor: colors.muted }]}
-          accessibilityLabel="Go back"
+          accessibilityLabel={t.actions.back}
           accessibilityRole="button"
         >
           <Feather name="arrow-left" size={20} color={colors.foreground} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.foreground }]} numberOfLines={1}>
-          {event?.title ?? "Attendee Needs"}
+          {event?.title ?? t.attendeeNeeds.fallbackTitle}
         </Text>
         <View style={styles.backBtn} />
       </View>
 
       <Text style={[styles.subhead, { color: colors.mutedForeground }]}>
-        Dietary restrictions and accessibility needs attendees chose to share with you — for catering and venue
-        accommodation planning. Only attendees who explicitly opted in appear here.
+        {t.attendeeNeeds.subhead}
       </Text>
 
       {isLoading && (
@@ -61,7 +62,7 @@ export default function EventAttendeeNeedsScreen() {
 
       {isError && !isLoading && (
         <View style={styles.centerState}>
-          <Text style={{ color: colors.mutedForeground }}>Couldn't load attendee needs. Please try again.</Text>
+          <Text style={{ color: colors.mutedForeground }}>{t.attendeeNeeds.couldntLoad}</Text>
         </View>
       )}
 
@@ -69,7 +70,7 @@ export default function EventAttendeeNeedsScreen() {
         <View style={styles.centerState}>
           <Feather name="inbox" size={28} color={colors.mutedForeground} />
           <Text style={{ color: colors.mutedForeground, marginTop: 8, textAlign: "center", paddingHorizontal: 24 }}>
-            No attendees have shared dietary or accessibility needs yet.
+            {t.attendeeNeeds.noneYet}
           </Text>
         </View>
       )}
