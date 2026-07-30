@@ -18,6 +18,7 @@ import { useActivatePass, getGetQuestProgressQueryKey } from "@workspace/api-cli
 import { Alert } from "@/lib/alert";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useQuestProgress, usePerks, useUnlockPerk, type PerkView } from "@/hooks/useQuests";
 
 /**
@@ -41,6 +42,7 @@ export default function RewardsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { authToken } = useApp();
+  const t = useTranslation();
   const { data: progress, isLoading, isError } = useQuestProgress();
   const { data: perksData, isError: isPerksError } = usePerks();
   const unlock = useUnlockPerk();
@@ -142,7 +144,7 @@ export default function RewardsScreen() {
           >
             <Feather name="arrow-left" size={20} color={colors.foreground} />
           </Pressable>
-          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Rewards</Text>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t.rewards.title}</Text>
           <View style={styles.backBtn} />
         </View>
 
@@ -151,12 +153,12 @@ export default function RewardsScreen() {
             <View style={[styles.emptyIcon, { backgroundColor: colors.muted }]}>
               <Feather name="gift" size={34} color={colors.mutedForeground} />
             </View>
-            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Sign in to view rewards</Text>
+            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t.rewards.signInTitle}</Text>
             <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              Earn KULTROINS from quests, then unlock experiences.
+              {t.rewards.signInSub}
             </Text>
             <Pressable style={styles.cta} onPress={() => router.push("/login")}>
-              <Text style={styles.ctaText}>Sign In</Text>
+              <Text style={styles.ctaText}>{t.auth.signIn}</Text>
             </Pressable>
           </View>
         ) : isLoading ? (
@@ -168,16 +170,16 @@ export default function RewardsScreen() {
             <View style={[styles.emptyIcon, { backgroundColor: colors.muted }]}>
               <Feather name="wifi-off" size={34} color={colors.mutedForeground} />
             </View>
-            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Couldn't load rewards</Text>
+            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t.rewards.couldntLoad}</Text>
             <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              Check your connection and try again.
+              {t.rewards.checkConnection}
             </Text>
           </View>
         ) : (
           <>
             {/* Balance card */}
             <View style={[styles.balanceCard, { backgroundColor: "#1A0A00", borderColor: "#FF6B00" }]}>
-              <Text style={styles.balanceLabel}>KULTROIN BALANCE</Text>
+              <Text style={styles.balanceLabel}>{t.rewards.balanceLabel.toUpperCase()}</Text>
               <View style={styles.balanceRow}>
                 <Feather name="star" size={26} color="#FFB400" />
                 <Text style={styles.balanceValue}>{balance.toLocaleString()}</Text>
@@ -190,7 +192,7 @@ export default function RewardsScreen() {
               ) : (
                 <>
                   <Text style={styles.balanceSub}>
-                    Lifetime earned: {(progress?.lifetimeEarned ?? 0).toLocaleString()}
+                    {t.rewards.lifetimeEarned}: {(progress?.lifetimeEarned ?? 0).toLocaleString()}
                   </Text>
                   <Pressable
                     onPress={handleGetPass}
@@ -204,7 +206,7 @@ export default function RewardsScreen() {
                     ) : (
                       <>
                         <Feather name="zap" size={13} color="#000" />
-                        <Text style={styles.getPassBtnText}>Get KULTR PASS · 500 KES / 30 days</Text>
+                        <Text style={styles.getPassBtnText}>{t.rewards.getPass} · 500 KES / 30 days</Text>
                       </>
                     )}
                   </Pressable>
@@ -214,10 +216,10 @@ export default function RewardsScreen() {
 
             {/* Perks */}
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Unlock More Experiences</Text>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t.rewards.unlockMore}</Text>
               {perks.length === 0 ? (
                 <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-                  No perks available right now.
+                  {t.rewards.noPerks}
                 </Text>
               ) : (
                 perks.map((perk) => {
@@ -256,7 +258,7 @@ export default function RewardsScreen() {
                         ]}
                       >
                         <Text style={[styles.unlockBtnText, { color: affordable ? "#fff" : colors.mutedForeground }]}>
-                          {affordable ? "Unlock" : "Locked"}
+                          {affordable ? t.rewards.unlock : t.rewards.locked}
                         </Text>
                       </Pressable>
                     </View>
@@ -270,7 +272,7 @@ export default function RewardsScreen() {
               onPress={() => router.push("/quests")}
             >
               <Feather name="compass" size={16} color="#FF6B00" />
-              <Text style={[styles.questsLinkText, { color: colors.foreground }]}>Back to Cultural Quests</Text>
+              <Text style={[styles.questsLinkText, { color: colors.foreground }]}>{t.rewards.backToQuests}</Text>
               <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
             </Pressable>
           </>

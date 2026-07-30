@@ -15,6 +15,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { useTranslation } from "@/hooks/useTranslation";
+import type { Translations } from "@/constants/translations";
 import {
   useGetGamificationProfile,
   getGetGamificationProfileQueryKey,
@@ -22,13 +24,13 @@ import {
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-function getLevelTitle(level: number): string {
-  if (level <= 2) return "Newcomer";
-  if (level <= 5) return "Explorer";
-  if (level <= 9) return "Wanderer";
-  if (level <= 14) return "Trailblazer";
-  if (level <= 19) return "Culture Bearer";
-  return "Legend";
+function getLevelTitleKey(level: number): keyof Translations["gamification"] {
+  if (level <= 2) return "levelNewcomer";
+  if (level <= 5) return "levelExplorer";
+  if (level <= 9) return "levelWanderer";
+  if (level <= 14) return "levelTrailblazer";
+  if (level <= 19) return "levelCultureBearer";
+  return "levelLegend";
 }
 
 const BADGE_ICONS: Record<string, string> = {
@@ -38,24 +40,32 @@ const BADGE_ICONS: Record<string, string> = {
   community_builder: "users",
 };
 
-const BADGE_META: Record<string, { label: string; description: string }> = {
-  week_warrior: { label: "Week Warrior", description: "7-day check-in streak" },
-  consistent: { label: "Consistent", description: "2 events in a row" },
-  event_king: { label: "Event King", description: "Attended 10+ events" },
-  community_builder: { label: "Community Builder", description: "Attended 5+ events" },
+const BADGE_META_KEYS: Record<
+  string,
+  { labelKey: keyof Translations["gamification"]; descKey: keyof Translations["gamification"] }
+> = {
+  week_warrior: { labelKey: "badgeWeekWarrior", descKey: "badgeWeekWarriorDesc" },
+  consistent: { labelKey: "badgeConsistent", descKey: "badgeConsistentDesc" },
+  event_king: { labelKey: "badgeEventKing", descKey: "badgeEventKingDesc" },
+  community_builder: { labelKey: "badgeCommunityBuilder", descKey: "badgeCommunityBuilderDesc" },
 };
 
 const LEVELS = [
-  { title: "Newbie", visits: 0, icon: "star" },
-  { title: "Explorer", visits: 10, icon: "compass" },
-  { title: "Culturalist", visits: 25, icon: "globe" },
-  { title: "Global Icon", visits: 50, icon: "award" },
-] as const;
+  { titleKey: "journeyNewbie", visits: 0, icon: "star" },
+  { titleKey: "journeyExplorer", visits: 10, icon: "compass" },
+  { titleKey: "journeyCulturalist", visits: 25, icon: "globe" },
+  { titleKey: "journeyGlobalIcon", visits: 50, icon: "award" },
+] as const satisfies ReadonlyArray<{
+  titleKey: keyof Translations["gamification"];
+  visits: number;
+  icon: string;
+}>;
 
 export default function GamificationScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { authToken, authUser } = useApp();
+  const t = useTranslation();
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
 
@@ -66,7 +76,7 @@ export default function GamificationScreen() {
     },
   });
 
-  const displayName = authUser?.displayName ?? "Kultr Member";
+  const displayName = authUser?.displayName ?? t.profile.member;
   const initials = displayName
     .split(" ")
     .map((w) => w[0])
@@ -102,16 +112,16 @@ export default function GamificationScreen() {
         >
           <Feather name="arrow-left" size={20} color={colors.foreground} />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: colors.foreground }]}>Streaks & Badges</Text>
+        <Text style={[styles.headerTitle, { color: colors.foreground }]}>{t.gamification.title}</Text>
         <View style={styles.backBtn} />
       </View>
 
       {!authToken ? (
         <View style={styles.empty}>
           <Feather name="lock" size={36} color={colors.mutedForeground} />
-          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Sign in to track your streaks</Text>
+          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t.gamification.signInTitle}</Text>
           <Pressable style={styles.cta} onPress={() => router.push("/login")}>
-            <Text style={styles.ctaText}>Sign In</Text>
+            <Text style={styles.ctaText}>{t.auth.signIn}</Text>
           </Pressable>
         </View>
       ) : isLoading ? (
@@ -121,14 +131,14 @@ export default function GamificationScreen() {
       ) : isError ? (
         <View style={styles.empty}>
           <Feather name="wifi-off" size={32} color={colors.mutedForeground} />
-          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Couldn't load your profile</Text>
+          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t.gamification.couldntLoad}</Text>
           <Pressable
             onPress={() => refetch()}
             style={{ marginTop: 16, paddingHorizontal: 24, paddingVertical: 10, backgroundColor: "#FF6B00", borderRadius: 20 }}
             accessibilityLabel="Retry loading profile"
             accessibilityRole="button"
           >
-            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 14 }}>Try Again</Text>
+            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 14 }}>{t.gamification.tryAgain}</Text>
           </Pressable>
         </View>
       ) : (
@@ -142,9 +152,9 @@ export default function GamificationScreen() {
               <View style={styles.profileInfo}>
                 <Text style={[styles.profileName, { color: colors.foreground }]}>{displayName}</Text>
                 <View style={styles.levelRow}>
-                  <Text style={[styles.levelLabel, { color: "#FF6B00" }]}>Level {level}</Text>
+                  <Text style={[styles.levelLabel, { color: "#FF6B00" }]}>{t.gamification.level} {level}</Text>
                   <Text style={[styles.levelDot, { color: colors.mutedForeground }]}>•</Text>
-                  <Text style={[styles.levelTitle, { color: colors.mutedForeground }]}>{getLevelTitle(level)}</Text>
+                  <Text style={[styles.levelTitle, { color: colors.mutedForeground }]}>{t.gamification[getLevelTitleKey(level)]}</Text>
                 </View>
                 <View style={[styles.xpTrack, { backgroundColor: colors.muted }]}>
                   <View style={[styles.xpFill, { width: `${xpPercent}%` }]} />
@@ -161,14 +171,14 @@ export default function GamificationScreen() {
               accessibilityRole="button"
             >
               <Feather name="user" size={13} color={colors.foreground} />
-              <Text style={[styles.viewProfileText, { color: colors.foreground }]}>View Profile</Text>
+              <Text style={[styles.viewProfileText, { color: colors.foreground }]}>{t.gamification.viewProfile}</Text>
             </Pressable>
           </View>
 
           {/* Level Journey */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Level Journey</Text>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t.gamification.levelJourney}</Text>
             </View>
             <ScrollView
               horizontal
@@ -179,10 +189,10 @@ export default function GamificationScreen() {
                 const isPast = idx <= currentLevelIndex;
                 const isCurrent = idx === currentLevelIndex;
                 return (
-                  <React.Fragment key={lvl.title}>
+                  <React.Fragment key={lvl.titleKey}>
                     <View style={{ alignItems: "center", width: 72 }}>
                       {isCurrent && (
-                        <Text style={styles.youAreHere}>YOU ARE HERE</Text>
+                        <Text style={styles.youAreHere}>{t.gamification.youAreHere.toUpperCase()}</Text>
                       )}
                       <View
                         style={[
@@ -199,10 +209,10 @@ export default function GamificationScreen() {
                         />
                       </View>
                       <Text style={[styles.levelNodeTitle, { color: isPast ? colors.foreground : "#555" }]}>
-                        {lvl.title}
+                        {t.gamification[lvl.titleKey]}
                       </Text>
                       <Text style={[styles.levelNodeVisits, { color: colors.mutedForeground }]}>
-                        {lvl.visits === 0 ? "Start" : `${lvl.visits} visits`}
+                        {lvl.visits === 0 ? t.gamification.start : `${lvl.visits} ${t.gamification.visitsSuffix}`}
                       </Text>
                     </View>
                     {idx < LEVELS.length - 1 && (
@@ -224,7 +234,7 @@ export default function GamificationScreen() {
             <View style={styles.sectionHeader}>
               <View style={styles.sectionTitleRow}>
                 <Text style={styles.fireEmoji}>🔥</Text>
-                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Kultr Streaks</Text>
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t.gamification.kultrStreaks}</Text>
               </View>
             </View>
 
@@ -233,26 +243,26 @@ export default function GamificationScreen() {
               <View style={styles.streakBannerLeft}>
                 {currentStreak >= 7 ? (
                   <>
-                    <Text style={styles.streakBannerTitle}>{currentStreak}-Day Event</Text>
-                    <Text style={styles.streakBannerAccent}>Streak!</Text>
+                    <Text style={styles.streakBannerTitle}>{currentStreak}-{t.gamification.dayEvent}</Text>
+                    <Text style={styles.streakBannerAccent}>{t.gamification.streakBang}</Text>
                     <Text style={styles.streakBannerSub}>
-                      You showed up and showed out. Keep it going!
+                      {t.gamification.keptItGoingSub}
                     </Text>
                   </>
                 ) : currentStreak > 0 ? (
                   <>
-                    <Text style={styles.streakBannerTitle}>{currentStreak}-Day</Text>
-                    <Text style={styles.streakBannerAccent}>Streak</Text>
+                    <Text style={styles.streakBannerTitle}>{currentStreak}-{t.gamification.streakDays}</Text>
+                    <Text style={styles.streakBannerAccent}>{t.gamification.keepCheckingIn}</Text>
                     <Text style={styles.streakBannerSub}>
-                      Keep checking in to build your streak!
+                      {t.gamification.keepStreakSub}
                     </Text>
                   </>
                 ) : (
                   <>
-                    <Text style={styles.streakBannerTitle}>Start Your</Text>
-                    <Text style={styles.streakBannerAccent}>Streak!</Text>
+                    <Text style={styles.streakBannerTitle}>{t.gamification.startYourStreak}</Text>
+                    <Text style={styles.streakBannerAccent}>{t.gamification.streakBang}</Text>
                     <Text style={styles.streakBannerSub}>
-                      Check in to your next event to begin.
+                      {t.gamification.startStreakSub}
                     </Text>
                   </>
                 )}
@@ -260,7 +270,7 @@ export default function GamificationScreen() {
               <View style={styles.streakRing}>
                 <View style={styles.streakRingInner}>
                   <Text style={styles.streakRingNumber}>{currentStreak}</Text>
-                  <Text style={styles.streakRingLabel}>DAYS</Text>
+                  <Text style={styles.streakRingLabel}>{t.gamification.daysLabel.toUpperCase()}</Text>
                 </View>
               </View>
             </View>
@@ -288,8 +298,8 @@ export default function GamificationScreen() {
                   <Text style={styles.fireEmoji}>🔥</Text>
                 </View>
                 <View>
-                  <Text style={[styles.streakStatLabel, { color: colors.mutedForeground }]}>Current Streak</Text>
-                  <Text style={[styles.streakStatValue, { color: "#FF6B00" }]}>{currentStreak} Days</Text>
+                  <Text style={[styles.streakStatLabel, { color: colors.mutedForeground }]}>{t.gamification.currentStreak}</Text>
+                  <Text style={[styles.streakStatValue, { color: "#FF6B00" }]}>{currentStreak} {t.gamification.daysLabel}</Text>
                 </View>
               </View>
               <View style={[styles.streakStatDivider, { backgroundColor: colors.border }]} />
@@ -298,8 +308,8 @@ export default function GamificationScreen() {
                   <Text style={styles.fireEmoji}>⭐</Text>
                 </View>
                 <View>
-                  <Text style={[styles.streakStatLabel, { color: colors.mutedForeground }]}>Best Streak</Text>
-                  <Text style={[styles.streakStatValue, { color: "#FFB400" }]}>{bestStreak} Days</Text>
+                  <Text style={[styles.streakStatLabel, { color: colors.mutedForeground }]}>{t.gamification.bestStreak}</Text>
+                  <Text style={[styles.streakStatValue, { color: "#FFB400" }]}>{bestStreak} {t.gamification.daysLabel}</Text>
                 </View>
               </View>
             </View>
@@ -308,7 +318,7 @@ export default function GamificationScreen() {
           {/* Badges */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Badges</Text>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t.gamification.badges}</Text>
             </View>
             <View style={styles.badgeGrid}>
               {badges.map((badge) => {
@@ -337,10 +347,10 @@ export default function GamificationScreen() {
                       <Feather name={icon} size={24} color={badge.earned ? "#FF6B00" : colors.mutedForeground} />
                     </View>
                     <Text style={[styles.badgeName, { color: colors.foreground }]} numberOfLines={2}>
-                      {BADGE_META[badge.id]?.label ?? badge.name}
+                      {BADGE_META_KEYS[badge.id] ? t.gamification[BADGE_META_KEYS[badge.id].labelKey] : badge.name}
                     </Text>
                     <Text style={[styles.badgeDesc, { color: colors.mutedForeground }]}>
-                      {BADGE_META[badge.id]?.description ?? badge.description}
+                      {BADGE_META_KEYS[badge.id] ? t.gamification[BADGE_META_KEYS[badge.id].descKey] : badge.description}
                     </Text>
                   </View>
                 );

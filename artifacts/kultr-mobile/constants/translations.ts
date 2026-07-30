@@ -246,6 +246,66 @@ export interface Translations {
     noCollectiblesYet: string;
     spendRewards: string;
   };
+  // Rewards screen
+  rewards: {
+    title: string;
+    signInTitle: string;
+    signInSub: string;
+    couldntLoad: string;
+    checkConnection: string;
+    balanceLabel: string;
+    lifetimeEarned: string;
+    getPass: string;
+    unlockMore: string;
+    noPerks: string;
+    unlock: string;
+    locked: string;
+    backToQuests: string;
+  };
+  // Gamification (Streaks & Badges) screen
+  gamification: {
+    title: string;
+    signInTitle: string;
+    couldntLoad: string;
+    tryAgain: string;
+    level: string;
+    viewProfile: string;
+    levelJourney: string;
+    youAreHere: string;
+    start: string;
+    kultrStreaks: string;
+    streakDays: string;
+    startYourStreak: string;
+    startStreakSub: string;
+    keepCheckingIn: string;
+    keepStreakSub: string;
+    dayEvent: string;
+    streakBang: string;
+    keptItGoingSub: string;
+    currentStreak: string;
+    bestStreak: string;
+    daysLabel: string;
+    badges: string;
+    levelNewcomer: string;
+    levelExplorer: string;
+    levelWanderer: string;
+    levelTrailblazer: string;
+    levelCultureBearer: string;
+    levelLegend: string;
+    visitsSuffix: string;
+    journeyNewbie: string;
+    journeyExplorer: string;
+    journeyCulturalist: string;
+    journeyGlobalIcon: string;
+    badgeWeekWarrior: string;
+    badgeWeekWarriorDesc: string;
+    badgeConsistent: string;
+    badgeConsistentDesc: string;
+    badgeEventKing: string;
+    badgeEventKingDesc: string;
+    badgeCommunityBuilder: string;
+    badgeCommunityBuilderDesc: string;
+  };
 }
 
 const en: Translations = {
@@ -478,6 +538,64 @@ const en: Translations = {
     culturalLegacy: "Cultural Legacy",
     noCollectiblesYet: "Complete quests to earn collectible badges.",
     spendRewards: "Spend your KULTROINS in Rewards",
+  },
+  rewards: {
+    title: "Rewards",
+    signInTitle: "Sign in to view rewards",
+    signInSub: "Earn KULTROINS from quests, then unlock experiences.",
+    couldntLoad: "Couldn't load rewards",
+    checkConnection: "Check your connection and try again.",
+    balanceLabel: "KULTROIN Balance",
+    lifetimeEarned: "Lifetime earned",
+    getPass: "Get KULTR PASS",
+    unlockMore: "Unlock More Experiences",
+    noPerks: "No perks available right now.",
+    unlock: "Unlock",
+    locked: "Locked",
+    backToQuests: "Back to Cultural Quests",
+  },
+  gamification: {
+    title: "Streaks & Badges",
+    signInTitle: "Sign in to track your streaks",
+    couldntLoad: "Couldn't load your profile",
+    tryAgain: "Try Again",
+    level: "Level",
+    viewProfile: "View Profile",
+    levelJourney: "Level Journey",
+    youAreHere: "You are here",
+    start: "Start",
+    kultrStreaks: "Kultr Streaks",
+    streakDays: "Day",
+    startYourStreak: "Start Your",
+    startStreakSub: "Check in to your next event to begin.",
+    keepCheckingIn: "Streak",
+    keepStreakSub: "Keep checking in to build your streak!",
+    dayEvent: "Day Event",
+    streakBang: "Streak!",
+    keptItGoingSub: "You showed up and showed out. Keep it going!",
+    currentStreak: "Current Streak",
+    bestStreak: "Best Streak",
+    daysLabel: "Days",
+    badges: "Badges",
+    levelNewcomer: "Newcomer",
+    levelExplorer: "Explorer",
+    levelWanderer: "Wanderer",
+    levelTrailblazer: "Trailblazer",
+    levelCultureBearer: "Culture Bearer",
+    levelLegend: "Legend",
+    visitsSuffix: "visits",
+    journeyNewbie: "Newbie",
+    journeyExplorer: "Explorer",
+    journeyCulturalist: "Culturalist",
+    journeyGlobalIcon: "Global Icon",
+    badgeWeekWarrior: "Week Warrior",
+    badgeWeekWarriorDesc: "7-day check-in streak",
+    badgeConsistent: "Consistent",
+    badgeConsistentDesc: "2 events in a row",
+    badgeEventKing: "Event King",
+    badgeEventKingDesc: "Attended 10+ events",
+    badgeCommunityBuilder: "Community Builder",
+    badgeCommunityBuilderDesc: "Attended 5+ events",
   },
 };
 
@@ -712,6 +830,64 @@ const fr: Translations = {
     noCollectiblesYet: "Complétez des quêtes pour gagner des badges à collectionner.",
     spendRewards: "Dépensez vos KULTROINS dans Récompenses",
   },
+  rewards: {
+    title: "Récompenses",
+    signInTitle: "Connectez-vous pour voir vos récompenses",
+    signInSub: "Gagnez des KULTROINS grâce aux quêtes, puis débloquez des expériences.",
+    couldntLoad: "Impossible de charger les récompenses",
+    checkConnection: "Vérifiez votre connexion et réessayez.",
+    balanceLabel: "Solde KULTROIN",
+    lifetimeEarned: "Total gagné",
+    getPass: "Obtenir le KULTR PASS",
+    unlockMore: "Débloquez plus d'expériences",
+    noPerks: "Aucun avantage disponible pour le moment.",
+    unlock: "Débloquer",
+    locked: "Verrouillé",
+    backToQuests: "Retour aux Quêtes Culturelles",
+  },
+  gamification: {
+    title: "Séries et Badges",
+    signInTitle: "Connectez-vous pour suivre vos séries",
+    couldntLoad: "Impossible de charger votre profil",
+    tryAgain: "Réessayer",
+    level: "Niveau",
+    viewProfile: "Voir le profil",
+    levelJourney: "Parcours de niveaux",
+    youAreHere: "Vous êtes ici",
+    start: "Début",
+    kultrStreaks: "Séries Kultr",
+    streakDays: "Jour",
+    startYourStreak: "Commencez votre",
+    startStreakSub: "Enregistrez-vous à votre prochain événement pour commencer.",
+    keepCheckingIn: "Série",
+    keepStreakSub: "Continuez à vous enregistrer pour construire votre série !",
+    dayEvent: "jours d'événements",
+    streakBang: "Série !",
+    keptItGoingSub: "Vous vous êtes montré à la hauteur. Continuez ainsi !",
+    currentStreak: "Série actuelle",
+    bestStreak: "Meilleure série",
+    daysLabel: "Jours",
+    badges: "Badges",
+    levelNewcomer: "Nouveau venu",
+    levelExplorer: "Explorateur",
+    levelWanderer: "Vagabond",
+    levelTrailblazer: "Pionnier",
+    levelCultureBearer: "Porteur de culture",
+    levelLegend: "Légende",
+    visitsSuffix: "visites",
+    journeyNewbie: "Débutant",
+    journeyExplorer: "Explorateur",
+    journeyCulturalist: "Culturaliste",
+    journeyGlobalIcon: "Icône mondiale",
+    badgeWeekWarrior: "Guerrier de la semaine",
+    badgeWeekWarriorDesc: "Série de 7 jours d'enregistrement",
+    badgeConsistent: "Assidu",
+    badgeConsistentDesc: "2 événements consécutifs",
+    badgeEventKing: "Roi des événements",
+    badgeEventKingDesc: "10+ événements suivis",
+    badgeCommunityBuilder: "Bâtisseur de communauté",
+    badgeCommunityBuilderDesc: "5+ événements suivis",
+  },
 };
 
 const sw: Translations = {
@@ -945,6 +1121,64 @@ const sw: Translations = {
     noCollectiblesYet: "Kamilisha misheni ili upate beji za kukusanya.",
     spendRewards: "Tumia KULTROINS zako kwenye Zawadi",
   },
+  rewards: {
+    title: "Zawadi",
+    signInTitle: "Ingia ili uone zawadi zako",
+    signInSub: "Pata KULTROINS kutoka misheni, kisha ufungue uzoefu.",
+    couldntLoad: "Imeshindwa kupakia zawadi",
+    checkConnection: "Angalia muunganisho wako na ujaribu tena.",
+    balanceLabel: "Salio la KULTROIN",
+    lifetimeEarned: "Jumla iliyopatikana",
+    getPass: "Pata KULTR PASS",
+    unlockMore: "Fungua Uzoefu Zaidi",
+    noPerks: "Hakuna manufaa yanayopatikana kwa sasa.",
+    unlock: "Fungua",
+    locked: "Imefungwa",
+    backToQuests: "Rudi kwenye Misheni za Kiutamaduni",
+  },
+  gamification: {
+    title: "Mfululizo na Beji",
+    signInTitle: "Ingia ili ufuatilie mfululizo wako",
+    couldntLoad: "Imeshindwa kupakia wasifu wako",
+    tryAgain: "Jaribu Tena",
+    level: "Ngazi",
+    viewProfile: "Angalia Wasifu",
+    levelJourney: "Safari ya Ngazi",
+    youAreHere: "Uko hapa",
+    start: "Anza",
+    kultrStreaks: "Mfululizo wa Kultr",
+    streakDays: "Siku",
+    startYourStreak: "Anzisha",
+    startStreakSub: "Ingia kwenye tukio lako lijalo ili kuanza.",
+    keepCheckingIn: "Mfululizo",
+    keepStreakSub: "Endelea kuingia ili kujenga mfululizo wako!",
+    dayEvent: "Siku za Matukio",
+    streakBang: "Mfululizo!",
+    keptItGoingSub: "Umejitokeza na kuonyesha uwezo. Endelea hivyo!",
+    currentStreak: "Mfululizo wa Sasa",
+    bestStreak: "Mfululizo Bora",
+    daysLabel: "Siku",
+    badges: "Beji",
+    levelNewcomer: "Mgeni",
+    levelExplorer: "Mgunduzi",
+    levelWanderer: "Mzururaji",
+    levelTrailblazer: "Kiongozi",
+    levelCultureBearer: "Mbeba Utamaduni",
+    levelLegend: "Hadithi",
+    visitsSuffix: "ziara",
+    journeyNewbie: "Mgeni",
+    journeyExplorer: "Mgunduzi",
+    journeyCulturalist: "Mtaalamu wa Utamaduni",
+    journeyGlobalIcon: "Ikoni ya Kimataifa",
+    badgeWeekWarrior: "Shujaa wa Wiki",
+    badgeWeekWarriorDesc: "Mfuatano wa siku 7 wa kujiandikisha",
+    badgeConsistent: "Mwenye Uthabiti",
+    badgeConsistentDesc: "Matukio 2 mfululizo",
+    badgeEventKing: "Mfalme wa Matukio",
+    badgeEventKingDesc: "Umehudhuria matukio 10+",
+    badgeCommunityBuilder: "Mjenzi wa Jamii",
+    badgeCommunityBuilderDesc: "Umehudhuria matukio 5+",
+  },
 };
 
 const ar: Translations = {
@@ -1177,6 +1411,64 @@ const ar: Translations = {
     culturalLegacy: "الإرث الثقافي",
     noCollectiblesYet: "أكمل المهام لتكسب شارات تذكارية.",
     spendRewards: "أنفق KULTROINS في المكافآت",
+  },
+  rewards: {
+    title: "المكافآت",
+    signInTitle: "سجّل الدخول لعرض مكافآتك",
+    signInSub: "اكسب KULTROINS من المهام، ثم افتح التجارب.",
+    couldntLoad: "تعذّر تحميل المكافآت",
+    checkConnection: "تحقق من اتصالك وحاول مرة أخرى.",
+    balanceLabel: "رصيد KULTROIN",
+    lifetimeEarned: "إجمالي المكتسب",
+    getPass: "احصل على KULTR PASS",
+    unlockMore: "افتح المزيد من التجارب",
+    noPerks: "لا توجد مزايا متاحة حالياً.",
+    unlock: "فتح",
+    locked: "مغلق",
+    backToQuests: "العودة إلى المهام الثقافية",
+  },
+  gamification: {
+    title: "السلاسل والشارات",
+    signInTitle: "سجّل الدخول لتتبع سلاسلك",
+    couldntLoad: "تعذّر تحميل ملفك الشخصي",
+    tryAgain: "حاول مرة أخرى",
+    level: "المستوى",
+    viewProfile: "عرض الملف الشخصي",
+    levelJourney: "رحلة المستويات",
+    youAreHere: "أنت هنا",
+    start: "البداية",
+    kultrStreaks: "سلاسل كلتر",
+    streakDays: "يوم",
+    startYourStreak: "ابدأ",
+    startStreakSub: "سجّل حضورك في فعاليتك القادمة للبدء.",
+    keepCheckingIn: "سلسلة",
+    keepStreakSub: "استمر في تسجيل الحضور لبناء سلسلتك!",
+    dayEvent: "أيام من الفعاليات",
+    streakBang: "سلسلة!",
+    keptItGoingSub: "لقد حضرت وأبليت حسناً. استمر!",
+    currentStreak: "السلسلة الحالية",
+    bestStreak: "أفضل سلسلة",
+    daysLabel: "أيام",
+    badges: "الشارات",
+    levelNewcomer: "قادم جديد",
+    levelExplorer: "مستكشف",
+    levelWanderer: "متجوّل",
+    levelTrailblazer: "رائد",
+    levelCultureBearer: "حامل الثقافة",
+    levelLegend: "أسطورة",
+    visitsSuffix: "زيارات",
+    journeyNewbie: "مبتدئ",
+    journeyExplorer: "مستكشف",
+    journeyCulturalist: "خبير ثقافي",
+    journeyGlobalIcon: "أيقونة عالمية",
+    badgeWeekWarrior: "محارب الأسبوع",
+    badgeWeekWarriorDesc: "سلسلة تسجيل حضور لمدة 7 أيام",
+    badgeConsistent: "مواظب",
+    badgeConsistentDesc: "حضور فعاليتين متتاليتين",
+    badgeEventKing: "ملك الفعاليات",
+    badgeEventKingDesc: "حضور أكثر من 10 فعاليات",
+    badgeCommunityBuilder: "باني المجتمع",
+    badgeCommunityBuilderDesc: "حضور أكثر من 5 فعاليات",
   },
 };
 
