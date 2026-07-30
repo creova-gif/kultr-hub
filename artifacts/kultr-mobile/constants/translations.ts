@@ -548,6 +548,40 @@ export interface Translations {
     tagMovies: string;
     tagChill: string;
   };
+  // For You (AI recommendations) tab screen
+  forYou: {
+    eyebrow: string;
+    heroTitleLine1: string;
+    heroTitleLine2: string;
+    heroVibeWord: string;
+    heroSub: string;
+    homeVibesTitle: string;
+    homeVibesSub: string;
+    topMatchesTitle: string;
+    refineVibe: string;
+    refinePreferencesA11y: string;
+    findingMatches: string;
+    noMatchesTitle: string;
+    noMatchesSub: string;
+    matchScoreLabel: string;
+    refineSheetTitle: string;
+    applyVibe: string;
+    applyPreferencesA11y: string;
+    selected: string;
+    inCity: string;
+    matchWord: string;
+    foodDrink: string;
+    vibeEnergetic: string;
+    vibeThoughtful: string;
+    vibeIndulgent: string;
+    vibeGrounded: string;
+    vibeUplifting: string;
+    vibePumped: string;
+    vibeElectric: string;
+    vibeCalm: string;
+    vibeConnected: string;
+    vibeVibrant: string;
+  };
 }
 
 const en: Translations = {
@@ -1071,6 +1105,39 @@ const en: Translations = {
     tagHouse: "House",
     tagMovies: "Movies",
     tagChill: "Chill",
+  },
+  forYou: {
+    eyebrow: "AI-Powered For You",
+    heroTitleLine1: "Your",
+    heroTitleLine2: "Personalized",
+    heroVibeWord: "Vibe",
+    heroSub: "Smart picks. Real vibes.\nHandpicked experiences\nthat match your energy.",
+    homeVibesTitle: "Home Vibes",
+    homeVibesSub: "Events from the motherland",
+    topMatchesTitle: "Top Matches For You",
+    refineVibe: "Refine Vibe",
+    refinePreferencesA11y: "Refine your vibe preferences",
+    findingMatches: "Finding your matches…",
+    noMatchesTitle: "No matches yet",
+    noMatchesSub: "Refine your vibe above to discover events tailored to you.",
+    matchScoreLabel: "Match Score",
+    refineSheetTitle: "What moves you?",
+    applyVibe: "Apply Vibe",
+    applyPreferencesA11y: "Apply vibe preferences",
+    selected: "selected",
+    inCity: "in",
+    matchWord: "match",
+    foodDrink: "Food & Drink",
+    vibeEnergetic: "Energetic",
+    vibeThoughtful: "Thoughtful",
+    vibeIndulgent: "Indulgent",
+    vibeGrounded: "Grounded",
+    vibeUplifting: "Uplifting",
+    vibePumped: "Pumped",
+    vibeElectric: "Electric",
+    vibeCalm: "Calm",
+    vibeConnected: "Connected",
+    vibeVibrant: "Vibrant",
   },
 };
 
@@ -1596,6 +1663,39 @@ const fr: Translations = {
     tagMovies: "Films",
     tagChill: "Détente",
   },
+  forYou: {
+    eyebrow: "Propulsé par l'IA, Pour Vous",
+    heroTitleLine1: "Votre",
+    heroTitleLine2: "Sélection",
+    heroVibeWord: "Personnalisée",
+    heroSub: "Choix intelligents. Vraies vibes.\nDes expériences sélectionnées\nqui correspondent à votre énergie.",
+    homeVibesTitle: "Vibes du Pays",
+    homeVibesSub: "Événements de la mère patrie",
+    topMatchesTitle: "Meilleures Correspondances Pour Vous",
+    refineVibe: "Affiner ma Vibe",
+    refinePreferencesA11y: "Affiner vos préférences de vibe",
+    findingMatches: "Recherche de vos correspondances…",
+    noMatchesTitle: "Aucune correspondance pour l'instant",
+    noMatchesSub: "Affinez votre vibe ci-dessus pour découvrir des événements faits pour vous.",
+    matchScoreLabel: "Score de Correspondance",
+    refineSheetTitle: "Qu'est-ce qui vous anime ?",
+    applyVibe: "Appliquer la Vibe",
+    applyPreferencesA11y: "Appliquer les préférences de vibe",
+    selected: "sélectionné",
+    inCity: "à",
+    matchWord: "de correspondance",
+    foodDrink: "Gastronomie & Boissons",
+    vibeEnergetic: "Énergique",
+    vibeThoughtful: "Réfléchi",
+    vibeIndulgent: "Gourmand",
+    vibeGrounded: "Ancré",
+    vibeUplifting: "Stimulant",
+    vibePumped: "Survolté",
+    vibeElectric: "Électrique",
+    vibeCalm: "Calme",
+    vibeConnected: "Connecté",
+    vibeVibrant: "Vibrant",
+  },
 };
 
 const sw: Translations = {
@@ -2120,6 +2220,39 @@ const sw: Translations = {
     tagMovies: "Filamu",
     tagChill: "Utulivu",
   },
+  forYou: {
+    eyebrow: "Kwa Ajili Yako, Kwa AI",
+    heroTitleLine1: "Uchaguzi Wako",
+    heroTitleLine2: "wa Kibinafsi",
+    heroVibeWord: "Hali",
+    heroSub: "Uchaguzi mahiri. Hali halisi.\nUzoefu ulioteuliwa\nunaolingana na nishati yako.",
+    homeVibesTitle: "Hali za Nyumbani",
+    homeVibesSub: "Matukio kutoka nchi ya asili",
+    topMatchesTitle: "Malengo Bora Kwako",
+    refineVibe: "Boresha Hali",
+    refinePreferencesA11y: "Boresha mapendeleo yako ya hali",
+    findingMatches: "Inatafuta malengo yako…",
+    noMatchesTitle: "Bado hakuna malengo",
+    noMatchesSub: "Boresha hali yako hapo juu ili kugundua matukio yaliyokutengenezea.",
+    matchScoreLabel: "Alama ya Kulingana",
+    refineSheetTitle: "Ni nini kinachokusisimua?",
+    applyVibe: "Tumia Hali",
+    applyPreferencesA11y: "Tumia mapendeleo ya hali",
+    selected: "imechaguliwa",
+    inCity: "katika",
+    matchWord: "kulingana",
+    foodDrink: "Chakula na Vinywaji",
+    vibeEnergetic: "Yenye Nguvu",
+    vibeThoughtful: "Yenye Kufikiria",
+    vibeIndulgent: "Ya Anasa",
+    vibeGrounded: "Iliyotulia",
+    vibeUplifting: "Yenye Kutia Moyo",
+    vibePumped: "Yenye Msisimko",
+    vibeElectric: "Yenye Cheche",
+    vibeCalm: "Tulivu",
+    vibeConnected: "Iliyounganika",
+    vibeVibrant: "Yenye Uchangamfu",
+  },
 };
 
 const ar: Translations = {
@@ -2643,6 +2776,39 @@ const ar: Translations = {
     tagHouse: "هاوس",
     tagMovies: "أفلام",
     tagChill: "استرخاء",
+  },
+  forYou: {
+    eyebrow: "بالذكاء الاصطناعي، من أجلك",
+    heroTitleLine1: "اختيارك",
+    heroTitleLine2: "الشخصي",
+    heroVibeWord: "الخاص بك",
+    heroSub: "اختيارات ذكية. أجواء حقيقية.\nتجارب منتقاة بعناية\nتناسب طاقتك.",
+    homeVibesTitle: "أجواء الوطن",
+    homeVibesSub: "فعاليات من الوطن الأم",
+    topMatchesTitle: "أفضل التوصيات لك",
+    refineVibe: "خصّص أجواءك",
+    refinePreferencesA11y: "خصّص تفضيلات أجوائك",
+    findingMatches: "جارٍ البحث عن توصياتك…",
+    noMatchesTitle: "لا توجد توصيات بعد",
+    noMatchesSub: "خصّص أجواءك أعلاه لاكتشاف فعاليات مصممة خصيصاً لك.",
+    matchScoreLabel: "درجة التطابق",
+    refineSheetTitle: "ما الذي يحرّكك؟",
+    applyVibe: "تطبيق الأجواء",
+    applyPreferencesA11y: "تطبيق تفضيلات الأجواء",
+    selected: "محدد",
+    inCity: "في",
+    matchWord: "تطابق",
+    foodDrink: "طعام ومشروبات",
+    vibeEnergetic: "نشيط",
+    vibeThoughtful: "متأمل",
+    vibeIndulgent: "منغمس",
+    vibeGrounded: "متزن",
+    vibeUplifting: "محفّز",
+    vibePumped: "متحمس",
+    vibeElectric: "كهربائي",
+    vibeCalm: "هادئ",
+    vibeConnected: "متصل",
+    vibeVibrant: "نابض بالحياة",
   },
 };
 

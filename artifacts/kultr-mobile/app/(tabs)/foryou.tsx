@@ -22,35 +22,48 @@ import { getListMyTicketsQueryKey, useListMyTickets } from "@workspace/api-clien
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { useEventCatalog } from "@/hooks/useEventCatalog";
+import { useTranslation } from "@/hooks/useTranslation";
+import { getCategoryLabel, Translations } from "@/constants/translations";
 import { EVENT_IMAGES, formatDate, formatTime } from "@/constants/data";
 import type { Event } from "@/constants/data";
 
 const LOGO_ICON = require("@/assets/images/logo-icon.png");
 const { width } = Dimensions.get("window");
 
-const VIBE_CONFIG: Record<string, { vibe: string; color: string; interest: string }> = {
-  Music: { vibe: "Energetic", color: "#FF6B00", interest: "music" },
-  Art: { vibe: "Thoughtful", color: "#A78BFA", interest: "art" },
-  Food: { vibe: "Indulgent", color: "#FFA726", interest: "food" },
-  Heritage: { vibe: "Grounded", color: "#00C853", interest: "heritage" },
-  Comedy: { vibe: "Uplifting", color: "#E91E63", interest: "comedy" },
-  Sports: { vibe: "Pumped", color: "#00C853", interest: "sports" },
-  Nightlife: { vibe: "Electric", color: "#A78BFA", interest: "nightlife" },
-  Film: { vibe: "Calm", color: "#4CAF50", interest: "film" },
-  Culture: { vibe: "Connected", color: "#00BCD4", interest: "heritage" },
-};
+// Keys are canonical English event categories — stable identifiers used only
+// for lookup — the displayed "vibe" word and color come from getVibeConfig().
+function getVibeConfig(t: Translations): Record<string, { vibe: string; color: string; interest: string }> {
+  return {
+    Music: { vibe: t.forYou.vibeEnergetic, color: "#FF6B00", interest: "music" },
+    Art: { vibe: t.forYou.vibeThoughtful, color: "#A78BFA", interest: "art" },
+    Food: { vibe: t.forYou.vibeIndulgent, color: "#FFA726", interest: "food" },
+    Heritage: { vibe: t.forYou.vibeGrounded, color: "#00C853", interest: "heritage" },
+    Comedy: { vibe: t.forYou.vibeUplifting, color: "#E91E63", interest: "comedy" },
+    Sports: { vibe: t.forYou.vibePumped, color: "#00C853", interest: "sports" },
+    Nightlife: { vibe: t.forYou.vibeElectric, color: "#A78BFA", interest: "nightlife" },
+    Film: { vibe: t.forYou.vibeCalm, color: "#4CAF50", interest: "film" },
+    Culture: { vibe: t.forYou.vibeConnected, color: "#00BCD4", interest: "heritage" },
+  };
+}
 
-const INTERESTS = [
-  { id: "music", label: "Music", icon: "music" },
-  { id: "art", label: "Art", icon: "image" },
-  { id: "food", label: "Food & Drink", icon: "coffee" },
-  { id: "heritage", label: "Heritage", icon: "globe" },
-  { id: "comedy", label: "Comedy", icon: "smile" },
-  { id: "sports", label: "Sports", icon: "activity" },
-  { id: "nightlife", label: "Nightlife", icon: "moon" },
-  { id: "film", label: "Film", icon: "film" },
-] as const;
+// id/icon are stable identifiers; only the displayed label is translated.
+// "food" reuses a distinct "Food & Drink" label (not the plain categories.food)
+// since the source English text differed from the shared category label.
+function getInterests(t: Translations) {
+  return [
+    { id: "music", label: t.categories.music, icon: "music" },
+    { id: "art", label: t.categories.art, icon: "image" },
+    { id: "food", label: t.forYou.foodDrink, icon: "coffee" },
+    { id: "heritage", label: t.categories.heritage, icon: "globe" },
+    { id: "comedy", label: t.categories.comedy, icon: "smile" },
+    { id: "sports", label: t.categories.sports, icon: "activity" },
+    { id: "nightlife", label: t.categories.nightlife, icon: "moon" },
+    { id: "film", label: t.onboarding.film, icon: "film" },
+  ] as const;
+}
 
+// Real country names compared against event.country for the diaspora-picks
+// filter — a stable, English, API-facing identifier, not display text.
 const DIASPORA_COUNTRIES = ["Kenya", "Ghana", "Nigeria", "South Africa", "Uganda", "Tanzania"];
 
 // Tiny deterministic tie-breaker only — used to stably order events that are
@@ -120,8 +133,13 @@ function buildUserAffinity(
   return { userInterests, categoryAffinity, cityAffinity, savedEventIds };
 }
 
-function scoreEvent(event: Event, affinity: UserAffinity): ScoredEvent {
-  const config = VIBE_CONFIG[event.category] ?? { vibe: "Vibrant", color: "#FF6B00", interest: "" };
+function scoreEvent(
+  event: Event,
+  affinity: UserAffinity,
+  vibeConfig: Record<string, { vibe: string; color: string; interest: string }>,
+  fallbackVibe: string,
+): ScoredEvent {
+  const config = vibeConfig[event.category] ?? { vibe: fallbackVibe, color: "#FF6B00", interest: "" };
 
   let score = 55; // neutral baseline for an event with no signal at all
   if (config.interest && affinity.userInterests.includes(config.interest)) score += 15;
@@ -144,6 +162,9 @@ function scoreEvent(event: Event, affinity: UserAffinity): ScoredEvent {
 export default function ForYouScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const t = useTranslation();
+  const VIBE_CONFIG = useMemo(() => getVibeConfig(t), [t]);
+  const INTERESTS = useMemo(() => getInterests(t), [t]);
   const { userInterests, setUserInterests, savedEvents, authToken } = useApp();
   const { events, isLoading } = useEventCatalog();
   const [showRefine, setShowRefine] = useState(false);
@@ -165,9 +186,9 @@ export default function ForYouScreen() {
 
   const scored = useMemo<ScoredEvent[]>(() => {
     return events
-      .map((e) => scoreEvent(e, affinity))
+      .map((e) => scoreEvent(e, affinity, VIBE_CONFIG, t.forYou.vibeVibrant))
       .sort((a, b) => b.score - a.score);
-  }, [events, affinity]);
+  }, [events, affinity, VIBE_CONFIG, t]);
 
   const diasporaEvents = useMemo(() => {
     return scored
@@ -209,16 +230,16 @@ export default function ForYouScreen() {
 
           <View style={styles.heroContent}>
             <View style={styles.heroLeft}>
-              <Text style={styles.heroEyebrow}>AI-POWERED FOR YOU</Text>
+              <Text style={styles.heroEyebrow}>{t.forYou.eyebrow.toUpperCase()}</Text>
               <Text style={styles.heroTitle}>
-                Your{"\n"}Personalized
+                {t.forYou.heroTitleLine1}{"\n"}{t.forYou.heroTitleLine2}
               </Text>
               <View style={styles.vibeRow}>
-                <Text style={styles.heroVibe}>Vibe</Text>
+                <Text style={styles.heroVibe}>{t.forYou.heroVibeWord}</Text>
                 <Text style={styles.heroStar}> ✦</Text>
               </View>
               <Text style={[styles.heroSub, { color: colors.mutedForeground }]}>
-                Smart picks. Real vibes.{"\n"}Handpicked experiences{"\n"}that match your energy.
+                {t.forYou.heroSub}
               </Text>
             </View>
 
@@ -240,11 +261,11 @@ export default function ForYouScreen() {
               <View style={styles.sectionLeft}>
                 <Text style={{ color: "#7B61FF", fontSize: 14 }}>✦</Text>
                 <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-                  Home Vibes
+                  {t.forYou.homeVibesTitle}
                 </Text>
               </View>
               <Text style={[styles.diasporaSub, { color: colors.mutedForeground }]}>
-                Events from the motherland
+                {t.forYou.homeVibesSub}
               </Text>
             </View>
             <FlatList
@@ -262,7 +283,7 @@ export default function ForYouScreen() {
                       router.push(`/event/${item.id}`);
                     }}
                     style={[styles.diasporaCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-                    accessibilityLabel={`${item.title} in ${item.city}`}
+                    accessibilityLabel={`${item.title} ${t.forYou.inCity} ${item.city}`}
                     accessibilityRole="button"
                   >
                     <Image source={img} style={styles.diasporaCardImage} resizeMode="cover" />
@@ -286,7 +307,7 @@ export default function ForYouScreen() {
           <View style={styles.sectionLeft}>
             <Text style={{ color: "#FF6B00", fontSize: 14 }}>✦</Text>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-              Top Matches For You
+              {t.forYou.topMatchesTitle}
             </Text>
           </View>
           <Pressable
@@ -296,11 +317,11 @@ export default function ForYouScreen() {
               setShowRefine(true);
             }}
             style={[styles.refineBtn, { backgroundColor: colors.muted, borderColor: colors.border }]}
-            accessibilityLabel="Refine your vibe preferences"
+            accessibilityLabel={t.forYou.refinePreferencesA11y}
             accessibilityRole="button"
           >
             <Feather name="sliders" size={13} color={colors.mutedForeground} />
-            <Text style={[styles.refineBtnText, { color: colors.mutedForeground }]}>Refine Vibe</Text>
+            <Text style={[styles.refineBtnText, { color: colors.mutedForeground }]}>{t.forYou.refineVibe}</Text>
           </Pressable>
         </View>
 
@@ -309,15 +330,15 @@ export default function ForYouScreen() {
           {isLoading && scored.length === 0 && (
             <View style={styles.loadingWrap}>
               <ActivityIndicator size="large" color="#FF6B00" />
-              <Text style={[styles.loadingText, { color: "#888" }]}>Finding your matches…</Text>
+              <Text style={[styles.loadingText, { color: "#888" }]}>{t.forYou.findingMatches}</Text>
             </View>
           )}
           {!isLoading && scored.length === 0 && (
             <View style={styles.emptyWrap}>
               <Feather name="star" size={36} color="#333" />
-              <Text style={[styles.emptyTitle, { color: "#fff" }]}>No matches yet</Text>
+              <Text style={[styles.emptyTitle, { color: "#fff" }]}>{t.forYou.noMatchesTitle}</Text>
               <Text style={[styles.emptyText, { color: "#888" }]}>
-                Refine your vibe above to discover events tailored to you.
+                {t.forYou.noMatchesSub}
               </Text>
             </View>
           )}
@@ -327,7 +348,7 @@ export default function ForYouScreen() {
               <Pressable
                 key={event.id}
                 onPress={() => router.push(`/event/${event.id}`)}
-                accessibilityLabel={`${event.title} in ${event.city}, ${event.score}% match`}
+                accessibilityLabel={`${event.title} ${t.forYou.inCity} ${event.city}, ${event.score}% ${t.forYou.matchWord}`}
                 accessibilityRole="button"
                 style={({ pressed }) => [
                   styles.matchCard,
@@ -345,7 +366,7 @@ export default function ForYouScreen() {
                 {/* Info */}
                 <View style={styles.matchCardInfo}>
                   <Text style={styles.matchCardCat}>
-                    {event.category.toUpperCase()}
+                    {getCategoryLabel(event.category, t).toUpperCase()}
                   </Text>
                   <Text
                     style={[styles.matchCardTitle, { color: colors.foreground }]}
@@ -371,10 +392,10 @@ export default function ForYouScreen() {
                 <View
                   style={styles.matchCardScore}
                   accessible={true}
-                  accessibilityLabel={`Match score ${event.score}%, ${event.vibe} vibe`}
+                  accessibilityLabel={`${t.forYou.matchScoreLabel} ${event.score}%, ${event.vibe}`}
                 >
                   <Text style={[styles.matchScoreLabel, { color: colors.mutedForeground }]}>
-                    Match Score
+                    {t.forYou.matchScoreLabel}
                   </Text>
                   <Text style={[styles.matchScorePct, { color: event.vibeColor }]}>
                     {event.score}%
@@ -399,9 +420,9 @@ export default function ForYouScreen() {
             onPress={(e) => e.stopPropagation()}
           >
             <View style={styles.refineSheetHandle} />
-            <Text style={styles.refineSheetEyebrow}>REFINE VIBE</Text>
+            <Text style={styles.refineSheetEyebrow}>{t.forYou.refineVibe.toUpperCase()}</Text>
             <Text style={[styles.refineSheetTitle, { color: colors.foreground }]}>
-              What moves you?
+              {t.forYou.refineSheetTitle}
             </Text>
             <View style={styles.interestGrid}>
               {INTERESTS.map((item) => {
@@ -410,7 +431,7 @@ export default function ForYouScreen() {
                   <Pressable
                     key={item.id}
                     onPress={() => toggleInterest(item.id)}
-                    accessibilityLabel={`${item.label}${selected ? ", selected" : ""}`}
+                    accessibilityLabel={`${item.label}${selected ? `, ${t.forYou.selected}` : ""}`}
                     accessibilityRole="checkbox"
                     style={[
                       styles.interestChip,
@@ -431,10 +452,10 @@ export default function ForYouScreen() {
             <Pressable
               style={styles.applyBtn}
               onPress={applyRefine}
-              accessibilityLabel="Apply vibe preferences"
+              accessibilityLabel={t.forYou.applyPreferencesA11y}
               accessibilityRole="button"
             >
-              <Text style={styles.applyBtnText}>Apply Vibe</Text>
+              <Text style={styles.applyBtnText}>{t.forYou.applyVibe}</Text>
               <Feather name="check" size={16} color="#fff" />
             </Pressable>
           </Pressable>
