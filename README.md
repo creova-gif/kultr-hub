@@ -13,6 +13,8 @@ Kultr Hub is a consumer-facing events and ticketing app for Kenya, Uganda, Tanza
 
 Deployed via Replit, synced from this repository's `main` branch.
 
+This is one of three connected CREOVA products forming a single East African fintech / creator-economy thesis: the payment rail and creator payout layer — collecting mobile-money payments for ticket sales and disbursing creator earnings by currency balance. See [Gopay](https://github.com/creova-gif/Gopay), [Sauti-Os](https://github.com/creova-gif/Sauti-Os), and the full [East Africa Fintech Thesis](https://github.com/creova-gif/CREOVA/blob/main/EAST-AFRICA-FINTECH-THESIS.md) for how they connect — and an honest accounting of what's actually integrated today versus what's still conceptual.
+
 ---
 
 ## Core Features
