@@ -49,4 +49,9 @@ jobs:
           MTN_MOMO_API_USER: ${{ secrets.MTN_MOMO_API_USER }}
           MTN_MOMO_API_KEY: ${{ secrets.MTN_MOMO_API_KEY }}
           MTN_MOMO_ENVIRONMENT: ${{ vars.MTN_MOMO_ENVIRONMENT }}
-        run: pnpm --filter @workspace/api-server run reconcile-payments
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::warning::DATABASE_URL is not set — skipping reconciliation sweep."
+            exit 0
+          fi
+          pnpm --filter @workspace/api-server run reconcile-payments
