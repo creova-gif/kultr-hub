@@ -25,6 +25,38 @@ import { EA_COUNTRIES } from "@/constants/currencies";
 import { useColors } from "@/hooks/useColors";
 import { adaptEventSummary, useEventCatalog } from "@/hooks/useEventCatalog";
 
+const CITY_TO_COUNTRY_CODE: Record<string, string> = {
+  London: "GB",
+  "New York": "US",
+  Toronto: "CA",
+  Paris: "FR",
+  "Portimão": "PT",
+  Portimao: "PT",
+  Kingston: "JM",
+  "Port of Spain": "TT",
+  Bridgetown: "BB",
+  Lagos: "NG",
+  Accra: "GH",
+  Nairobi: "KE",
+  Johannesburg: "ZA",
+  Kampala: "UG",
+  Kigali: "RW",
+  "Dar es Salaam": "TZ",
+  "Addis Ababa": "ET",
+  Cairo: "EG",
+  Dakar: "SN",
+  Abidjan: "CI",
+};
+
+function getCityFlag(cityName: string): string {
+  const code = CITY_TO_COUNTRY_CODE[cityName];
+  if (code) {
+    const country = EA_COUNTRIES.find((c) => c.code === code);
+    if (country) return country.flag;
+  }
+  return "🌍";
+}
+
 type DatePreset = "any" | "today" | "week" | "month";
 
 const DATE_PRESETS: { id: DatePreset; label: string }[] = [
@@ -189,6 +221,40 @@ export default function DiscoverScreen() {
           </Text>
         </View>
 
+        {/* KULTR PASS Banner */}
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push("/pass" as any);
+          }}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginHorizontal: 16,
+            marginBottom: 12,
+            backgroundColor: "#161616",
+            borderRadius: 14,
+            borderWidth: 1,
+            borderColor: "rgba(255,215,0,0.35)",
+            paddingHorizontal: 14,
+            paddingVertical: 10,
+          }}
+          accessibilityLabel="Explore KULTR PASS benefits"
+          accessibilityRole="button"
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+            <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: "rgba(255,215,0,0.15)", alignItems: "center", justifyContent: "center" }}>
+              <Feather name="shield" size={16} color="#FFD700" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>KULTR PASS — VIP Membership</Text>
+              <Text style={{ color: "#A0A0A0", fontSize: 11 }}>15% off tickets, priority lanes & drink passes</Text>
+            </View>
+          </View>
+          <Feather name="chevron-right" size={16} color="#FFD700" />
+        </Pressable>
+
         {/* Search Bar */}
         <View style={[styles.searchBar, { backgroundColor: colors.muted, borderColor: colors.border, flexDirection: isRTL ? "row-reverse" : "row" }]}>
           <Feather name="search" size={16} color={colors.mutedForeground} />
@@ -336,32 +402,71 @@ export default function DiscoverScreen() {
         {/* Cities quick filter */}
         {search.length === 0 && selectedCategory === "For You" && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground, textAlign: isRTL ? "right" : "left" }]}>Browse by City</Text>
+            <Text style={[styles.sectionTitle, { color: colors.foreground, textAlign: isRTL ? "right" : "left" }]}>
+              Browse by Cultural Capital
+            </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.cityRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
               {cities.map((city) => {
-                const country = events.find((e) => e.city === city);
+                const flag = getCityFlag(city);
                 return (
                   <Pressable
                     key={city}
                     onPress={() => setSearch(city)}
                     style={[styles.cityChip, { backgroundColor: colors.muted, borderColor: colors.border }]}
                   >
-                    <Feather name="map-pin" size={11} color="#FF6B00" />
+                    <Text style={styles.cityFlag}>{flag}</Text>
                     <Text style={[styles.cityText, { color: colors.foreground }]}>{city}</Text>
-                    {country && (
-                      <Text style={styles.cityFlag}>
-                        {EA_COUNTRIES.find((c) => c.code === (
-                          city === "Nairobi" ? "KE" :
-                          city === "Lagos" ? "NG" :
-                          city === "Accra" ? "GH" :
-                          city === "Kampala" ? "UG" :
-                          city === "Dar es Salaam" ? "TZ" : "KE"
-                        ))?.flag ?? ""}
-                      </Text>
-                    )}
                   </Pressable>
                 );
               })}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Diaspora Vibe Tribes */}
+        {search.length === 0 && selectedCategory === "For You" && (
+          <View style={styles.section}>
+            <View style={styles.sectionRow}>
+              <View>
+                <Text style={[styles.sectionTitle, { color: colors.foreground, marginBottom: 2, textAlign: isRTL ? "right" : "left" }]}>
+                  Diaspora Vibe Tribes
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.mutedForeground }}>
+                  Find your community & connect with event-goers
+                </Text>
+              </View>
+              <Pressable onPress={() => router.push("/vibe-tribes" as any)}>
+                <Text style={[styles.changeLink, { color: "#FF6B00" }]}>View All (6)</Text>
+              </Pressable>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tribesRow}>
+              {[
+                { name: "Afrobeats Nation", count: "12.5k", tag: "🎶 Music", color: "#FF6B00" },
+                { name: "Amapiano Movement", count: "8.9k", tag: "🎹 Grooves", color: "#9C27B0" },
+                { name: "Soca & Carnival", count: "7.1k", tag: "🎭 Mas", color: "#00E5FF" },
+                { name: "Jollof & Nyama", count: "6.2k", tag: "🍽️ Culinary", color: "#FFB300" },
+                { name: "Diaspora Runway", count: "5.8k", tag: "✨ Style", color: "#E91E63" },
+                { name: "Canvas Collective", count: "4.5k", tag: "🎨 Visual", color: "#00C853" },
+              ].map((tribe) => (
+                <Pressable
+                  key={tribe.name}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    router.push("/vibe-tribes" as any);
+                  }}
+                  style={[styles.tribeCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                >
+                  <View style={[styles.tribeTagBadge, { backgroundColor: tribe.color + "22" }]}>
+                    <Text style={[styles.tribeTagText, { color: tribe.color }]}>{tribe.tag}</Text>
+                  </View>
+                  <Text style={[styles.tribeName, { color: colors.foreground }]} numberOfLines={1}>
+                    {tribe.name}
+                  </Text>
+                  <Text style={[styles.tribeCount, { color: colors.mutedForeground }]}>
+                    {tribe.count} members
+                  </Text>
+                </Pressable>
+              ))}
             </ScrollView>
           </View>
         )}
@@ -560,7 +665,7 @@ const styles = StyleSheet.create({
   cityChip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
+    gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
@@ -568,6 +673,23 @@ const styles = StyleSheet.create({
   },
   cityText: { fontSize: 13, fontWeight: "500" },
   cityFlag: { fontSize: 14 },
+  tribesRow: { gap: 10, paddingBottom: 4 },
+  tribeCard: {
+    width: 140,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 6,
+  },
+  tribeTagBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  tribeTagText: { fontSize: 10, fontWeight: "700" },
+  tribeName: { fontSize: 13, fontWeight: "700" },
+  tribeCount: { fontSize: 11 },
   paymentRow: { gap: 10, paddingBottom: 4 },
   paymentCard: {
     width: 88,

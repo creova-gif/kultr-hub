@@ -681,6 +681,63 @@ export default function EventDetailScreen() {
             </View>
           </View>
 
+          {/* Kultr Canned Drinks & Express Bar Pass Spotlight */}
+          <View style={styles.section}>
+            <View style={styles.drinkPassSpotlightHeader}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Text style={{ fontSize: 20 }}>🥫</Text>
+                <Text style={[styles.sectionTitle, { color: colors.foreground, marginBottom: 0 }]}>
+                  Kultr Canned Drinks
+                </Text>
+              </View>
+              <View style={styles.expressLaneBadge}>
+                <Text style={styles.expressLaneText}>EXPRESS BAR PASS</Text>
+              </View>
+            </View>
+
+            <View style={[styles.drinkSpotlightCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.drinkSpotlightBanner}>
+                <Text style={styles.drinkSpotlightPitch}>
+                  ⚡ Skip the 45-minute festival bar queue!
+                </Text>
+                <Text style={[styles.drinkSpotlightDesc, { color: colors.mutedForeground }]}>
+                  Pre-order a 4-pack of Kultr craft botanical soda with your ticket. Instant QR token redemption at dedicated express bar lanes.
+                </Text>
+              </View>
+
+              {/* Flavor highlights */}
+              <View style={styles.flavorPillsRow}>
+                <View style={[styles.flavorPill, { backgroundColor: "rgba(255,107,0,0.12)", borderColor: "rgba(255,107,0,0.25)" }]}>
+                  <Text style={styles.flavorPillIcon}>🌺</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.flavorPillTitle, { color: colors.foreground }]}>Zobo Tonic</Text>
+                    <Text style={[styles.flavorPillSub, { color: colors.mutedForeground }]}>Hibiscus & Ginger</Text>
+                  </View>
+                </View>
+                <View style={[styles.flavorPill, { backgroundColor: "rgba(123,97,255,0.12)", borderColor: "rgba(123,97,255,0.25)" }]}>
+                  <Text style={styles.flavorPillIcon}>☕</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.flavorPillTitle, { color: colors.foreground }]}>Guaraná Brew</Text>
+                    <Text style={[styles.flavorPillSub, { color: colors.mutedForeground }]}>Cold Brew Energy</Text>
+                  </View>
+                </View>
+                <View style={[styles.flavorPill, { backgroundColor: "rgba(0,200,83,0.12)", borderColor: "rgba(0,200,83,0.25)" }]}>
+                  <Text style={styles.flavorPillIcon}>🍊</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.flavorPillTitle, { color: colors.foreground }]}>Tamarind Spritz</Text>
+                    <Text style={[styles.flavorPillSub, { color: colors.mutedForeground }]}>Coastal Citrus</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.drinkDiscountRow}>
+                <Feather name="zap" size={13} color="#FF6B00" />
+                <Text style={styles.drinkDiscountText}>
+                  Save 30% when bundling with your ticket at checkout
+                </Text>
+              </View>
+            </View>
+          </View>
 
           {/* Tribe Buzz */}
           <View style={styles.section}>
@@ -734,6 +791,45 @@ export default function EventDetailScreen() {
               />
             </View>
           )}
+          {/* Venue Spotlight Action */}
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              const vKey = event.venue.toLowerCase().includes("alchemist")
+                ? "alchemist"
+                : event.venue.toLowerCase().includes("eko")
+                ? "eko"
+                : "roundhouse";
+              router.push(`/venue/${vKey}` as any);
+            }}
+            style={[styles.directionsBtn, { backgroundColor: colors.card, borderColor: colors.border, marginTop: 16 }]}
+            accessibilityLabel={`Explore ${event.venue} details`}
+            accessibilityRole="button"
+          >
+            <Feather name="map" size={14} color="#FF6B00" />
+            <Text style={[styles.directionsBtnText, { color: colors.foreground }]}>
+              Explore {event.venue} — Capacity & Amenities
+            </Text>
+            <Feather name="chevron-right" size={14} color={colors.mutedForeground} />
+          </Pressable>
+
+          {/* Report Event Link */}
+          <View style={{ alignItems: "center", marginTop: 24, marginBottom: 8 }}>
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push(`/report-event?eventId=${event.id}` as any);
+              }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 6, opacity: 0.65 }}
+              accessibilityLabel="Report this event listing"
+              accessibilityRole="button"
+            >
+              <Feather name="flag" size={12} color="#D32F2F" />
+              <Text style={{ color: "#D32F2F", fontSize: 11, fontWeight: "600" }}>
+                Report misleading info or suspected scam
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
 
@@ -1095,4 +1191,78 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   ctaBtnText: { color: "#fff", fontWeight: "800", fontSize: 16 },
+  drinkPassSpotlightHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  expressLaneBadge: {
+    backgroundColor: "rgba(255,107,0,0.15)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255,107,0,0.3)",
+  },
+  expressLaneText: {
+    color: "#FF6B00",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  drinkSpotlightCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    gap: 14,
+  },
+  drinkSpotlightBanner: {
+    gap: 4,
+  },
+  drinkSpotlightPitch: {
+    color: "#FF6B00",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  drinkSpotlightDesc: {
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  flavorPillsRow: {
+    gap: 8,
+  },
+  flavorPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  flavorPillIcon: {
+    fontSize: 18,
+  },
+  flavorPillTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  flavorPillSub: {
+    fontSize: 10,
+    color: "#888",
+  },
+  drinkDiscountRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.06)",
+  },
+  drinkDiscountText: {
+    color: "#FF6B00",
+    fontSize: 11,
+    fontWeight: "700",
+  },
 });

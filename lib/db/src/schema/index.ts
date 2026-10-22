@@ -5,3 +5,4 @@ export * from "./gamification";
 export * from "./payments";
 export * from "./payouts";
 export * from "./notifications";
+export * from "./beverages";

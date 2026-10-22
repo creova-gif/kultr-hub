@@ -32,6 +32,7 @@ const TYPE_ICON: Record<string, { icon: NotifIcon; color: string }> = {
   event_cancelled: { icon: "x-circle", color: "#D32F2F" },
   payout_resolved: { icon: "dollar-sign", color: "#4F9DFF" },
   kultroin_earned: { icon: "star", color: "#FFD600" },
+  beverage_voucher_issued: { icon: "award", color: "#FF6B00" },
 };
 
 function timeAgo(iso: string): string {
@@ -72,7 +73,12 @@ export default function NotificationsScreen() {
         onError: () => Alert.alert("Couldn't update", "This notification couldn't be marked read. Please try again."),
       });
     }
-    const eventId = (notif.data as { eventId?: string } | null | undefined)?.eventId;
+    const metadata = notif.data as { eventId?: string; voucherId?: string; voucherCode?: string } | null | undefined;
+    if (metadata?.voucherId) {
+      router.push(`/bar-pass/${metadata.voucherId}?voucherCode=${metadata.voucherCode ?? ""}` as any);
+      return;
+    }
+    const eventId = metadata?.eventId;
     if (eventId) router.push(`/event/${eventId}` as any);
   };
 

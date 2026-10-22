@@ -22,19 +22,20 @@ import { useColors } from "@/hooks/useColors";
 // invented member counts and locally-only join state with no real backend
 // (see app/vibe-tribes.tsx), which reads as real social proof but isn't.
 const MENU_ITEMS = [
+  { icon: "shield", label: "KULTR PASS VIP Membership", route: "/pass" },
+  { icon: "gift", label: "Perks & Rewards Catalog", route: "/perks" },
   { icon: "compass", label: "Cultural Quests", route: "/quests" },
   { icon: "activity", label: "Streaks & Badges", route: "/gamification" },
+  { icon: "camera", label: "Door Gate Ticket Scanner", route: "/door-scanner" },
+  { icon: "coffee", label: "Bartender Drink Scanner", route: "/bartender-scanner" },
+  { icon: "user", label: "Public Tastemaker Profile", route: "/user/me" },
   { icon: "flag", label: "Tribe Leaders Program", route: "/tribe-leaders" },
-  { icon: "gift", label: "Rewards", route: "/rewards" },
   { icon: "heart", label: "Saved Events", route: "/saved" },
-  { icon: "tag", label: "My Tickets", route: "/(tabs)/tickets" },
+  { icon: "tag", label: "My Tickets & Bar Passes", route: "/(tabs)/tickets" },
   { icon: "plus-circle", label: "Create Event", route: "/create-event" },
-  { icon: "star", label: "My Reviews", route: null },
-  { icon: "users", label: "Following", route: null },
   { icon: "bell", label: "Notifications", route: "/notifications" },
-  { icon: "shield", label: "Privacy & Data", route: "/privacy-data" },
+  { icon: "lock", label: "Privacy & Data (GDPR)", route: "/privacy-data" },
   { icon: "settings", label: "Settings", route: "/settings" },
-  { icon: "help-circle", label: "Help & Support", route: null },
 ] as const;
 
 // Mirrors the labeling in app/creator-studio.tsx so status is never shown as
@@ -184,6 +185,16 @@ export default function ProfileScreen() {
               <Text style={[styles.dashboardTitle, { color: colors.foreground }]}>Creator Dashboard</Text>
             </View>
             <View style={{ flexDirection: "row", gap: 8 }}>
+              <Pressable
+                onPress={() => {
+                  router.push("/bartender-scanner" as any);
+                }}
+                style={[styles.newEventBtn, { backgroundColor: "rgba(255,107,0,0.1)" }]}
+                accessibilityLabel="Open Bar Station Scanner"
+              >
+                <Feather name="maximize" size={13} color="#FF6B00" />
+                <Text style={styles.newEventBtnText}>Scanner</Text>
+              </Pressable>
               <Pressable
                 onPress={() => {
                   if (!authUser) {

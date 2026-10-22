@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import React from "react";
 import {
@@ -54,6 +55,50 @@ export default function TicketsScreen() {
     return [...apiTickets, ...localOnly];
   }, [apiData, localTickets]);
 
+  const [activeTab, setActiveTab] = React.useState<"tickets" | "drinks">("tickets");
+  const [vouchers, setVouchers] = React.useState<{
+    id: string;
+    voucherCode: string;
+    eventId: string;
+    totalUnits: number;
+    redeemedUnits: number;
+    status: string;
+    createdAt: string;
+    expiresAt: string;
+    eventTitle: string;
+    eventDate: string;
+    venue: string;
+  }[]>([]);
+  const [vouchersLoading, setVouchersLoading] = React.useState(false);
+
+  const apiBase = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
+
+  const fetchVouchers = React.useCallback(async () => {
+    if (!authToken) return;
+    setVouchersLoading(true);
+    try {
+      const res = await fetch(`${apiBase}/api/beverages/my-vouchers`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.vouchers && Array.isArray(data.vouchers)) {
+          setVouchers(data.vouchers);
+        }
+      }
+    } catch {
+      // Offline fallback
+    } finally {
+      setVouchersLoading(false);
+    }
+  }, [authToken, apiBase]);
+
+  React.useEffect(() => {
+    if (activeTab === "drinks") {
+      fetchVouchers();
+    }
+  }, [activeTab, fetchVouchers]);
+
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
 
   return (
@@ -67,14 +112,127 @@ export default function TicketsScreen() {
     >
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-          My <Text style={{ color: "#FF6B00" }}>Tickets</Text>
+          My <Text style={{ color: "#FF6B00" }}>{activeTab === "tickets" ? "Tickets" : "Bar Passes"}</Text>
         </Text>
         <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>
-          {tickets.length} ticket{tickets.length !== 1 ? "s" : ""}
+          {activeTab === "tickets" ? `${tickets.length} ticket${tickets.length !== 1 ? "s" : ""}` : "Express venue drink redemption"}
         </Text>
       </View>
 
-      {tickets.length === 0 ? (
+      {/* Segmented Switcher */}
+      <View style={[styles.segmentContainer, { backgroundColor: colors.muted }]}>
+        <Pressable
+          style={[styles.segmentBtn, activeTab === "tickets" && styles.segmentBtnActive]}
+          onPress={() => setActiveTab("tickets")}
+          accessibilityRole="button"
+          accessibilityLabel="View Tickets"
+        >
+          <Feather name="tag" size={14} color={activeTab === "tickets" ? "#FFFFFF" : colors.mutedForeground} />
+          <Text style={[styles.segmentText, { color: activeTab === "tickets" ? "#FFFFFF" : colors.mutedForeground }]}>
+            Tickets ({tickets.length})
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[styles.segmentBtn, activeTab === "drinks" && styles.segmentBtnActive]}
+          onPress={() => setActiveTab("drinks")}
+          accessibilityRole="button"
+          accessibilityLabel="View Bar Passes"
+        >
+          <Text style={{ fontSize: 13 }}>🍹</Text>
+          <Text style={[styles.segmentText, { color: activeTab === "drinks" ? "#FFFFFF" : colors.mutedForeground }]}>
+            Bar Passes {vouchers.length > 0 ? `(${vouchers.length})` : ""}
+          </Text>
+        </Pressable>
+      </View>
+
+      {activeTab === "drinks" ? (
+        vouchers.length === 0 ? (
+          <View style={styles.empty}>
+            <View style={[styles.emptyIcon, { backgroundColor: "rgba(255,107,0,0.12)" }]}>
+              <Text style={{ fontSize: 36 }}>🥫</Text>
+            </View>
+            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Kultr Canned Drinks</Text>
+            <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+              Pre-order your 4-pack of Kultr botanical drinks when booking tickets to skip the 45-minute bar queue at festivals!
+            </Text>
+            <Pressable
+              style={styles.discoverBtn}
+              onPress={() => router.push("/(tabs)/discover" as any)}
+              accessibilityLabel="Discover Events & Drink Bundles"
+              accessibilityRole="button"
+            >
+              <Text style={styles.discoverBtnText}>Explore Festival Bundles</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.ticketList}>
+            {vouchers.map((voucher) => {
+              const remaining = Math.max(0, voucher.totalUnits - voucher.redeemedUnits);
+              const isActive = voucher.status === "active" && remaining > 0;
+              return (
+                <Pressable
+                  key={voucher.id}
+                  style={[
+                    styles.ticketCard,
+                    { backgroundColor: colors.card, borderColor: isActive ? "#FF6B00" : colors.border },
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    router.push(
+                      `/bar-pass/${voucher.id}?voucherCode=${voucher.voucherCode}&totalUnits=${voucher.totalUnits}&redeemedUnits=${voucher.redeemedUnits}&title=${encodeURIComponent(voucher.eventTitle)}` as any,
+                    );
+                  }}
+                  accessibilityLabel={`Bar Pass for ${voucher.eventTitle}`}
+                  accessibilityRole="button"
+                >
+                  <View style={styles.voucherTopBanner}>
+                    <View style={styles.voucherBadgeRow}>
+                      <View style={[styles.statusBadge, { backgroundColor: isActive ? "#00E676" : "#757575" }]}>
+                        <View style={[styles.statusDot, { backgroundColor: "#FFFFFF" }]} />
+                        <Text style={[styles.statusText, { color: "#FFFFFF" }]}>
+                          {isActive ? "READY TO POUR" : "FULLY REDEEMED"}
+                        </Text>
+                      </View>
+                      <Text style={styles.voucherCodePill}>{voucher.voucherCode}</Text>
+                    </View>
+                    <Text style={[styles.voucherEventTitle, { color: colors.foreground }]}>{voucher.eventTitle}</Text>
+                    <Text style={[styles.voucherVenueText, { color: colors.mutedForeground }]}>
+                      {voucher.venue}
+                    </Text>
+                  </View>
+
+                  <View style={styles.dividerRow}>
+                    <View style={[styles.cutoutLeft, { backgroundColor: colors.background }]} />
+                    <View style={styles.dashedLine}>
+                      {Array.from({ length: 18 }).map((_, i) => (
+                        <View key={i} style={[styles.dash, { backgroundColor: colors.border }]} />
+                      ))}
+                    </View>
+                    <View style={[styles.cutoutRight, { backgroundColor: colors.background }]} />
+                  </View>
+
+                  <View style={styles.voucherBottom}>
+                    <View style={styles.canCounterRow}>
+                      <Text style={{ fontSize: 18 }}>
+                        {Array.from({ length: voucher.totalUnits }).map((_, i) => (i < remaining ? "🥫" : "⚪")).join(" ")}
+                      </Text>
+                      <Text style={[styles.canRemainingText, { color: isActive ? "#FF6B00" : colors.mutedForeground }]}>
+                        {remaining} of {voucher.totalUnits} cans remaining
+                      </Text>
+                    </View>
+                    <View style={styles.viewTicketRow}>
+                      <Text style={[styles.viewTicketText, { color: colors.mutedForeground }]}>
+                        Tap to open live Bar Pass QR
+                      </Text>
+                      <Feather name="chevron-right" size={14} color="#FF6B00" />
+                    </View>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        )
+      ) : tickets.length === 0 ? (
         <View style={styles.empty}>
           <View style={[styles.emptyIcon, { backgroundColor: colors.muted }]}>
             <Feather name="tag" size={36} color={colors.mutedForeground} />
@@ -215,9 +373,33 @@ export default function TicketsScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { gap: 0 },
-  header: { paddingHorizontal: 16, marginBottom: 24 },
+  header: { paddingHorizontal: 16, marginBottom: 16 },
   headerTitle: { fontSize: 28, fontWeight: "800" },
   headerSub: { fontSize: 14, marginTop: 2 },
+  segmentContainer: {
+    flexDirection: "row",
+    marginHorizontal: 16,
+    marginBottom: 20,
+    padding: 4,
+    borderRadius: 14,
+    gap: 4,
+  },
+  segmentBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6,
+  },
+  segmentBtnActive: {
+    backgroundColor: "#FF6B00",
+  },
+  segmentText: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
   empty: { alignItems: "center", paddingTop: 60, paddingHorizontal: 32, gap: 12 },
   emptyIcon: {
     width: 80,
@@ -319,4 +501,40 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(255,255,255,0.06)",
   },
   viewTicketText: { fontSize: 12 },
+  voucherTopBanner: {
+    padding: 16,
+    gap: 8,
+  },
+  voucherBadgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  voucherCodePill: {
+    color: "#FF6B00",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+  },
+  voucherEventTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    marginTop: 4,
+  },
+  voucherVenueText: {
+    fontSize: 13,
+  },
+  voucherBottom: {
+    padding: 16,
+    gap: 12,
+  },
+  canCounterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  canRemainingText: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
 });

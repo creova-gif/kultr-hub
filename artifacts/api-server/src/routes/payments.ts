@@ -1,7 +1,16 @@
 import { Router } from "express";
 import { and, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { db, ticketTypesTable, eventsTable, usersTable, pendingPaymentsTable, kultrPassPaymentsTable } from "@workspace/db";
+import {
+  db,
+  ticketTypesTable,
+  eventsTable,
+  usersTable,
+  pendingPaymentsTable,
+  kultrPassPaymentsTable,
+  eventBeverageBundlesTable,
+  pendingPaymentItemsTable,
+} from "@workspace/db";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { initializePayment, verifyPayment, isPaystackConfigured } from "../lib/paystack.js";
 import { initiateStkPush, queryStkPush, isMpesaConfigured } from "../lib/mpesa.js";
@@ -9,6 +18,7 @@ import { initiateMoMoRequest, getMoMoPaymentStatus, isMoMoConfigured } from "../
 import { normalizeMsisdn } from "../lib/phone.js";
 import { simulationAllowed } from "../lib/simulation.js";
 import { issueTicket, validateQuantity, TicketIssueError } from "../lib/issue.js";
+import { issueBeverageVoucher } from "../lib/issue-voucher.js";
 import type { Request, Response } from "express";
 
 const router = Router();
@@ -401,11 +411,12 @@ router.get("/callback", async (req: Request, res: Response) => {
  */
 router.post("/mpesa/stk-push", requireAuth, async (req: Request, res: Response) => {
   const authed = req as AuthedRequest;
-  const { eventId, ticketTypeId, phone, countryCode } = req.body as {
+  const { eventId, ticketTypeId, phone, countryCode, bundleId } = req.body as {
     eventId: string;
     ticketTypeId: string;
     phone: string;
     countryCode?: string;
+    bundleId?: string;
   };
 
   if (!eventId || !ticketTypeId || !phone) {
@@ -436,7 +447,32 @@ router.post("/mpesa/stk-push", requireAuth, async (req: Request, res: Response) 
     return;
   }
 
-  const totalAmount = Number(ticketType.price) * quantity;
+  let bundleAmount = 0;
+  let bundleRecord: typeof eventBeverageBundlesTable.$inferSelect | null = null;
+  if (bundleId) {
+    const [b] = await db
+      .select()
+      .from(eventBeverageBundlesTable)
+      .where(
+        and(
+          eq(eventBeverageBundlesTable.id, bundleId),
+          eq(eventBeverageBundlesTable.eventId, eventId),
+        ),
+      )
+      .limit(1);
+    if (!b || !b.isActive) {
+      res.status(400).json({ message: "Selected beverage bundle is not available" });
+      return;
+    }
+    if (b.allocatedInventory - b.claimedInventory < 1) {
+      res.status(400).json({ message: "Selected beverage bundle is sold out" });
+      return;
+    }
+    bundleRecord = b;
+    bundleAmount = Number(b.bundlePrice);
+  }
+
+  const totalAmount = Number(ticketType.price) * quantity + bundleAmount;
   const reference = generatePaymentRef();
 
   // Normalise to a bare E.164 MSISDN using the caller's country (body override
@@ -454,7 +490,7 @@ router.post("/mpesa/stk-push", requireAuth, async (req: Request, res: Response) 
       phone: normalised,
       amountKES: totalAmount,
       reference,
-      description: `${event.title} ticket`,
+      description: bundleRecord ? `${event.title} ticket + drink bundle` : `${event.title} ticket`,
     });
 
     // Persist what this reference is actually for, server-side, before ever
@@ -474,6 +510,27 @@ router.post("/mpesa/stk-push", requireAuth, async (req: Request, res: Response) 
       provider: "mpesa",
       providerHandle: stkResult ? stkResult.checkoutRequestId : `sim_${reference}`,
     });
+
+    if (bundleRecord) {
+      await db.insert(pendingPaymentItemsTable).values([
+        {
+          paymentReference: reference,
+          itemType: "TICKET",
+          itemReferenceId: ticketTypeId,
+          quantity,
+          unitPrice: String(Number(ticketType.price)),
+          subtotal: String(Number(ticketType.price) * quantity),
+        },
+        {
+          paymentReference: reference,
+          itemType: "BEVERAGE_BUNDLE",
+          itemReferenceId: bundleRecord.id,
+          quantity: 1,
+          unitPrice: String(Number(bundleRecord.bundlePrice)),
+          subtotal: String(Number(bundleRecord.bundlePrice)),
+        },
+      ]);
+    }
 
     if (!stkResult) {
       // Simulated mode (no M-Pesa credentials)
@@ -565,9 +622,37 @@ router.post("/mpesa/verify", requireAuth, async (req: Request, res: Response) =>
       paymentReference: reference,
       paymentProvider: allowSimulation ? "mpesa_simulated" : "mpesa",
     });
+
+    // Check if this payment included a beverage bundle
+    const [bundleItem] = await db
+      .select()
+      .from(pendingPaymentItemsTable)
+      .where(
+        and(
+          eq(pendingPaymentItemsTable.paymentReference, reference),
+          eq(pendingPaymentItemsTable.itemType, "BEVERAGE_BUNDLE"),
+        ),
+      )
+      .limit(1);
+
+    let voucherId: string | undefined;
+    let voucherCode: string | undefined;
+    if (bundleItem) {
+      const { voucher } = await issueBeverageVoucher({
+        userId: authed.userId,
+        eventId: pending.eventId,
+        bundleId: bundleItem.itemReferenceId,
+        paymentReference: reference,
+      });
+      voucherId = voucher.id;
+      voucherCode = voucher.voucherCode;
+    }
+
     res.status(201).json({
       ticketId: ticket.id,
       ticketNumber: ticket.ticketNumber,
+      voucherId,
+      voucherCode,
       status: ticket.status,
       totalAmount,
       currency: ticketType.currency,

@@ -191,6 +191,29 @@ function CityMap({ pins, cityName, onPressPin }: CityMapProps) {
 const CATEGORY_FILTERS = ["For You", "Music", "Art", "Food", "Heritage", "More"] as const;
 type CategoryFilter = (typeof CATEGORY_FILTERS)[number];
 
+const COUNTRY_TO_CAPITAL: Record<string, string> = {
+  GB: "London",
+  US: "New York",
+  CA: "Toronto",
+  FR: "Paris",
+  PT: "Portimão",
+  JM: "Kingston",
+  TT: "Port of Spain",
+  BB: "Bridgetown",
+  NG: "Lagos",
+  GH: "Accra",
+  KE: "Nairobi",
+  ZA: "Johannesburg",
+  UG: "Kampala",
+  RW: "Kigali",
+  TZ: "Dar es Salaam",
+  EG: "Cairo",
+  SN: "Dakar",
+  CI: "Abidjan",
+  CM: "Douala",
+  ET: "Addis Ababa",
+};
+
 type DatePreset = "any" | "today" | "week" | "month";
 
 const DATE_PRESETS: { id: DatePreset; label: string }[] = [
@@ -224,12 +247,7 @@ export default function CultureCompassScreen() {
   const { userCountry, setUserCountry } = useApp();
   const [selectedCat, setSelectedCat] = useState<CategoryFilter>("For You");
   const [showCityPicker, setShowCityPicker] = useState(false);
-  // Filters button used to have no onPress handler at all — confirmed dead
-  // on live audit. It now toggles this panel, which reuses the exact same
-  // category-chip filter state above (selectedCat) plus date/price, all
-  // feeding the one `filtered` list that drives both the map pins and the
-  // event list below — the same filtering pattern the rest of this screen
-  // already uses, not a new one bolted on for this panel.
+  const [isGlobalView, setIsGlobalView] = useState(false);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [datePreset, setDatePreset] = useState<DatePreset>("any");
   const [priceMin, setPriceMin] = useState("");
@@ -238,7 +256,8 @@ export default function CultureCompassScreen() {
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 44) : insets.top;
 
-  const cityName = userCountry.name.split(" ")[0]; // "Nairobi" from "Nairobi CBD"
+  const activeHubCity = COUNTRY_TO_CAPITAL[userCountry.code] ?? userCountry.name.split(" ")[0];
+  const cityName = isGlobalView ? "GLOBAL DIASPORA" : activeHubCity;
 
   const priceMinNum = priceMin.trim() !== "" && !Number.isNaN(Number(priceMin)) ? Number(priceMin) : undefined;
   const priceMaxNum = priceMax.trim() !== "" && !Number.isNaN(Number(priceMax)) ? Number(priceMax) : undefined;
@@ -252,9 +271,13 @@ export default function CultureCompassScreen() {
       const matchesPrice =
         (priceMinNum === undefined || e.price >= priceMinNum) &&
         (priceMaxNum === undefined || e.price <= priceMaxNum);
-      return matchesCat && matchesDate && matchesPrice;
+      const matchesLocation =
+        isGlobalView ||
+        e.country === userCountry.code ||
+        (COUNTRY_TO_CAPITAL[userCountry.code] && e.city?.toLowerCase() === COUNTRY_TO_CAPITAL[userCountry.code]?.toLowerCase());
+      return matchesCat && matchesDate && matchesPrice && (matchesLocation || !events.some((ev) => ev.country === userCountry.code));
     });
-  }, [events, selectedCat, datePreset, priceMinNum, priceMaxNum]);
+  }, [events, selectedCat, datePreset, priceMinNum, priceMaxNum, isGlobalView, userCountry.code]);
 
   // Real pins, derived from whatever `filtered` actually contains — no
   // fabricated labels, and they shrink/grow with every filter above exactly
@@ -289,7 +312,7 @@ export default function CultureCompassScreen() {
             >
               <Feather name="map-pin" size={12} color={colors.mutedForeground} />
               <Text style={[styles.citySelectorText, { color: colors.mutedForeground }]}>
-                {userCountry.name}
+                {isGlobalView ? "🌍 Global Diaspora" : `${userCountry.flag} ${activeHubCity}`}
               </Text>
               <Feather name="chevron-down" size={12} color={colors.mutedForeground} />
             </Pressable>
@@ -388,29 +411,56 @@ export default function CultureCompassScreen() {
             style={[styles.cityDropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
             nestedScrollEnabled
           >
-            {EA_COUNTRIES.map((c) => (
-              <Pressable
-                key={c.code}
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  setUserCountry(c);
-                  setShowCityPicker(false);
-                }}
-                style={[
-                  styles.cityOption,
-                  {
-                    backgroundColor: c.code === userCountry.code ? "rgba(255,107,0,0.1)" : "transparent",
-                    borderBottomColor: colors.border,
-                  },
-                ]}
-              >
-                <Text style={{ fontSize: 20 }}>{c.flag}</Text>
-                <Text style={[styles.cityOptionName, { color: colors.foreground }]}>{c.name}</Text>
-                {c.code === userCountry.code && (
-                  <Feather name="check" size={14} color="#FF6B00" />
-                )}
-              </Pressable>
-            ))}
+            {/* Global Diaspora option */}
+            <Pressable
+              onPress={() => {
+                Haptics.selectionAsync();
+                setIsGlobalView(true);
+                setShowCityPicker(false);
+              }}
+              style={[
+                styles.cityOption,
+                {
+                  backgroundColor: isGlobalView ? "rgba(255,107,0,0.1)" : "transparent",
+                  borderBottomColor: colors.border,
+                },
+              ]}
+            >
+              <Text style={{ fontSize: 20 }}>🌍</Text>
+              <Text style={[styles.cityOptionName, { color: colors.foreground }]}>Global Diaspora (All Hubs)</Text>
+              {isGlobalView && <Feather name="check" size={14} color="#FF6B00" />}
+            </Pressable>
+
+            {EA_COUNTRIES.map((c) => {
+              const capital = COUNTRY_TO_CAPITAL[c.code] ?? c.name;
+              const isSelected = !isGlobalView && c.code === userCountry.code;
+              return (
+                <Pressable
+                  key={c.code}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setIsGlobalView(false);
+                    setUserCountry(c);
+                    setShowCityPicker(false);
+                  }}
+                  style={[
+                    styles.cityOption,
+                    {
+                      backgroundColor: isSelected ? "rgba(255,107,0,0.1)" : "transparent",
+                      borderBottomColor: colors.border,
+                    },
+                  ]}
+                >
+                  <Text style={{ fontSize: 20 }}>{c.flag}</Text>
+                  <Text style={[styles.cityOptionName, { color: colors.foreground }]}>
+                    {capital} ({c.name})
+                  </Text>
+                  {isSelected && (
+                    <Feather name="check" size={14} color="#FF6B00" />
+                  )}
+                </Pressable>
+              );
+            })}
           </ScrollView>
         )}
 

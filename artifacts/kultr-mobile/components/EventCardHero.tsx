@@ -110,6 +110,10 @@ export function EventCardHero({ event }: Props) {
           <View style={[styles.categoryBadge, { backgroundColor: "rgba(255,107,0,0.25)", borderColor: "#FF6B00" }]}>
             <Text style={[styles.categoryText, { color: "#FF6B00" }]}>{event.category.toUpperCase()}</Text>
           </View>
+          <View style={[styles.categoryBadge, { backgroundColor: "rgba(255,107,0,0.15)", borderColor: "rgba(255,107,0,0.4)" }]}>
+            <Text style={{ fontSize: 9 }}>🥫</Text>
+            <Text style={[styles.categoryText, { color: "#FF6B00", marginLeft: 3 }]}>DRINK PASS</Text>
+          </View>
           {event.capacity && (
             <View style={[styles.capacityBadge, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
               <Feather name="users" size={10} color="#A0A0A0" />

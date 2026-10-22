@@ -50,6 +50,8 @@ export default function CreateEventScreen() {
   const [city, setCity] = useState("");
   const [description, setDescription] = useState("");
   const [prices, setPrices] = useState({ earlybird: "", regular: "", vip: "" });
+  const [includeDrinkBundle, setIncludeDrinkBundle] = useState(true);
+  const [drinkAllocation, setDrinkAllocation] = useState("250");
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [published, setPublished] = useState(false);
@@ -150,6 +152,24 @@ export default function CreateEventScreen() {
       // approve it before it's actually live and publicly visible.
       try {
         await updateEventStatusApi({ id: created.id, data: { status: "pending_review" } });
+
+        // Co-allocate Kultr Canned Drinks inventory if selected
+        if (includeDrinkBundle) {
+          const apiBase = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
+          fetch(`${apiBase}/api/beverages/events/${created.id}/bundles`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${authToken}`,
+            },
+            body: JSON.stringify({
+              title: "Kultr Zobo 4-Pack Express Bundle",
+              quantityUnits: 4,
+              bundlePrice: userCountry.currencyCode === "KE" ? 800 : 7,
+              allocatedInventory: parseInt(drinkAllocation) || 250,
+            }),
+          }).catch((err) => console.error("Could not allocate beverage bundle:", err));
+        }
       } catch (err) {
         setPublishing(false);
         Alert.alert(
@@ -384,6 +404,89 @@ export default function CreateEventScreen() {
           ))}
         </View>
 
+        {/* Kultr Canned Drinks Integration */}
+        <View style={styles.fieldGroup}>
+          <Text style={[styles.fieldLabel, { color: colors.foreground }]}>
+            Beverage Commerce (Optional)
+          </Text>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setIncludeDrinkBundle((prev) => !prev);
+            }}
+            style={[
+              styles.bundleSelectorCard,
+              {
+                backgroundColor: includeDrinkBundle ? "rgba(255,107,0,0.08)" : colors.card,
+                borderColor: includeDrinkBundle ? "#FF6B00" : colors.border,
+              },
+            ]}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+                <Text style={{ fontSize: 24 }}>🍹</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.fieldLabel, { color: colors.foreground, marginBottom: 2 }]}>
+                    Kultr Canned Drinks Express Pass
+                  </Text>
+                  <Text style={[styles.fieldHint, { color: colors.mutedForeground }]}>
+                    Offer attendees 4-pack pre-orders to skip festival bar queues
+                  </Text>
+                </View>
+              </View>
+              <View
+                style={[
+                  styles.toggleDot,
+                  {
+                    backgroundColor: includeDrinkBundle ? "#FF6B00" : "transparent",
+                    borderColor: includeDrinkBundle ? "#FF6B00" : colors.border,
+                  },
+                ]}
+              >
+                {includeDrinkBundle && <Feather name="check" size={12} color="#FFF" />}
+              </View>
+            </View>
+
+            {includeDrinkBundle && (
+              <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: "rgba(255,107,0,0.15)", gap: 8 }}>
+                <Text style={{ fontSize: 11, fontWeight: "800", color: "#FF6B00", letterSpacing: 0.5 }}>
+                  INITIAL FESTIVAL INVENTORY ALLOCATION (4-PACKS)
+                </Text>
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  {["100", "250", "500", "1000"].map((qty) => (
+                    <Pressable
+                      key={qty}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setDrinkAllocation(qty);
+                      }}
+                      style={{
+                        flex: 1,
+                        paddingVertical: 8,
+                        borderRadius: 8,
+                        alignItems: "center",
+                        backgroundColor: drinkAllocation === qty ? "#FF6B00" : colors.background,
+                        borderWidth: 1,
+                        borderColor: drinkAllocation === qty ? "#FF6B00" : colors.border,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: "700",
+                          color: drinkAllocation === qty ? "#FFF" : colors.foreground,
+                        }}
+                      >
+                        {qty}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            )}
+          </Pressable>
+        </View>
+
         {/* Media upload */}
         <Pressable
           style={[styles.mediaUpload, { backgroundColor: colors.card, borderColor: coverImage ? "#FF6B00" : colors.border }]}
@@ -615,4 +718,17 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   successDoneText: { color: "#fff", fontSize: 15, fontWeight: "800" },
+  bundleSelectorCard: {
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 1.5,
+  },
+  toggleDot: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

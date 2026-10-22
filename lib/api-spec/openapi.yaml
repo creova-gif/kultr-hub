@@ -22,6 +22,8 @@ tags:
     description: Quests, KULTROIN rewards, perks and collectibles
   - name: users
     description: Account data rights — export and deletion
+  - name: beverages
+    description: Kultr Canned Drinks, event bundles, and bar vouchers
 
 paths:
   /healthz:
@@ -1417,6 +1419,137 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  # ── BEVERAGES & CANNED DRINKS ───────────────────────────────────────────
+  /beverages:
+    get:
+      operationId: listBeverages
+      tags: [beverages]
+      summary: List all active Kultr Canned Drink catalog products
+      responses:
+        "200":
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  products:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BeverageProduct"
+                  total:
+                    type: integer
+                required: [products, total]
+
+  /beverages/events/{eventId}/bundles:
+    get:
+      operationId: listEventBeverageBundles
+      tags: [beverages]
+      summary: List beverage bundles available for a specific event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Event beverage bundles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bundles:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/EventBeverageBundle"
+                  total:
+                    type: integer
+                required: [bundles, total]
+
+    post:
+      operationId: createEventBeverageBundle
+      tags: [beverages]
+      summary: Add a drink bundle to an event (Creator or Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBeverageBundleRequest"
+      responses:
+        "201":
+          description: Bundle created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventBeverageBundle"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /beverages/my-vouchers:
+    get:
+      operationId: listMyBeverageVouchers
+      tags: [beverages]
+      summary: List active beverage vouchers owned by the user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of vouchers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vouchers:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BeverageVoucher"
+                  total:
+                    type: integer
+                required: [vouchers, total]
+
+  /beverages/redeem:
+    post:
+      operationId: redeemBeverageVoucher
+      tags: [beverages]
+      summary: Redeem units from a customer's Drink Pass QR code at the bar
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RedeemVoucherRequest"
+      responses:
+        "200":
+          description: Redemption successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RedeemVoucherResponse"
+        "400":
+          description: Invalid voucher or insufficient units
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -2710,3 +2843,132 @@ components:
           type: boolean
         reference:
           type: string
+
+    BeverageProduct:
+      type: object
+      required: [id, name, flavor, sku, volumeMl, description, basePrice, currency, isActive]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        flavor:
+          type: string
+        sku:
+          type: string
+        volumeMl:
+          type: integer
+        description:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+        basePrice:
+          type: string
+        currency:
+          type: string
+        isActive:
+          type: boolean
+
+    EventBeverageBundle:
+      type: object
+      required: [id, eventId, title, quantityUnits, bundlePrice, currency, allocatedInventory, claimedInventory]
+      properties:
+        id:
+          type: string
+        eventId:
+          type: string
+        title:
+          type: string
+        quantityUnits:
+          type: integer
+        bundlePrice:
+          type: string
+        currency:
+          type: string
+        allocatedInventory:
+          type: integer
+        claimedInventory:
+          type: integer
+        product:
+          $ref: "#/components/schemas/BeverageProduct"
+
+    CreateBeverageBundleRequest:
+      type: object
+      required: [beverageProductId, title, bundlePrice, allocatedInventory]
+      properties:
+        beverageProductId:
+          type: string
+        title:
+          type: string
+        quantityUnits:
+          type: integer
+          default: 4
+        bundlePrice:
+          type: number
+        allocatedInventory:
+          type: integer
+
+    BeverageVoucher:
+      type: object
+      required: [id, voucherCode, eventId, totalUnits, redeemedUnits, status, expiresAt]
+      properties:
+        id:
+          type: string
+        voucherCode:
+          type: string
+        eventId:
+          type: string
+        eventTitle:
+          type: string
+        eventDate:
+          type: string
+          format: date-time
+        venue:
+          type: string
+        totalUnits:
+          type: integer
+        redeemedUnits:
+          type: integer
+        status:
+          type: string
+          enum: [active, exhausted, cancelled, refunded]
+        signatureHash:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+
+    RedeemVoucherRequest:
+      type: object
+      required: [voucherCode]
+      properties:
+        voucherCode:
+          type: string
+        stationIdentifier:
+          type: string
+          default: "MAIN_BAR"
+        units:
+          type: integer
+          default: 1
+        idempotencyKey:
+          type: string
+
+    RedeemVoucherResponse:
+      type: object
+      required: [success, voucherCode, remainingUnits, totalUnits, redeemedUnits, status, alreadyRedeemed]
+      properties:
+        success:
+          type: boolean
+        voucherCode:
+          type: string
+        remainingUnits:
+          type: integer
+        totalUnits:
+          type: integer
+        redeemedUnits:
+          type: integer
+        status:
+          type: string
+        alreadyRedeemed:
+          type: boolean

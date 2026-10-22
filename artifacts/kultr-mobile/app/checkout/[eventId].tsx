@@ -40,6 +40,19 @@ export default function CheckoutScreen() {
   const ticketType = event?.ticketTypes[typeIdx] ?? event?.ticketTypes[0];
 
   const [quantity, setQuantity] = useState(1);
+  const [bundleSelected, setBundleSelected] = useState(false);
+  const [eventBundles, setEventBundles] = useState<{
+    id: string;
+    eventId: string;
+    title: string;
+    quantityUnits: number;
+    bundlePrice: string;
+    currency: string;
+    product?: {
+      name: string;
+      flavor: string;
+    };
+  }[]>([]);
   const [selectedMethodId, setSelectedMethodId] = useState<string>("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
@@ -47,11 +60,30 @@ export default function CheckoutScreen() {
   const [checkoutError, setCheckoutError] = useState<string>("");
   const isMounted = useRef(true);
 
+  const apiBase = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
+
   useEffect(() => {
     return () => {
       isMounted.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!eventId) return;
+    fetch(`${apiBase}/api/beverages/events/${eventId}/bundles`)
+      .then((res) => (res.ok ? res.json() : { bundles: [] }))
+      .then((data) => {
+        if (data?.bundles?.length) {
+          setEventBundles(data.bundles);
+        }
+      })
+      .catch(() => {});
+  }, [eventId, apiBase]);
+
+  const activeBundle = eventBundles[0];
+  const activeBundleId = activeBundle?.id;
+  const bundleBasePrice = activeBundle ? Number(activeBundle.bundlePrice) : 800;
+  const bundleCurrency = activeBundle?.currency ?? "KES";
 
   // Active payment methods for user's country
   const paymentMethods = userCountry.paymentMethods;
@@ -77,7 +109,19 @@ export default function CheckoutScreen() {
     return convertCurrency(ticketType.price, eventCurrencyCode, userCountry.code);
   }, [ticketType, eventCurrencyCode, userCountry.code, isSameCurrency, fxData]);
 
-  const total = convertedPrice * quantity;
+  // Kultr Canned Drinks bundle pricing
+  const convertedBundlePrice = useMemo(() => {
+    if (userCountry.currencyCode === bundleCurrency) return bundleBasePrice;
+    const liveRate = fxData?.rates?.[bundleCurrency];
+    if (liveRate && liveRate > 0) {
+      return Math.round(bundleBasePrice / liveRate);
+    }
+    return convertCurrency(bundleBasePrice, bundleCurrency, userCountry.code);
+  }, [userCountry.currencyCode, userCountry.code, fxData, bundleBasePrice, bundleCurrency]);
+
+  const ticketTotal = convertedPrice * quantity;
+  const bundleTotal = bundleSelected ? convertedBundlePrice : 0;
+  const total = ticketTotal + bundleTotal;
   const fee = Math.round(total * 0.05);
   const grandTotal = total + fee;
 
@@ -148,7 +192,13 @@ export default function CheckoutScreen() {
         const stkRes = await fetch(`${apiBase}/api/payments/mpesa/stk-push`, {
           method: "POST",
           headers: authHeader,
-          body: JSON.stringify({ eventId: event.id, ticketTypeId: ticketType.id, quantity, phone }),
+          body: JSON.stringify({
+            eventId: event.id,
+            ticketTypeId: ticketType.id,
+            quantity,
+            phone,
+            bundleId: bundleSelected ? (activeBundleId ?? "bundle_4pack_zobo") : undefined,
+          }),
         });
 
         if (!stkRes.ok) {
@@ -183,11 +233,17 @@ export default function CheckoutScreen() {
           return;
         }
 
-        const verifyData = await verifyRes.json() as { ticketId: string; ticketNumber: string };
+        const verifyData = await verifyRes.json() as {
+          ticketId: string;
+          ticketNumber: string;
+          voucherId?: string;
+          voucherCode?: string;
+        };
         if (typeof verifyData.ticketId !== "string") throw new Error("Invalid verify response");
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setLoading(false);
-        router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}`);
+        const bundleParam = bundleSelected ? `&bundlePurchased=true${verifyData.voucherCode ? `&voucherCode=${verifyData.voucherCode}` : ""}` : "";
+        router.replace(`/ticket/${verifyData.ticketId}?newPurchase=true&eventId=${event.id}&ticketTypeName=${encodeURIComponent(ticketType.name)}&ticketNumber=${verifyData.ticketNumber}${bundleParam}`);
         return;
       }
 
@@ -259,7 +315,12 @@ export default function CheckoutScreen() {
       const initRes = await fetch(`${apiBase}/api/payments/init`, {
         method: "POST",
         headers: authHeader,
-        body: JSON.stringify({ eventId: event.id, ticketTypeId: ticketType.id, quantity }),
+        body: JSON.stringify({
+          eventId: event.id,
+          ticketTypeId: ticketType.id,
+          quantity,
+          bundleId: bundleSelected ? (activeBundleId ?? "bundle_4pack_zobo") : undefined,
+        }),
       });
 
       if (!initRes.ok) {
@@ -451,6 +512,67 @@ export default function CheckoutScreen() {
           </View>
         </View>
 
+        {/* ── KULTR CANNED DRINKS ADD-ON ── */}
+        <View style={styles.section}>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setBundleSelected((prev) => !prev);
+            }}
+            style={[
+              styles.bundleCard,
+              {
+                backgroundColor: bundleSelected ? "rgba(255,107,0,0.12)" : colors.card,
+                borderColor: bundleSelected ? "#FF6B00" : colors.border,
+              },
+            ]}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: bundleSelected }}
+            accessibilityLabel="Add 4-Pack of Kultr Canned Drinks"
+          >
+            <View style={styles.bundleCardHeader}>
+              <View style={styles.bundleBadge}>
+                <Text style={styles.bundleBadgeText}>⚡ FESTIVAL SPECIAL · SAVE 30%</Text>
+              </View>
+              <View
+                style={[
+                  styles.checkbox,
+                  {
+                    backgroundColor: bundleSelected ? "#FF6B00" : "transparent",
+                    borderColor: bundleSelected ? "#FF6B00" : colors.mutedForeground,
+                  },
+                ]}
+              >
+                {bundleSelected && <Feather name="check" size={14} color="#FFFFFF" />}
+              </View>
+            </View>
+
+            <View style={styles.bundleContentRow}>
+              <View style={styles.bundleIconBox}>
+                <Text style={{ fontSize: 30 }}>🥫</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.bundleTitle, { color: colors.foreground }]}>
+                  {activeBundle?.title ?? "4-Pack Kultr Botanical Drinks"}
+                </Text>
+                <Text style={[styles.bundleSubtitle, { color: colors.mutedForeground }]}>
+                  {activeBundle?.product?.flavor
+                    ? `${activeBundle.product.flavor} · Skip the 45-min festival bar line! Pre-order chilled cans.`
+                    : "Skip the 45-min festival bar line! Pre-order chilled botanical drinks with express QR pickup."}
+                </Text>
+                <View style={styles.bundlePriceRow}>
+                  <Text style={[styles.bundlePrice, { color: "#FF6B00" }]}>
+                    +{userCountry.currencySymbol} {convertedBundlePrice.toLocaleString()}
+                  </Text>
+                  <Text style={[styles.bundleRegularPrice, { color: colors.mutedForeground }]}>
+                    {userCountry.currencySymbol} {Math.round(convertedBundlePrice * 1.4).toLocaleString()}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </Pressable>
+        </View>
+
         {/* Payment Method */}
         <View style={styles.section}>
           <View style={styles.sectionTitleRow}>
@@ -609,9 +731,16 @@ export default function CheckoutScreen() {
           <View style={[styles.orderCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <OrderRow
               label={`${ticketType.name} × ${quantity}`}
-              value={`${userCountry.currencySymbol} ${total.toLocaleString()}`}
+              value={`${userCountry.currencySymbol} ${ticketTotal.toLocaleString()}`}
               colors={colors}
             />
+            {bundleSelected && (
+              <OrderRow
+                label="Kultr Drinks (4-Pack Express)"
+                value={`${userCountry.currencySymbol} ${convertedBundlePrice.toLocaleString()}`}
+                colors={colors}
+              />
+            )}
             {!isSameCurrency && (
               <OrderRow
                 label="Original price"
@@ -945,5 +1074,73 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+  },
+  // Kultr Beverage Bundle Add-On
+  bundleCard: {
+    borderRadius: 16,
+    borderWidth: 1.5,
+    padding: 16,
+    gap: 12,
+  },
+  bundleCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  bundleBadge: {
+    backgroundColor: "rgba(255,107,0,0.18)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  bundleBadgeText: {
+    color: "#FF6B00",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bundleContentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  bundleIconBox: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bundleTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    marginBottom: 2,
+  },
+  bundleSubtitle: {
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: 6,
+  },
+  bundlePriceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  bundlePrice: {
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  bundleRegularPrice: {
+    fontSize: 12,
+    textDecorationLine: "line-through",
   },
 });

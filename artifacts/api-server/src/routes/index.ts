@@ -10,6 +10,7 @@ import gamificationRouter from "./gamification.js";
 import usersRouter from "./users.js";
 import reportsRouter from "./reports.js";
 import notificationsRouter from "./notifications.js";
+import beveragesRouter from "./beverages.js";
 
 const router: IRouter = Router();
 
@@ -21,6 +22,7 @@ router.use("/events", eventsRouter);
 router.use("/events", reportsRouter);
 router.use("/tickets", ticketsRouter);
 router.use("/payments", paymentsRouter);
+router.use("/beverages", beveragesRouter);
 router.use("/payouts", payoutsRouter);
 router.use("/fx", fxRouter);
 router.use("/users", usersRouter);

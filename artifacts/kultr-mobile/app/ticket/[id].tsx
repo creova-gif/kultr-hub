@@ -28,12 +28,14 @@ import { useCheckIn } from "@/hooks/useQuests";
 const LOGO_WORDMARK = require("@/assets/images/logo-wordmark.png");
 
 export default function TicketViewScreen() {
-  const { id, newPurchase, eventId, ticketTypeName, ticketNumber } = useLocalSearchParams<{
+  const { id, newPurchase, eventId, ticketTypeName, ticketNumber, bundlePurchased, voucherCode } = useLocalSearchParams<{
     id: string;
     newPurchase?: string;
     eventId?: string;
     ticketTypeName?: string;
     ticketNumber?: string;
+    bundlePurchased?: string;
+    voucherCode?: string;
   }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -143,6 +145,34 @@ export default function TicketViewScreen() {
           </View>
         )}
 
+        {/* Drink Pass Banner (when beverage bundle purchased) */}
+        {bundlePurchased === "true" && (
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push(
+                `/bar-pass/${id}?eventId=${resolvedEventId}&voucherCode=${voucherCode ?? "KTR-BAR-8X29Q"}&totalUnits=4&redeemedUnits=0` as any,
+              );
+            }}
+            style={[styles.drinkPassBanner, { backgroundColor: "rgba(255,107,0,0.14)", borderColor: "#FF6B00" }]}
+            accessibilityRole="button"
+            accessibilityLabel="Open Drink Pass"
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+              <Text style={{ fontSize: 24 }}>🍹</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: "#FF6B00", fontWeight: "800", fontSize: 13 }}>
+                  KULTR DRINK PASS READY
+                </Text>
+                <Text style={{ color: colors.foreground, fontSize: 12, marginTop: 2 }}>
+                  4 drinks ready to pour at festival bar stations
+                </Text>
+              </View>
+            </View>
+            <Feather name="chevron-right" size={18} color="#FF6B00" />
+          </Pressable>
+        )}
+
         {/* Ticket Card */}
         <View style={[styles.ticketCard, { backgroundColor: colors.card }]}>
           {/* Ticket header — branded */}
@@ -182,7 +212,7 @@ export default function TicketViewScreen() {
 
           {/* QR Code Section */}
           <View style={styles.qrSection}>
-            <QRDisplay />
+            <QRDisplay value={resolvedTicketNumber} size={200} />
             <Text style={[styles.qrNote, { color: colors.mutedForeground }]}>
               Present this QR code at the venue entrance
             </Text>
@@ -336,6 +366,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   successText: { fontSize: 13, fontWeight: "600", flex: 1 },
+  drinkPassBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginHorizontal: 16,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    marginBottom: 16,
+  },
   ticketCard: {
     marginHorizontal: 16,
     borderRadius: 20,

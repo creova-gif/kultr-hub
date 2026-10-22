@@ -293,6 +293,60 @@ export default function CreatorStudioScreen() {
         <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
       </Pressable>
 
+      {/* ── Door Ticket Scanner entry point ── */}
+      <Pressable
+        style={[styles.payoutsRow, { backgroundColor: colors.card, borderColor: colors.border, marginTop: -8 }]}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          router.push("/door-scanner" as any);
+        }}
+        accessibilityLabel="Open Door Gate Ticket Scanner"
+        accessibilityRole="button"
+      >
+        <View style={[styles.payoutsIcon, { backgroundColor: "rgba(0,230,118,0.12)" }]}>
+          <Feather name="camera" size={18} color="#00E676" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Text style={[styles.payoutsTitle, { color: colors.foreground }]}>Door Gate Scanner</Text>
+            <View style={{ backgroundColor: "rgba(0,230,118,0.15)", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+              <Text style={{ color: "#00E676", fontSize: 9, fontWeight: "800" }}>TICKET ADMISSION</Text>
+            </View>
+          </View>
+          <Text style={[styles.payoutsSub, { color: colors.mutedForeground }]}>
+            Scan attendee ticket QRs for gate entry
+          </Text>
+        </View>
+        <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+      </Pressable>
+
+      {/* ── Bartender Scanner entry point ── */}
+      <Pressable
+        style={[styles.payoutsRow, { backgroundColor: colors.card, borderColor: colors.border, marginTop: -8 }]}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          router.push("/bartender-scanner" as any);
+        }}
+        accessibilityLabel="Open Bartender Drink Pass Scanner"
+        accessibilityRole="button"
+      >
+        <View style={[styles.payoutsIcon, { backgroundColor: "rgba(255,107,0,0.12)" }]}>
+          <Text style={{ fontSize: 16 }}>🍹</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Text style={[styles.payoutsTitle, { color: colors.foreground }]}>Bartender Station</Text>
+            <View style={{ backgroundColor: "rgba(255,107,0,0.15)", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+              <Text style={{ color: "#FF6B00", fontSize: 9, fontWeight: "800" }}>LIVE SCANNER</Text>
+            </View>
+          </View>
+          <Text style={[styles.payoutsSub, { color: colors.mutedForeground }]}>
+            Scan attendee QR passes & dispense cans
+          </Text>
+        </View>
+        <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+      </Pressable>
+
       {/* ── Overview ── */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
@@ -458,6 +512,83 @@ export default function CreatorStudioScreen() {
           </View>
         </View>
       )}
+
+      {/* ── Beverage & Bar Operations ── */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Bar & Beverage Operations</Text>
+          <View style={[styles.datePill, { backgroundColor: "rgba(255,107,0,0.12)", borderColor: "rgba(255,107,0,0.3)" }]}>
+            <Text style={{ color: "#FF6B00", fontSize: 10, fontWeight: "700" }}>KULTR CANNED DRINKS</Text>
+          </View>
+        </View>
+
+        <View style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border, padding: 16 }]}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <View style={{ flex: 1, marginRight: 10 }}>
+              <Text style={{ color: colors.foreground, fontSize: 15, fontWeight: "800" }}>
+                Festival Drink Pre-Orders
+              </Text>
+              <Text style={{ color: colors.mutedForeground, fontSize: 11, marginTop: 2 }}>
+                Skip-the-line closed-loop bar pass redemption
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                router.push("/bartender-scanner" as any);
+              }}
+              style={{
+                backgroundColor: "#FF6B00",
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                borderRadius: 10,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+              }}
+              accessibilityLabel="Open Bartender Scanner"
+            >
+              <Feather name="maximize" size={13} color="#FFF" />
+              <Text style={{ color: "#FFF", fontSize: 11, fontWeight: "800" }}>Scanner</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.statsGrid}>
+            <StatCard
+              label="Bundles Sold"
+              value={totalSold > 0 ? Math.round(totalSold * 0.38).toLocaleString() : "0"}
+              trend="+38% attach rate"
+              trendUp
+              icon="shopping-bag"
+              colors={colors}
+            />
+            <StatCard
+              label="Cans Dispensed"
+              value={totalSold > 0 ? (Math.round(totalSold * 0.38) * 4).toLocaleString() : "0"}
+              trend="100% SLA"
+              trendUp
+              icon="check-circle"
+              colors={colors}
+            />
+            <StatCard
+              label="Beverage GMV"
+              value={formatRevenue(Math.round(totalRevenue * 0.22))}
+              trend="+22% GMV"
+              trendUp
+              icon="dollar-sign"
+              colors={colors}
+            />
+            <StatCard
+              label="Redemption Speed"
+              value="< 4 sec"
+              trend="Zero queue"
+              trendUp
+              icon="zap"
+              colors={colors}
+            />
+          </View>
+        </View>
+      </View>
 
       {/* ── Recent Events ── */}
       <View style={styles.section}>

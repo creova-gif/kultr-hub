@@ -103,6 +103,8 @@ function RootLayoutNav() {
       <Stack.Screen name="event/[id]" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="checkout/[eventId]" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="ticket/[id]" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="bar-pass/[id]" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="bartender-scanner" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="saved" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="notifications" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="create-event" options={{ headerShown: false, presentation: "card" }} />
