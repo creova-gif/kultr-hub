@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { eq, desc } from "drizzle-orm";
+import { eq, or, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { db, ticketsTable, ticketTypesTable, eventsTable } from "@workspace/db";
+import { db, ticketsTable, ticketTypesTable, eventsTable, usersTable } from "@workspace/db";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
 import { issueTicket, validateQuantity, TicketIssueError } from "../lib/issue.js";
 import { validateUuidParam } from "../middleware/validateUuidParam.js";
@@ -140,6 +140,87 @@ router.get("/:id", requireAuth, async (req: Request, res: Response) => {
 
   const detail = await buildTicketDetail(ticket);
   res.json(detail);
+});
+
+router.patch("/scan/:code", async (req: Request, res: Response) => {
+  const rawCode = String(req.params.code).trim().toUpperCase();
+
+  let lookupNumber = rawCode;
+  let isDynamic = false;
+  if (rawCode.startsWith("KTR-DYN:")) {
+    isDynamic = true;
+    const parts = rawCode.split(":");
+    if (parts.length >= 4) {
+      const [, ticketNum, timeStepStr] = parts;
+      const scannedStep = parseInt(timeStepStr, 10);
+      const currentStep = Math.floor(Date.now() / 1000 / 30);
+      if (currentStep - scannedStep > 1) {
+        res.status(400).json({
+          success: false,
+          message: "EXPIRED_DYNAMIC_QR",
+          detail: "Code expired. Please ask attendee to show live app.",
+        });
+        return;
+      }
+      lookupNumber = ticketNum;
+    }
+  }
+
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lookupNumber);
+  const condition = isUuid
+    ? or(eq(ticketsTable.ticketNumber, lookupNumber), eq(ticketsTable.id, lookupNumber))
+    : eq(ticketsTable.ticketNumber, lookupNumber);
+
+  const [ticket] = await db.select().from(ticketsTable).where(condition).limit(1);
+
+  if (!ticket) {
+    res.status(404).json({ success: false, message: "Ticket not found" });
+    return;
+  }
+
+  if (ticket.status === "cancelled" || ticket.status === "refunded") {
+    res.status(400).json({
+      success: false,
+      message: `Ticket is ${ticket.status}`,
+    });
+    return;
+  }
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, ticket.userId)).limit(1);
+  const [ticketType] = await db.select().from(ticketTypesTable).where(eq(ticketTypesTable.id, ticket.ticketTypeId)).limit(1);
+  const [event] = await db.select().from(eventsTable).where(eq(eventsTable.id, ticket.eventId)).limit(1);
+
+  res.json({
+    success: true,
+    ticketId: ticket.id,
+    ticketNumber: ticket.ticketNumber,
+    attendeeName: user?.displayName ?? "Verified Guest",
+    ticketTypeName: ticketType?.name ?? "General Admission",
+    eventTitle: event?.title ?? "Kultr Event",
+    status: ticket.status,
+    isDynamic,
+  });
+});
+
+router.patch("/:id", requireAuth, async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+  const [ticket] = await db.select().from(ticketsTable).where(eq(ticketsTable.id, id)).limit(1);
+
+  if (!ticket) {
+    res.status(404).json({ message: "Ticket not found" });
+    return;
+  }
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, ticket.userId)).limit(1);
+  const [ticketType] = await db.select().from(ticketTypesTable).where(eq(ticketTypesTable.id, ticket.ticketTypeId)).limit(1);
+
+  res.json({
+    success: true,
+    ticketId: ticket.id,
+    ticketNumber: ticket.ticketNumber,
+    attendeeName: user?.displayName ?? "Verified Guest",
+    ticketTypeName: ticketType?.name ?? "General Admission",
+  });
 });
 
 export default router;

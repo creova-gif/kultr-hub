@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
+import { validateDynamicTicketPayload } from "@/lib/totp";
 
 interface CheckinLogItem {
   id: string;
@@ -83,9 +84,29 @@ export default function DoorScannerScreen() {
     setScanResult(null);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
+    // Dynamic anti-screenshot validation check
+    const dynamicCheck = validateDynamicTicketPayload(code);
+    if (!dynamicCheck.valid) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setScanResult({
+        success: false,
+        message:
+          dynamicCheck.reason === "EXPIRED_CODE"
+            ? "⚠️ EXPIRED QR — SCREENSHOT DETECTED"
+            : "⚠️ INVALID SECURITY SIGNATURE",
+        ticketNumber: dynamicCheck.ticketNumber,
+        usedAt:
+          dynamicCheck.reason === "EXPIRED_CODE"
+            ? `Generated ${dynamicCheck.ageSeconds ?? 30}s ago. Ask attendee to show live app.`
+            : "Counterfeit security token. Reject entry.",
+      });
+      setIsValidating(false);
+      return;
+    }
+
     try {
-      // Look up or validate ticket via API
-      const res = await fetch(`${apiBase}/api/tickets/${encodeURIComponent(code)}`, {
+      // Look up or validate ticket via API (supports /api/tickets/scan/:code)
+      const res = await fetch(`${apiBase}/api/tickets/scan/${encodeURIComponent(code)}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -102,8 +123,10 @@ export default function DoorScannerScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setScanResult({
           success: true,
-          message: "VALID TICKET — ADMIT GUEST",
-          ticketNumber: code,
+          message: dynamicCheck.isDynamic
+            ? "LIVE DYNAMIC QR VERIFIED — ADMIT GUEST"
+            : "VALID TICKET — ADMIT GUEST",
+          ticketNumber: data.ticketNumber || dynamicCheck.ticketNumber,
           attendeeName: data.attendeeName || "Verified Guest",
           ticketType: data.ticketTypeName || "General Admission",
         });
@@ -114,7 +137,7 @@ export default function DoorScannerScreen() {
         setRecentLogs((prev) => [
           {
             id: `log-${Date.now()}`,
-            ticketNumber: code,
+            ticketNumber: data.ticketNumber || dynamicCheck.ticketNumber,
             attendeeName: data.attendeeName || "Verified Guest",
             ticketType: data.ticketTypeName || "General Admission",
             time: "Just now",

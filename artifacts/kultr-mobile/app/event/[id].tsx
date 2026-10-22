@@ -21,6 +21,7 @@ import { Alert } from "@/lib/alert";
 import { CheckinCelebration } from "@/components/CheckinCelebration";
 import { shareEventToWhatsApp } from "@/utils/share";
 import { EventCardCompact } from "@/components/EventCardCompact";
+import { TicketSelectionBottomSheet } from "@/components/TicketSelectionBottomSheet";
 import { useApp } from "@/context/AppContext";
 import {
   EVENT_IMAGES,
@@ -123,6 +124,7 @@ export default function EventDetailScreen() {
   const insets = useSafeAreaInsets();
   const { isSaved, toggleSaved, tickets, authToken } = useApp();
   const [selectedTicketType, setSelectedTicketType] = useState(0);
+  const [showTicketSheet, setShowTicketSheet] = useState(false);
   const { event, isLoading } = useEventDetail(id);
   const { events } = useEventCatalog();
   const checkIn = useCheckIn();
@@ -610,6 +612,7 @@ export default function EventDetailScreen() {
                       if (!soldOut) {
                         Haptics.selectionAsync();
                         setSelectedTicketType(i);
+                        setShowTicketSheet(true);
                       }
                     }}
                     style={[
@@ -865,9 +868,7 @@ export default function EventDetailScreen() {
           ]}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            router.push(
-              `/checkout/${event.id}?ticketTypeIndex=${selectedTicketType}`
-            );
+            setShowTicketSheet(true);
           }}
           accessibilityLabel={(event.ticketTypes[selectedTicketType]?.available ?? 1) === 0 ? "Sold out" : "Get tickets"}
         >
@@ -877,6 +878,19 @@ export default function EventDetailScreen() {
           {(event.ticketTypes[selectedTicketType]?.available ?? 1) > 0 && <Feather name="arrow-right" size={16} color="#fff" />}
         </Pressable>
       </View>
+
+      <TicketSelectionBottomSheet
+        visible={showTicketSheet}
+        onClose={() => setShowTicketSheet(false)}
+        event={event}
+        selectedTicketType={selectedTicketType}
+        onSelectTicketType={setSelectedTicketType}
+        onProceedToCheckout={(typeIdx, qty, bundle) => {
+          router.push(
+            `/checkout/${event.id}?ticketTypeIndex=${typeIdx}&quantity=${qty}&bundleSelected=${bundle}`
+          );
+        }}
+      />
     </View>
   );
 }

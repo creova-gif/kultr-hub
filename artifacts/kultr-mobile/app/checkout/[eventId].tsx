@@ -28,9 +28,16 @@ import { useEventDetail } from "@/hooks/useEventDetail";
 import { useGetFxRates } from "@workspace/api-client-react";
 
 export default function CheckoutScreen() {
-  const { eventId, ticketTypeIndex } = useLocalSearchParams<{
+  const {
+    eventId,
+    ticketTypeIndex,
+    quantity: initialQuantity,
+    bundleSelected: initialBundleSelected,
+  } = useLocalSearchParams<{
     eventId: string;
     ticketTypeIndex: string;
+    quantity?: string;
+    bundleSelected?: string;
   }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -39,8 +46,12 @@ export default function CheckoutScreen() {
   const typeIdx = Number(ticketTypeIndex ?? "0");
   const ticketType = event?.ticketTypes[typeIdx] ?? event?.ticketTypes[0];
 
-  const [quantity, setQuantity] = useState(1);
-  const [bundleSelected, setBundleSelected] = useState(false);
+  const [quantity, setQuantity] = useState(
+    initialQuantity ? Math.max(1, Number(initialQuantity)) : 1
+  );
+  const [bundleSelected, setBundleSelected] = useState(
+    initialBundleSelected === "true"
+  );
   const [eventBundles, setEventBundles] = useState<{
     id: string;
     eventId: string;

@@ -84,7 +84,29 @@ export default function SocialScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<SocialTab>("all");
+  const [activityItems, setActivityItems] = useState(ACTIVITY_ITEMS);
   const { events, isLoading } = useEventCatalog();
+
+  const apiBase = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
+
+  React.useEffect(() => {
+    fetch(`${apiBase}/api/tribes/social/activity`)
+      .then((res) => (res.ok ? res.json() : { activities: [] }))
+      .then((data) => {
+        if (data?.activities?.length) {
+          const formatted = data.activities.map((a: any, i: number) => ({
+            id: a.id,
+            user: a.user,
+            color: FRIEND_COLORS[i % FRIEND_COLORS.length],
+            action: a.action,
+            event: a.event,
+            time: a.time,
+          }));
+          setActivityItems(formatted);
+        }
+      })
+      .catch(() => {});
+  }, [apiBase]);
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
 
@@ -170,7 +192,7 @@ export default function SocialScreen() {
       {/* ── Activity Feed ── */}
       {activeTab === "activity" && (
         <View style={styles.activityFeed}>
-          {ACTIVITY_ITEMS.map((item) => (
+          {activityItems.map((item) => (
             <Pressable
               key={item.id}
               style={[styles.activityItem, { backgroundColor: colors.card, borderColor: colors.border }]}

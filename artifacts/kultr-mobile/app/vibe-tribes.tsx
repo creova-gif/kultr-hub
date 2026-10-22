@@ -49,34 +49,96 @@ export default function VibeTribesScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { authToken } = useApp();
+  const [tribesList, setTribesList] = useState<Tribe[]>(TRIBES);
   const [joined, setJoined] = useState<string[]>(["afrobeats"]);
   const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const apiBase = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
+
+  React.useEffect(() => {
+    setLoading(true);
+    fetch(`${apiBase}/api/tribes`, {
+      headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+    })
+      .then((res) => (res.ok ? res.json() : { tribes: [] }))
+      .then((data) => {
+        if (data?.tribes?.length) {
+          setTribesList(data.tribes);
+          const joinedIds = data.tribes
+            .filter((t: any) => t.hasJoined)
+            .map((t: any) => t.id);
+          if (joinedIds.length > 0) setJoined(joinedIds);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [apiBase, authToken]);
 
   const topPad = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
   const bottomPad = Platform.OS === "web" ? Math.max(insets.bottom, 34) : insets.bottom;
 
-  const toggleJoin = (id: string) => {
+  const toggleJoin = async (id: string) => {
     if (!authToken) {
       router.push("/login");
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setJoined((prev) => (prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]));
+    const isCurrentlyJoined = joined.includes(id);
+
+    // Optimistic UI update
+    setJoined((prev) =>
+      isCurrentlyJoined ? prev.filter((t) => t !== id) : [...prev, id]
+    );
+    setTribesList((prev) =>
+      prev.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              members: isCurrentlyJoined
+                ? Math.max(0, t.members - 1)
+                : t.members + 1,
+            }
+          : t
+      )
+    );
+
+    try {
+      const endpoint = isCurrentlyJoined ? "leave" : "join";
+      const res = await fetch(`${apiBase}/api/tribes/${id}/${endpoint}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTribesList((prev) =>
+          prev.map((t) => (t.id === id ? { ...t, members: data.memberCount } : t))
+        );
+      }
+    } catch {
+      // Revert on network failure
+      setJoined((prev) =>
+        !isCurrentlyJoined ? prev.filter((t) => t !== id) : [...prev, id]
+      );
+    }
   };
 
   const { myTribes, discoverTribes } = useMemo(() => {
     const filtered = query.trim()
-      ? TRIBES.filter(
+      ? tribesList.filter(
           (t) =>
             t.name.toLowerCase().includes(query.toLowerCase()) ||
             t.category.toLowerCase().includes(query.toLowerCase())
         )
-      : TRIBES;
+      : tribesList;
     return {
       myTribes: filtered.filter((t) => joined.includes(t.id)),
       discoverTribes: filtered.filter((t) => !joined.includes(t.id)),
     };
-  }, [joined, query]);
+  }, [joined, query, tribesList]);
 
   const renderTribe = (tribe: Tribe) => {
     const isJoined = joined.includes(tribe.id);

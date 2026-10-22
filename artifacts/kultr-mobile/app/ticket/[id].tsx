@@ -2,7 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Linking from "expo-linking";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Image,
   Platform,
@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Alert } from "@/lib/alert";
 import { QRDisplay } from "@/components/QRDisplay";
+import { DynamicQRDisplay } from "@/components/DynamicQRDisplay";
 import { useApp } from "@/context/AppContext";
 
 import { formatDate, formatTime } from "@/constants/data";
@@ -48,6 +49,7 @@ export default function TicketViewScreen() {
   const event = getEventById(resolvedEventId);
   const resolvedTicketNumber = ticket?.ticketNumber ?? ticketNumber ?? "KTR-00000";
   const resolvedTicketTypeName = ticket?.ticketTypeName ?? ticketTypeName ?? "General Admission";
+  const [useDynamicQR, setUseDynamicQR] = useState(true);
 
   useEffect(() => {
     if (newPurchase === "true") {
@@ -212,10 +214,75 @@ export default function TicketViewScreen() {
 
           {/* QR Code Section */}
           <View style={styles.qrSection}>
-            <QRDisplay value={resolvedTicketNumber} size={200} />
+            {/* Mode Switcher */}
+            <View style={styles.qrToggleRow}>
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setUseDynamicQR(true);
+                }}
+                style={[
+                  styles.qrToggleBtn,
+                  useDynamicQR && styles.qrToggleBtnActive,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Switch to Live Dynamic QR"
+              >
+                <Feather
+                  name="shield"
+                  size={12}
+                  color={useDynamicQR ? "#FF6B00" : "#888"}
+                />
+                <Text
+                  style={[
+                    styles.qrToggleText,
+                    useDynamicQR && styles.qrToggleTextActive,
+                  ]}
+                >
+                  Live Dynamic QR
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setUseDynamicQR(false);
+                }}
+                style={[
+                  styles.qrToggleBtn,
+                  !useDynamicQR && styles.qrToggleBtnActive,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Switch to Classic QR code"
+              >
+                <Feather
+                  name="grid"
+                  size={12}
+                  color={!useDynamicQR ? "#FF6B00" : "#888"}
+                />
+                <Text
+                  style={[
+                    styles.qrToggleText,
+                    !useDynamicQR && styles.qrToggleTextActive,
+                  ]}
+                >
+                  Classic Code
+                </Text>
+              </Pressable>
+            </View>
+
+            {useDynamicQR ? (
+              <DynamicQRDisplay ticketNumber={resolvedTicketNumber} size={200} />
+            ) : (
+              <QRDisplay value={resolvedTicketNumber} size={200} />
+            )}
+
             <Text style={[styles.qrNote, { color: colors.mutedForeground }]}>
-              Present this QR code at the venue entrance
+              {useDynamicQR
+                ? "Present this live rolling QR code to door gate scanners"
+                : "Present this classic code at the venue entrance"}
             </Text>
+
             {!!authToken && (
               <Pressable
                 onPress={handleCheckIn}
@@ -409,6 +476,35 @@ const styles = StyleSheet.create({
   eventTitle: { color: "#FFFFFF", fontSize: 26, fontWeight: "900", lineHeight: 30, marginBottom: 4 },
   eventSubtitle: { color: "#FF6B00", fontSize: 13, marginBottom: 16 },
   qrSection: { alignItems: "center", paddingVertical: 24, paddingHorizontal: 20 },
+  qrToggleRow: {
+    flexDirection: "row",
+    backgroundColor: "#161616",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#262626",
+    padding: 3,
+    marginBottom: 16,
+    gap: 4,
+  },
+  qrToggleBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  qrToggleBtnActive: {
+    backgroundColor: "rgba(255,107,0,0.15)",
+  },
+  qrToggleText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#888",
+  },
+  qrToggleTextActive: {
+    color: "#FF6B00",
+  },
   qrNote: { fontSize: 11, marginTop: 12, textAlign: "center" },
   checkInBtn: {
     flexDirection: "row",

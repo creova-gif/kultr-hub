@@ -529,6 +529,22 @@ export default function LoginScreen() {
                   </Text>
                 </Pressable>
               )}
+
+              <Pressable
+                style={styles.guestBtn}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setOnboardingDone(true);
+                  router.replace("/(tabs)");
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Browse events as guest"
+              >
+                <Text style={[styles.guestBtnText, { color: colors.mutedForeground }]}>
+                  Browse events as guest
+                </Text>
+                <Feather name="arrow-right" size={14} color={colors.mutedForeground} />
+              </Pressable>
             </>
           ) : (
             <>
@@ -743,6 +759,20 @@ const styles = StyleSheet.create({
 
   resendBtn: { alignItems: "center", paddingVertical: 6 },
   resendText: { fontSize: 14 },
+
+  guestBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    marginTop: 4,
+    minHeight: 44,
+  },
+  guestBtnText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
 
   methodToggleRow: {
     flexDirection: "row",

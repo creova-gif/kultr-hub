@@ -55,10 +55,10 @@ export function AppScreens() {
           <img src="/screens/logo-wordmark.png" alt="Kultr" style={{ width: 130, height: 40, objectFit: "contain" }} />
         </div>
         <p style={{ color: "#A0A0A0", fontSize: 15, margin: 0, letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 600 }}>
-          East Africa's Cultural Events Platform
+          Global Diaspora Cultural Events Platform
         </p>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 12 }}>
-          {["7 Countries", "Local Payments", "Instant Tickets", "Creator Tools"].map((pill) => (
+          {["Global Diaspora Hubs", "Local Payments", "Express Drink Passes", "Creator Studio"].map((pill) => (
             <span key={pill} style={{ background: "rgba(255,107,0,0.12)", border: "1px solid rgba(255,107,0,0.25)", color: "#FF6B00", fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 20, letterSpacing: "0.04em" }}>{pill}</span>
           ))}
         </div>
